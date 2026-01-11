@@ -1,0 +1,12 @@
+MSH|^~\&|GenericDevice|Hospital|OpenPace|System||20240116093000||ORU^R01|MSG002|P|2.5
+PID|1||P789012^^^Hospital||Smith^Jane||19750515|F
+OBR|1|||IN_CLINIC|||20240116093000
+OBX|1|NM|73990-7^Battery Voltage^LN||2.42|V|2.2-2.8|N|||F
+OBX|2|NM|73991-5^Battery ERI Date^LN||20251201||||F
+OBX|3|NM|8889-8^Lead Impedance Atrial^LN||550|Ohm|200-1500|N|||F
+OBX|4|NM|8890-6^Lead Impedance RV^LN||620|Ohm|200-1500|N|||F
+OBX|5|NM|89269-2^AFib Burden Percent^LN||5.8|%|0-100|N|||F
+OBX|6|NM|8896-3^Atrial Pacing Percent^LN||23.1|%|0-100|N|||F
+OBX|7|NM|8897-1^Ventricular Pacing Percent^LN||92.3|%|0-100|H|||F
+OBX|8|NM|8895-5^Mean Heart Rate^LN||68|bpm|60-100|N|||F
+OBX|9|ST|8901-1^Pacing Mode^LN||DDD||||F
