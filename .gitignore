@@ -73,6 +73,8 @@ data/patient_data/
 data/hl7_messages/
 *.hl7
 !tests/sample_data/*.hl7
+*.dat
+tests/sample_data/csc.1002050604.1.dat
 
 # Logs
 *.log
