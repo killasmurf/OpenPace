@@ -73,6 +73,9 @@ class BatteryTrendWidget(QWidget):
         # Legend
         self.plot_widget.addLegend()
 
+        # Set default time range (2020 to current date)
+        self._set_default_time_range()
+
     def set_data(self, time_points: List[datetime], voltages: List[float]):
         """
         Set battery voltage data.
@@ -263,6 +266,16 @@ class BatteryTrendWidget(QWidget):
 
         # Auto-range Y-axis only
         self.plot_widget.enableAutoRange(axis='y')
+
+    def _set_default_time_range(self):
+        """Set default time range from 2020 to current date."""
+        start_date = datetime(2020, 1, 1)
+        end_date = datetime.now()
+
+        start_timestamp = start_date.timestamp()
+        end_timestamp = end_date.timestamp()
+
+        self.plot_widget.setXRange(start_timestamp, end_timestamp, padding=0)
 
     def clear(self):
         """Clear all data and plots."""

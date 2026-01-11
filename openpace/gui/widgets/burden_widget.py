@@ -73,6 +73,9 @@ class BurdenWidget(QWidget):
         # Legend
         self.plot_widget.addLegend()
 
+        # Set default time range (2020 to current date)
+        self._set_default_time_range()
+
     def set_data(self, arrhythmia_type: str, time_points: List[datetime], burden_values: List[float]):
         """
         Set arrhythmia burden data.
@@ -249,6 +252,16 @@ class BurdenWidget(QWidget):
         padding = time_range * 0.10 if time_range > 0 else 86400  # 1 day if single point
 
         self.plot_widget.setXRange(min_time - padding, max_time + padding, padding=0)
+
+    def _set_default_time_range(self):
+        """Set default time range from 2020 to current date."""
+        start_date = datetime(2020, 1, 1)
+        end_date = datetime.now()
+
+        start_timestamp = start_date.timestamp()
+        end_timestamp = end_date.timestamp()
+
+        self.plot_widget.setXRange(start_timestamp, end_timestamp, padding=0)
 
     def clear(self):
         """Clear all data and plots."""
