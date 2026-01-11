@@ -150,12 +150,19 @@ class HL7Parser:
         """
         # python-hl7 indexing: MSH|^~\&|3|4|5|6|7|8|9|10|11|12|13
         # Note: Field 0=MSH, 1=separator field, 2=^~\&, then actual data starts at 3
+
+        # Parse datetime - try field 8 first (Medtronic), then field 7 (Boston Scientific)
+        datetime_str = str(msh_segment[8][0]) if isinstance(msh_segment[8], list) else str(msh_segment[8])
+        if not datetime_str or datetime_str in ('', 'None'):
+            # Try field 7 as fallback (Boston Scientific uses this)
+            datetime_str = str(msh_segment[7][0]) if isinstance(msh_segment[7], list) else str(msh_segment[7])
+
         return {
             'sending_application': str(msh_segment[3][0]) if isinstance(msh_segment[3], list) else str(msh_segment[3]),
             'sending_facility': str(msh_segment[4][0]) if isinstance(msh_segment[4], list) else str(msh_segment[4]),
             'receiving_application': str(msh_segment[5][0]) if isinstance(msh_segment[5], list) else str(msh_segment[5]),
             'receiving_facility': str(msh_segment[6][0]) if isinstance(msh_segment[6], list) else str(msh_segment[6]),
-            'message_datetime': self._parse_hl7_datetime(str(msh_segment[8][0]) if isinstance(msh_segment[8], list) else str(msh_segment[8])),
+            'message_datetime': self._parse_hl7_datetime(datetime_str),
             'message_type': 'ORU^R01',  # Already validated
             'message_control_id': str(msh_segment[11][0]) if isinstance(msh_segment[11], list) else str(msh_segment[11]),
             'version': str(msh_segment[13][0]) if len(msh_segment) > 13 else '2.5',
@@ -384,25 +391,42 @@ class HL7Parser:
         """
         Convert HL7 datetime (YYYYMMDDHHmmss) to Python datetime.
 
+        Handles formats like:
+        - YYYYMMDDHHmmss
+        - YYYYMMDDHHmmss+0000 (with timezone)
+        - YYYYMMDD (date only)
+
         Args:
             hl7_datetime: HL7 datetime string
 
         Returns:
             Python datetime object or None if invalid
         """
-        if not hl7_datetime or hl7_datetime == '':
+        if not hl7_datetime or hl7_datetime == '' or hl7_datetime == 'None':
             return None
 
         try:
-            # HL7 datetime: YYYYMMDDHHmmss (can be truncated)
+            # HL7 datetime: YYYYMMDDHHmmss (can be truncated, may have timezone)
             hl7_datetime = hl7_datetime.strip()
+
+            # Remove timezone if present (+0000, -0500, etc.)
+            if '+' in hl7_datetime or '-' in hl7_datetime:
+                # Find the timezone separator
+                for sep in ['+', '-']:
+                    if sep in hl7_datetime and hl7_datetime.index(sep) >= 8:
+                        hl7_datetime = hl7_datetime[:hl7_datetime.index(sep)]
+                        break
+
             if len(hl7_datetime) >= 14:
                 return datetime.strptime(hl7_datetime[:14], '%Y%m%d%H%M%S')
+            elif len(hl7_datetime) >= 12:
+                # YYYYMMDDHHmm (no seconds)
+                return datetime.strptime(hl7_datetime[:12], '%Y%m%d%H%M')
             elif len(hl7_datetime) >= 8:
                 # Date only
                 return datetime.strptime(hl7_datetime[:8], '%Y%m%d')
-        except ValueError:
-            pass
+        except ValueError as e:
+            logger.warning(f"Failed to parse HL7 datetime '{hl7_datetime}': {e}")
 
         return None
 
