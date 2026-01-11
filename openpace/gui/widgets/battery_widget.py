@@ -108,8 +108,8 @@ class BatteryTrendWidget(QWidget):
         # Configure time axis
         self._configure_time_axis(timestamps)
 
-        # Auto-range
-        self.plot_widget.autoRange()
+        # Set X-axis range with 10% extension on either side
+        self._set_time_range_with_padding(timestamps)
 
     def _plot_voltage_line(self, timestamps: List[float], voltages: List[float]):
         """
@@ -241,6 +241,28 @@ class BatteryTrendWidget(QWidget):
         # Create date axis
         axis = pg.DateAxisItem(orientation='bottom')
         self.plot_widget.setAxisItems({'bottom': axis})
+
+    def _set_time_range_with_padding(self, timestamps: List[float]):
+        """
+        Set X-axis range with 10% padding on either side.
+
+        Args:
+            timestamps: Unix timestamps
+        """
+        if len(timestamps) == 0:
+            return
+
+        min_time = min(timestamps)
+        max_time = max(timestamps)
+        time_range = max_time - min_time
+
+        # Add 10% padding on each side
+        padding = time_range * 0.10 if time_range > 0 else 86400  # 1 day if single point
+
+        self.plot_widget.setXRange(min_time - padding, max_time + padding, padding=0)
+
+        # Auto-range Y-axis only
+        self.plot_widget.enableAutoRange(axis='y')
 
     def clear(self):
         """Clear all data and plots."""
