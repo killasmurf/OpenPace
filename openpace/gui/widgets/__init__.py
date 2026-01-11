@@ -7,6 +7,8 @@ from .impedance_widget import ImpedanceTrendWidget
 from .burden_widget import BurdenWidget
 from .timeline_view import TimelineView
 from .summary_panel import SummaryPanel
+from .egm_viewer import EGMViewerWidget
+from .episode_selector import EpisodeSelectorWidget
 
 __all__ = [
     'BatteryTrendWidget',
@@ -14,4 +16,6 @@ __all__ = [
     'BurdenWidget',
     'TimelineView',
     'SummaryPanel',
+    'EGMViewerWidget',
+    'EpisodeSelectorWidget',
 ]
