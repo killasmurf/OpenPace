@@ -18,9 +18,15 @@ from PyQt6.QtWidgets import (
     QMenuBar,
     QMenu,
     QStatusBar,
+    QFileDialog,
+    QMessageBox,
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction
+
+from openpace.database.connection import init_database, get_db_session
+from openpace.hl7.parser import HL7Parser
+from openpace.gui.widgets.timeline_view import TimelineView
 
 
 class MainWindow(QMainWindow):
@@ -34,6 +40,10 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("OpenPace - Pacemaker Data Analyzer")
         self.setGeometry(100, 100, 1400, 900)
+
+        # Initialize database
+        init_database()
+        self.db_session = get_db_session()
 
         # Initialize UI
         self._create_menu_bar()
@@ -112,25 +122,9 @@ class MainWindow(QMainWindow):
 
     def _create_central_widget(self):
         """Create the central widget with timeline and episode views."""
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-
-        layout = QVBoxLayout()
-        central_widget.setLayout(layout)
-
-        # Placeholder welcome message
-        welcome_label = QLabel("Welcome to OpenPace")
-        welcome_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        welcome_label.setStyleSheet("font-size: 24px; font-weight: bold; padding: 50px;")
-        layout.addWidget(welcome_label)
-
-        info_label = QLabel(
-            "Pacemaker Data Analysis & Visualization Platform\n\n"
-            "Click 'Import Data' to load HL7 ORU^R01 messages"
-        )
-        info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        info_label.setStyleSheet("font-size: 14px; color: gray;")
-        layout.addWidget(info_label)
+        # Create timeline view as central widget
+        self.timeline_view = TimelineView(self.db_session)
+        self.setCentralWidget(self.timeline_view)
 
     def _create_status_bar(self):
         """Create the status bar."""
@@ -141,7 +135,47 @@ class MainWindow(QMainWindow):
     # Slot methods
     def _import_data(self):
         """Handle data import action."""
-        self.statusBar().showMessage("Import data functionality coming soon...")
+        # Open file dialog
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Import HL7 Data",
+            "",
+            "HL7 Files (*.hl7);;All Files (*)"
+        )
+
+        if not file_path:
+            return
+
+        try:
+            # Read HL7 file
+            with open(file_path, 'r') as f:
+                hl7_message = f.read()
+
+            # Parse HL7 message
+            parser = HL7Parser(self.db_session, anonymize=False)
+            transmission = parser.parse_message(hl7_message, filename=file_path)
+
+            # Show success message
+            QMessageBox.information(
+                self,
+                "Import Successful",
+                f"Successfully imported transmission {transmission.transmission_id}\n"
+                f"Patient: {transmission.patient.patient_name}\n"
+                f"Observations: {len(transmission.observations)}"
+            )
+
+            # Refresh timeline view
+            self.timeline_view.patient_selector.load_patients()
+
+            self.statusBar().showMessage(f"Imported: {file_path}", 5000)
+
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Import Error",
+                f"Failed to import HL7 file:\n{str(e)}"
+            )
+            self.statusBar().showMessage("Import failed", 5000)
 
     def _toggle_anonymization(self, checked):
         """Toggle anonymization mode."""

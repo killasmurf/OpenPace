@@ -124,7 +124,8 @@ class HL7Parser:
             observation = self.parse_obx(
                 obx_segment,
                 transmission.transmission_id,
-                translator
+                translator,
+                transmission.transmission_date
             )
             if observation:
                 self.session.add(observation)
@@ -132,7 +133,7 @@ class HL7Parser:
 
         self.session.commit()
 
-        print(f"✓ Parsed transmission {transmission.transmission_id}: {obx_count} observations")
+        print(f"[OK] Parsed transmission {transmission.transmission_id}: {obx_count} observations")
         return transmission
 
     def parse_msh(self, msh_segment) -> Dict:
@@ -148,7 +149,7 @@ class HL7Parser:
             Dictionary with message header data
         """
         # python-hl7 indexing: MSH|^~\&|3|4|5|6|7|8|9|10|11|12|13
-        # Note: Indices are shifted due to encoding characters field
+        # Note: Field 0=MSH, 1=separator field, 2=^~\&, then actual data starts at 3
         return {
             'sending_application': str(msh_segment[3][0]) if isinstance(msh_segment[3], list) else str(msh_segment[3]),
             'sending_facility': str(msh_segment[4][0]) if isinstance(msh_segment[4], list) else str(msh_segment[4]),
@@ -231,7 +232,8 @@ class HL7Parser:
             'observation_datetime': self._parse_hl7_datetime(str(obr_segment[7])) if len(obr_segment) > 7 else None,
         }
 
-    def parse_obx(self, obx_segment, transmission_id: int, translator) -> Optional[Observation]:
+    def parse_obx(self, obx_segment, transmission_id: int, translator,
+                  observation_time: datetime) -> Optional[Observation]:
         """
         Parse OBX (Observation) segment - the core pacemaker data.
 
@@ -246,6 +248,7 @@ class HL7Parser:
             obx_segment: OBX segment from hl7 message
             transmission_id: ID of parent transmission
             translator: Vendor-specific translator
+            observation_time: Timestamp for the observation (from transmission)
 
         Returns:
             Observation object or None if observation is unknown
@@ -283,7 +286,7 @@ class HL7Parser:
 
         if not universal_var:
             # Unknown observation, skip or log
-            print(f"  ⚠ Unknown observation: {observation_id} ({observation_text})")
+            print(f"  [WARN] Unknown observation: {observation_id} ({observation_text})")
             return None
 
         # Determine if LOINC code
@@ -292,7 +295,7 @@ class HL7Parser:
         # Create observation object
         observation = Observation(
             transmission_id=transmission_id,
-            observation_time=datetime.utcnow(),  # Could extract from OBX-14 if available
+            observation_time=observation_time,
             sequence_number=sequence,
             variable_name=universal_var,
             loinc_code=loinc_code,
@@ -308,7 +311,7 @@ class HL7Parser:
             try:
                 observation.value_numeric = float(value)
             except ValueError:
-                print(f"  ⚠ Invalid numeric value: {value}")
+                print(f"  [WARN] Invalid numeric value: {value}")
                 return None
 
         elif value_type == 'ST':  # String/Text
@@ -350,7 +353,7 @@ class HL7Parser:
 
             self.session.add(patient)
             self.session.flush()
-            print(f"✓ Created new patient: {patient.anonymized_id if self.anonymize else patient.patient_name}")
+            print(f"[OK] Created new patient: {patient.anonymized_id if self.anonymize else patient.patient_name}")
 
         return patient
 
@@ -443,7 +446,7 @@ class HL7Parser:
             try:
                 return base64.b64decode(parts[2])
             except Exception as e:
-                print(f"  ⚠ Failed to decode base64: {e}")
+                print(f"  [WARN] Failed to decode base64: {e}")
                 return None
 
         return None

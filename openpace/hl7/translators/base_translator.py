@@ -117,7 +117,7 @@ class GenericTranslator(VendorTranslator):
         Map LOINC code to universal variable.
 
         Args:
-            vendor_code: LOINC code
+            vendor_code: LOINC code or vendor-specific code
             observation_text: Observation description
 
         Returns:
@@ -127,19 +127,48 @@ class GenericTranslator(VendorTranslator):
         if vendor_code in self.LOINC_MAP:
             return self.LOINC_MAP[vendor_code]
 
+        # Try direct vendor code as lowercase (for simple text codes)
+        code_lower = vendor_code.lower()
+
+        # Check if vendor code is already a reasonable variable name
+        # (e.g., "BATTERY_VOLTAGE" -> "battery_voltage")
+        if code_lower in ['battery_voltage', 'battery_current', 'battery_impedance',
+                          'ra_lead_impedance', 'rv_lead_impedance', 'lv_lead_impedance',
+                          'atrial_sensing', 'ventricular_sensing',
+                          'a_pace_threshold', 'v_pace_threshold',
+                          'af_episode_count', 'vt_episode_count',
+                          'device_model', 'device_serial', 'longevity_estimate']:
+            return code_lower
+
         # Try to infer from observation text
         text_lower = observation_text.lower()
 
         if "battery" in text_lower and "voltage" in text_lower:
             return "battery_voltage"
-        elif "impedance" in text_lower and "atrial" in text_lower:
+        elif "battery" in text_lower and "current" in text_lower:
+            return "battery_current"
+        elif "impedance" in text_lower and ("atrial" in text_lower or "ra" in text_lower):
             return "lead_impedance_atrial"
         elif "impedance" in text_lower and ("ventricular" in text_lower or "rv" in text_lower):
             return "lead_impedance_ventricular"
-        elif "afib" in text_lower or "atrial fib" in text_lower:
+        elif "afib" in text_lower or "atrial fib" in text_lower or "af episode" in text_lower:
             return "afib_burden_percent"
         elif "pacing" in text_lower and "percent" in text_lower:
             return "pacing_percent_ventricular"
+        elif "longevity" in text_lower or "battery" in text_lower and "estimate" in text_lower:
+            return "longevity_estimate"
+        elif "device" in text_lower and "model" in text_lower:
+            return "device_model"
+        elif "device" in text_lower and "serial" in text_lower:
+            return "device_serial"
+        elif "sensing" in text_lower and "atrial" in text_lower:
+            return "atrial_sensing"
+        elif "sensing" in text_lower and "ventricular" in text_lower:
+            return "ventricular_sensing"
+        elif "threshold" in text_lower and "atrial" in text_lower:
+            return "atrial_pacing_threshold"
+        elif "threshold" in text_lower and "ventricular" in text_lower:
+            return "ventricular_pacing_threshold"
 
         return None
 
