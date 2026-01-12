@@ -1,10 +1,11 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(alembic init:*)"
+    ],
     "additionalDirectories": [
       "c:\\users\\Adam Murphy\\AI\\icepac"
-    ],
-    "allow": [
-      "Bash(grep:*)"
     ]
   }
 }

@@ -26,7 +26,9 @@ from PyQt6.QtGui import QAction
 
 from openpace.database.connection import init_database, get_db_session
 from openpace.hl7.parser import HL7Parser
+from openpace.database.models import Transmission
 from openpace.gui.widgets.timeline_view import TimelineView
+from openpace.gui.widgets.settings_panel import SettingsPanel
 
 
 class MainWindow(QMainWindow):
@@ -82,6 +84,13 @@ class MainWindow(QMainWindow):
         episode_action.setCheckable(True)
         episode_action.setChecked(True)
         view_menu.addAction(episode_action)
+
+        view_menu.addSeparator()
+
+        settings_action = QAction("Device &Settings", self)
+        settings_action.setShortcut("Ctrl+S")
+        settings_action.triggered.connect(self._show_settings_window)
+        view_menu.addAction(settings_action)
 
         # Analysis menu
         analysis_menu = menubar.addMenu("&Analysis")
@@ -181,6 +190,60 @@ class MainWindow(QMainWindow):
         """Toggle anonymization mode."""
         mode = "ON" if checked else "OFF"
         self.statusBar().showMessage(f"Anonymization mode: {mode}")
+
+    def _show_settings_window(self):
+        """Show device settings in a separate window."""
+        # Get current patient's most recent transmission
+        current_patient_id = self.timeline_view.patient_selector.get_current_patient_id()
+
+        if not current_patient_id:
+            QMessageBox.information(
+                self,
+                "No Patient Selected",
+                "Please select a patient first to view device settings."
+            )
+            return
+
+        # Query most recent transmission
+        most_recent_transmission = self.db_session.query(Transmission).filter_by(
+            patient_id=current_patient_id
+        ).order_by(Transmission.transmission_date.desc()).first()
+
+        if not most_recent_transmission:
+            QMessageBox.information(
+                self,
+                "No Data",
+                "No transmission data available for this patient."
+            )
+            return
+
+        # Create settings window
+        settings_window = QWidget()
+        settings_window.setWindowTitle(
+            f"Device Settings - {most_recent_transmission.patient.patient_name}"
+        )
+        settings_window.setGeometry(150, 150, 700, 600)
+
+        layout = QVBoxLayout()
+        settings_window.setLayout(layout)
+
+        # Create settings panel
+        settings_panel = SettingsPanel()
+        settings_panel.load_transmission(most_recent_transmission)
+        layout.addWidget(settings_panel)
+
+        # Add close button
+        close_btn = QPushButton("Close")
+        close_btn.clicked.connect(settings_window.close)
+        layout.addWidget(close_btn)
+
+        # Show window
+        settings_window.show()
+
+        # Keep reference to prevent garbage collection
+        if not hasattr(self, '_settings_windows'):
+            self._settings_windows = []
+        self._settings_windows.append(settings_window)
 
     def _show_about(self):
         """Show about dialog."""

@@ -19,6 +19,7 @@ from openpace.processing.trend_calculator import TrendCalculator
 from .battery_widget import BatteryTrendWidget
 from .impedance_widget import ImpedanceTrendWidget
 from .burden_widget import BurdenWidget
+from .settings_panel import SettingsPanel
 
 
 class PatientSelectorWidget(QWidget):
@@ -156,6 +157,14 @@ class TimelineView(QWidget):
         burden_layout.addWidget(self.burden_widget)
         charts_layout.addWidget(burden_group)
 
+        # Device Settings Panel
+        settings_group = QGroupBox("Device Settings")
+        settings_layout = QVBoxLayout()
+        settings_group.setLayout(settings_layout)
+        self.settings_panel = SettingsPanel()
+        settings_layout.addWidget(self.settings_panel)
+        charts_layout.addWidget(settings_group)
+
         scroll.setWidget(charts_container)
         layout.addWidget(scroll)
 
@@ -207,6 +216,16 @@ class TimelineView(QWidget):
                 time_points = [datetime.fromisoformat(tp) for tp in trend.time_points]
                 self.burden_widget.set_data("AFib", time_points, trend.values)
 
+            # Load device settings from most recent transmission
+            most_recent_transmission = self.session.query(Transmission).filter_by(
+                patient_id=patient_id
+            ).order_by(Transmission.transmission_date.desc()).first()
+
+            if most_recent_transmission:
+                self.settings_panel.load_transmission(most_recent_transmission)
+            else:
+                self.settings_panel.clear()
+
         except Exception as e:
             print(f"Error loading patient data: {e}")
             import traceback
@@ -218,3 +237,4 @@ class TimelineView(QWidget):
         self.atrial_impedance_widget.clear()
         self.vent_impedance_widget.clear()
         self.burden_widget.clear()
+        self.settings_panel.clear()
