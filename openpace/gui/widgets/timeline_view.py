@@ -216,6 +216,9 @@ class TimelineView(QWidget):
         # Dictionary to track panels
         self.panels = {}
 
+        # Current orientation
+        self.current_orientation = Qt.Orientation.Vertical
+
         self._init_ui()
 
     def _init_ui(self):
@@ -289,6 +292,28 @@ class TimelineView(QWidget):
             self.show_panel(panel_name)
         else:
             self.hide_panel(panel_name)
+
+    def set_orientation(self, orientation: Qt.Orientation):
+        """
+        Change the orientation of the panel layout.
+
+        Args:
+            orientation: Qt.Orientation.Vertical or Qt.Orientation.Horizontal
+        """
+        if orientation == self.current_orientation:
+            return
+
+        self.current_orientation = orientation
+
+        # Get current panel sizes before changing orientation
+        current_sizes = self.splitter.sizes()
+
+        # Change splitter orientation
+        self.splitter.setOrientation(orientation)
+
+        # Restore sizes (they'll be applied to the new orientation)
+        if len(current_sizes) == 5:
+            self.splitter.setSizes(current_sizes)
 
     def load_patient_data(self, patient_id: str):
         """

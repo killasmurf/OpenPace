@@ -110,6 +110,23 @@ class MainWindow(QMainWindow):
 
         view_menu.addSeparator()
 
+        # Layout submenu
+        layout_menu = view_menu.addMenu("&Layout")
+
+        self.vertical_layout_action = QAction("Vertical (Stacked)", self)
+        self.vertical_layout_action.setCheckable(True)
+        self.vertical_layout_action.setChecked(True)
+        self.vertical_layout_action.triggered.connect(self._set_vertical_layout)
+        layout_menu.addAction(self.vertical_layout_action)
+
+        self.horizontal_layout_action = QAction("Horizontal (Side-by-Side)", self)
+        self.horizontal_layout_action.setCheckable(True)
+        self.horizontal_layout_action.setChecked(False)
+        self.horizontal_layout_action.triggered.connect(self._set_horizontal_layout)
+        layout_menu.addAction(self.horizontal_layout_action)
+
+        view_menu.addSeparator()
+
         settings_window_action = QAction("Device Settings &Window", self)
         settings_window_action.setShortcut("Ctrl+S")
         settings_window_action.triggered.connect(self._show_settings_window)
@@ -220,6 +237,20 @@ class MainWindow(QMainWindow):
         """Toggle anonymization mode."""
         mode = "ON" if checked else "OFF"
         self.statusBar().showMessage(f"Anonymization mode: {mode}")
+
+    def _set_vertical_layout(self):
+        """Set vertical (stacked) panel layout."""
+        self.timeline_view.set_orientation(Qt.Orientation.Vertical)
+        self.vertical_layout_action.setChecked(True)
+        self.horizontal_layout_action.setChecked(False)
+        self.statusBar().showMessage("Layout: Vertical (Stacked)", 3000)
+
+    def _set_horizontal_layout(self):
+        """Set horizontal (side-by-side) panel layout."""
+        self.timeline_view.set_orientation(Qt.Orientation.Horizontal)
+        self.vertical_layout_action.setChecked(False)
+        self.horizontal_layout_action.setChecked(True)
+        self.statusBar().showMessage("Layout: Horizontal (Side-by-Side)", 3000)
 
     def _show_settings_window(self):
         """Show device settings in a separate window."""
