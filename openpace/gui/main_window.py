@@ -75,22 +75,45 @@ class MainWindow(QMainWindow):
         # View menu
         view_menu = menubar.addMenu("&View")
 
-        timeline_action = QAction("&Timeline View", self)
-        timeline_action.setCheckable(True)
-        timeline_action.setChecked(True)
-        view_menu.addAction(timeline_action)
+        # Panels submenu
+        panels_menu = view_menu.addMenu("&Panels")
 
-        episode_action = QAction("&Episode Viewer", self)
-        episode_action.setCheckable(True)
-        episode_action.setChecked(True)
-        view_menu.addAction(episode_action)
+        self.battery_panel_action = QAction("Battery Voltage", self)
+        self.battery_panel_action.setCheckable(True)
+        self.battery_panel_action.setChecked(True)
+        self.battery_panel_action.triggered.connect(lambda checked: self.timeline_view.toggle_panel('battery', checked))
+        panels_menu.addAction(self.battery_panel_action)
+
+        self.atrial_panel_action = QAction("Atrial Lead Impedance", self)
+        self.atrial_panel_action.setCheckable(True)
+        self.atrial_panel_action.setChecked(True)
+        self.atrial_panel_action.triggered.connect(lambda checked: self.timeline_view.toggle_panel('atrial_impedance', checked))
+        panels_menu.addAction(self.atrial_panel_action)
+
+        self.vent_panel_action = QAction("Ventricular Lead Impedance", self)
+        self.vent_panel_action.setCheckable(True)
+        self.vent_panel_action.setChecked(True)
+        self.vent_panel_action.triggered.connect(lambda checked: self.timeline_view.toggle_panel('vent_impedance', checked))
+        panels_menu.addAction(self.vent_panel_action)
+
+        self.burden_panel_action = QAction("Arrhythmia Burden", self)
+        self.burden_panel_action.setCheckable(True)
+        self.burden_panel_action.setChecked(True)
+        self.burden_panel_action.triggered.connect(lambda checked: self.timeline_view.toggle_panel('burden', checked))
+        panels_menu.addAction(self.burden_panel_action)
+
+        self.settings_panel_action = QAction("Device Settings", self)
+        self.settings_panel_action.setCheckable(True)
+        self.settings_panel_action.setChecked(True)
+        self.settings_panel_action.triggered.connect(lambda checked: self.timeline_view.toggle_panel('settings', checked))
+        panels_menu.addAction(self.settings_panel_action)
 
         view_menu.addSeparator()
 
-        settings_action = QAction("Device &Settings", self)
-        settings_action.setShortcut("Ctrl+S")
-        settings_action.triggered.connect(self._show_settings_window)
-        view_menu.addAction(settings_action)
+        settings_window_action = QAction("Device Settings &Window", self)
+        settings_window_action.setShortcut("Ctrl+S")
+        settings_window_action.triggered.connect(self._show_settings_window)
+        view_menu.addAction(settings_window_action)
 
         # Analysis menu
         analysis_menu = menubar.addMenu("&Analysis")
@@ -134,6 +157,13 @@ class MainWindow(QMainWindow):
         # Create timeline view as central widget
         self.timeline_view = TimelineView(self.db_session)
         self.setCentralWidget(self.timeline_view)
+
+        # Connect panel visibility signals to menu actions (for synchronization)
+        self.timeline_view.battery_visibility_changed.connect(self.battery_panel_action.setChecked)
+        self.timeline_view.atrial_impedance_visibility_changed.connect(self.atrial_panel_action.setChecked)
+        self.timeline_view.vent_impedance_visibility_changed.connect(self.vent_panel_action.setChecked)
+        self.timeline_view.burden_visibility_changed.connect(self.burden_panel_action.setChecked)
+        self.timeline_view.settings_visibility_changed.connect(self.settings_panel_action.setChecked)
 
     def _create_status_bar(self):
         """Create the status bar."""
