@@ -9,6 +9,7 @@ from .timeline_view import TimelineView
 from .summary_panel import SummaryPanel
 from .egm_viewer import EGMViewerWidget
 from .episode_selector import EpisodeSelectorWidget
+from .settings_panel import SettingsPanel
 
 __all__ = [
     'BatteryTrendWidget',
@@ -18,4 +19,5 @@ __all__ = [
     'SummaryPanel',
     'EGMViewerWidget',
     'EpisodeSelectorWidget',
+    'SettingsPanel',
 ]
