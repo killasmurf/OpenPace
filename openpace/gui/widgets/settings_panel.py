@@ -223,34 +223,27 @@ class SettingsPanel(QWidget):
         """Populate bradycardia pacing settings."""
         self._clear_group(self.brady_group)
 
-        # Common brady settings
-        brady_settings = {
-            'pacing_mode': 'Pacing Mode',
-            'base_rate': 'Base Rate',
-            'lower_rate': 'Lower Rate',
-            'max_tracking_rate': 'Max Tracking Rate',
-            'max_sensor_rate': 'Max Sensor Rate',
-            'av_delay': 'AV Delay',
-            'sav_delay': 'SAV Delay',
-            'pav_delay': 'PAV Delay',
-            'sav_delay_high': 'SAV Delay (High)',
-            'sav_delay_low': 'SAV Delay (Low)',
-            'pav_delay_high': 'PAV Delay (High)',
-            'pav_delay_low': 'PAV Delay (Low)',
-            'pvarp': 'PVARP',
-            'rate_response': 'Rate Response',
-            'sensor_type': 'Sensor Type',
-            'mode_switch': 'Mode Switch',
-            'mode_switch_rate': 'Mode Switch Rate'
-        }
+        # Find all settings with brady-related keywords
+        brady_keywords = ['brady', 'pacing', 'mode', 'rate', 'delay', 'av', 'sav', 'pav',
+                          'pvarp', 'sensor', 'switch', 'lowrate', 'tracking']
 
         found_any = False
-        for var_name, display_name in brady_settings.items():
-            if var_name in self.settings_data:
+        for var_name, setting_info in sorted(self.settings_data.items()):
+            # Check if this is a brady-related setting
+            var_lower = var_name.lower()
+            is_brady = any(keyword in var_lower for keyword in brady_keywords)
+
+            # Also check if it's a SET_BRADY code
+            if 'set_brady' in var_lower or 'mdc_idc_set_brady' in var_lower:
+                is_brady = True
+
+            if is_brady:
+                # Create readable display name from variable name
+                display_name = self._format_variable_name(var_name)
                 self._add_setting_row(
                     self.brady_group,
                     display_name,
-                    self.settings_data[var_name]['value_str']
+                    setting_info['value_str']
                 )
                 found_any = True
 
@@ -261,56 +254,62 @@ class SettingsPanel(QWidget):
         """Populate tachycardia therapy settings (ICD only)."""
         self._clear_group(self.tachy_group)
 
-        # Tachy therapy settings
-        tachy_settings = {
-            'vt_detection': 'VT Detection',
-            'vf_detection': 'VF Detection',
-            'vt_therapy': 'VT Therapy',
-            'vf_therapy': 'VF Therapy',
-            'atp_enabled': 'ATP Enabled',
-            'shock_enabled': 'Shock Enabled',
-            'max_shock_energy': 'Max Shock Energy'
-        }
+        # Find all settings with tachy-related keywords
+        tachy_keywords = ['tachy', 'zone', 'vt', 'vf', 'atp', 'shock', 'therapy',
+                          'detection', 'energy', 'vstat']
 
         found_any = False
-        for var_name, display_name in tachy_settings.items():
-            if var_name in self.settings_data:
+        for var_name, setting_info in sorted(self.settings_data.items()):
+            # Check if this is a tachy-related setting
+            var_lower = var_name.lower()
+            is_tachy = any(keyword in var_lower for keyword in tachy_keywords)
+
+            # Also check for SET_TACHYTHERAPY or SET_ZONE codes
+            if 'set_tachytherapy' in var_lower or 'set_zone' in var_lower:
+                is_tachy = True
+
+            if is_tachy:
+                # Create readable display name from variable name
+                display_name = self._format_variable_name(var_name)
                 self._add_setting_row(
                     self.tachy_group,
                     display_name,
-                    self.settings_data[var_name]['value_str']
+                    setting_info['value_str']
                 )
                 found_any = True
 
         # Show/hide group based on whether we have tachy settings
         self.tachy_group.setVisible(found_any)
 
-        if found_any:
-            # No "no data" label - just hide if empty
-            pass
-
     def _populate_sensing_settings(self):
         """Populate sensing configuration."""
         self._clear_group(self.sensing_group)
 
-        # Sensing settings
-        sensing_settings = {
-            'atrial_sensitivity': 'Atrial Sensitivity',
-            'ventricular_sensitivity': 'Ventricular Sensitivity',
-            'lv_sensitivity': 'LV Sensitivity',
-            'atrial_blanking': 'Atrial Blanking',
-            'ventricular_blanking': 'Ventricular Blanking',
-            'atrial_adaptation': 'Atrial Adaptation',
-            'ventricular_adaptation': 'Ventricular Adaptation'
-        }
+        # Find all settings with sensing-related keywords
+        sensing_keywords = ['sensing', 'sensitivity', 'blanking', 'adaptation',
+                            'leadchnl', 'intr', 'ampl']
 
         found_any = False
-        for var_name, display_name in sensing_settings.items():
-            if var_name in self.settings_data:
+        for var_name, setting_info in sorted(self.settings_data.items()):
+            # Check if this is a sensing-related setting
+            var_lower = var_name.lower()
+            is_sensing = any(keyword in var_lower for keyword in sensing_keywords)
+
+            # Also check for SET_LEADCHNL_SENSING codes
+            if 'set_leadchnl' in var_lower and 'sensing' in var_lower:
+                is_sensing = True
+
+            # Exclude pacing settings (they go in lead channels)
+            if 'pacing' in var_lower or 'amplitude' in var_lower or 'pulsewidth' in var_lower:
+                is_sensing = False
+
+            if is_sensing:
+                # Create readable display name from variable name
+                display_name = self._format_variable_name(var_name)
                 self._add_setting_row(
                     self.sensing_group,
                     display_name,
-                    self.settings_data[var_name]['value_str']
+                    setting_info['value_str']
                 )
                 found_any = True
 
@@ -320,55 +319,91 @@ class SettingsPanel(QWidget):
         """Populate lead channel configuration."""
         self._clear_group(self.lead_group)
 
-        # Lead channel settings
-        lead_settings = {
-            'atrial_amplitude': 'Atrial Pacing Amplitude',
-            'ventricular_amplitude': 'Ventricular Pacing Amplitude',
-            'lv_amplitude': 'LV Pacing Amplitude',
-            'atrial_pulse_width': 'Atrial Pulse Width',
-            'ventricular_pulse_width': 'Ventricular Pulse Width',
-            'lv_pulse_width': 'LV Pulse Width',
-            'atrial_polarity': 'Atrial Polarity',
-            'ventricular_polarity': 'Ventricular Polarity',
-            'lv_polarity': 'LV Polarity'
-        }
+        # Find all settings with lead/pacing-related keywords
+        lead_keywords = ['pacing', 'amplitude', 'pulsewidth', 'pulse_width', 'polarity',
+                         'leadchnl', 'capture', 'threshold']
 
         found_any = False
-        for var_name, display_name in lead_settings.items():
-            if var_name in self.settings_data:
+        for var_name, setting_info in sorted(self.settings_data.items()):
+            # Check if this is a lead-related setting
+            var_lower = var_name.lower()
+            is_lead = any(keyword in var_lower for keyword in lead_keywords)
+
+            # Also check for SET_LEADCHNL_PACING codes
+            if 'set_leadchnl' in var_lower and 'pacing' in var_lower:
+                is_lead = True
+
+            # Exclude brady mode/rate settings (they go in brady section)
+            if any(kw in var_lower for kw in ['mode', 'lowrate', 'tracking', 'sensor_rate']):
+                is_lead = False
+
+            if is_lead:
+                # Create readable display name from variable name
+                display_name = self._format_variable_name(var_name)
                 self._add_setting_row(
                     self.lead_group,
                     display_name,
-                    self.settings_data[var_name]['value_str']
+                    setting_info['value_str']
                 )
                 found_any = True
 
         self.lead_group.setVisible(found_any)
 
     def _populate_advanced_settings(self):
-        """Populate advanced features."""
+        """Populate advanced features and uncategorized settings."""
         self._clear_group(self.advanced_group)
 
-        # Advanced settings
-        advanced_settings = {
-            'magnet_response': 'Magnet Response',
-            'capture_management': 'Capture Management',
-            'discriminators': 'SVT Discriminators',
-            'vv_delay': 'VV Delay',
-            'lv_offset': 'LV Offset'
-        }
+        # Keywords that indicate this setting has already been categorized
+        categorized_keywords = [
+            'brady', 'pacing', 'mode', 'rate', 'delay', 'av', 'sav', 'pav',
+            'tachy', 'zone', 'vt', 'vf', 'atp', 'shock', 'therapy', 'detection',
+            'sensing', 'sensitivity', 'blanking', 'adaptation',
+            'amplitude', 'pulsewidth', 'pulse_width', 'polarity', 'capture', 'threshold',
+            'battery', 'impedance', 'longevity', 'voltage', 'burden', 'afib'
+        ]
 
         found_any = False
-        for var_name, display_name in advanced_settings.items():
-            if var_name in self.settings_data:
+        for var_name, setting_info in sorted(self.settings_data.items()):
+            # Check if this setting hasn't been categorized yet
+            var_lower = var_name.lower()
+            is_categorized = any(keyword in var_lower for keyword in categorized_keywords)
+
+            # Show uncategorized settings here
+            if not is_categorized:
+                # Create readable display name from variable name
+                display_name = self._format_variable_name(var_name)
                 self._add_setting_row(
                     self.advanced_group,
                     display_name,
-                    self.settings_data[var_name]['value_str']
+                    setting_info['value_str']
                 )
                 found_any = True
 
         self.advanced_group.setVisible(found_any)
+
+    def _format_variable_name(self, var_name: str) -> str:
+        """
+        Convert a variable name into a readable display name.
+
+        Args:
+            var_name: Variable name (e.g., 'set_brady_lowrate', 'atrial_amplitude')
+
+        Returns:
+            Formatted display name (e.g., 'Brady Lowrate', 'Atrial Amplitude')
+        """
+        # Remove common prefixes
+        name = var_name
+        for prefix in ['mdc_idc_', 'set_', 'msmt_']:
+            if name.lower().startswith(prefix):
+                name = name[len(prefix):]
+
+        # Replace underscores with spaces
+        name = name.replace('_', ' ')
+
+        # Title case each word
+        name = ' '.join(word.capitalize() for word in name.split())
+
+        return name
 
     def _add_setting_row(self, group: QGroupBox, label: str, value: str):
         """

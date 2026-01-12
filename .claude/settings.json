@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(grep:*)",
-      "Bash(alembic init:*)"
+      "Bash(alembic init:*)",
+      "Bash(test:*)",
+      "Bash(alembic revision:*)",
+      "Bash(timeout 5 python:*)"
     ],
     "additionalDirectories": [
       "c:\\users\\Adam Murphy\\AI\\icepac"
