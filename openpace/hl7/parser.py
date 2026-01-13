@@ -312,6 +312,8 @@ class HL7Parser:
             sending_application=msh_data.get('sending_application'),
             sending_facility=msh_data.get('sending_facility'),
             device_manufacturer=self._extract_manufacturer(msh_data),
+            device_model=pid_data.get('device_model'),
+            device_serial=pid_data.get('device_serial'),
             hl7_filename=filename,
         )
         self.session.add(transmission)
@@ -376,11 +378,14 @@ class HL7Parser:
 
         PID|1||PATIENT_ID^^^FACILITY||LAST^FIRST||DOB|GENDER|||...
 
+        Boston Scientific LATITUDE format embeds device info in PID-3:
+        model:D433/serial:677770^^BSX^U~7767669^^The Alfred Hospital^U
+
         Args:
             pid_segment: PID segment from hl7 message
 
         Returns:
-            Dictionary with sanitized patient data
+            Dictionary with sanitized patient data including device info
 
         Raises:
             PatientIDValidationError: If patient ID is invalid
@@ -388,8 +393,19 @@ class HL7Parser:
         """
         # Extract patient ID (PID-3)
         patient_id_field = str(pid_segment[3])
-        # Handle complex ID format: ID^^^FACILITY
-        raw_patient_id = patient_id_field.split('^')[0] if '^' in patient_id_field else patient_id_field
+
+        # Initialize device info
+        device_model = None
+        device_serial = None
+
+        # Check for Boston Scientific LATITUDE format with embedded device info
+        # Format: model:D433/serial:677770^^BSX^U~7767669^^The Alfred Hospital^U
+        if 'model:' in patient_id_field or 'serial:' in patient_id_field:
+            # Parse device info from the field
+            device_model, device_serial, raw_patient_id = self._extract_device_info_from_pid(patient_id_field)
+        else:
+            # Handle complex ID format: ID^^^FACILITY
+            raw_patient_id = patient_id_field.split('^')[0] if '^' in patient_id_field else patient_id_field
 
         # Sanitize patient ID (critical for SQL injection prevention)
         patient_id = DataSanitizer.sanitize_patient_id(raw_patient_id)
@@ -428,6 +444,8 @@ class HL7Parser:
             'patient_name': patient_name,
             'date_of_birth': dob,
             'gender': gender,
+            'device_model': device_model,
+            'device_serial': device_serial,
         }
 
     def parse_obr(self, obr_segment) -> Dict:
@@ -609,6 +627,57 @@ class HL7Parser:
             return 'Biotronik'
         else:
             return 'Generic'
+
+    def _extract_device_info_from_pid(self, patient_id_field: str) -> tuple:
+        """
+        Extract device model and serial from Boston Scientific LATITUDE PID-3 format.
+
+        Format: model:D433/serial:677770^^BSX^U~7767669^^The Alfred Hospital^U
+
+        The field may contain multiple repetitions separated by '~':
+        - First repetition: device info (model:XXX/serial:YYY)
+        - Second repetition: actual patient ID
+
+        Args:
+            patient_id_field: Raw PID-3 field value
+
+        Returns:
+            Tuple of (device_model, device_serial, patient_id)
+        """
+        device_model = None
+        device_serial = None
+        patient_id = None
+
+        # Split by repetition separator '~'
+        repetitions = patient_id_field.split('~')
+
+        for rep in repetitions:
+            # Get first component (before any '^')
+            first_component = rep.split('^')[0] if '^' in rep else rep
+
+            # Check if this repetition contains device info
+            if 'model:' in first_component or 'serial:' in first_component:
+                # Parse device info: model:D433/serial:677770
+                parts = first_component.split('/')
+                for part in parts:
+                    if part.startswith('model:'):
+                        device_model = part[6:].strip()  # Remove 'model:' prefix
+                    elif part.startswith('serial:'):
+                        device_serial = part[7:].strip()  # Remove 'serial:' prefix
+            else:
+                # This might be the patient ID
+                if first_component and first_component.strip():
+                    # Use first non-device-info value as patient ID
+                    if patient_id is None:
+                        patient_id = first_component.strip()
+
+        # If no separate patient ID found, generate one from device serial
+        if patient_id is None and device_serial:
+            patient_id = f"DEV-{device_serial}"
+
+        logger.info(f"Extracted device info - Model: {device_model}, Serial: {device_serial}, Patient ID: {patient_id}")
+
+        return device_model, device_serial, patient_id
 
     def _parse_hl7_datetime(self, hl7_datetime: str) -> Optional[datetime]:
         """
