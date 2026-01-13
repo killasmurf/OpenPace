@@ -29,7 +29,30 @@ class Patient(Base):
     """
     Patient information from HL7 PID segment.
 
-    Supports anonymization mode where real names/DOB are stripped.
+    Stores patient demographics and metadata. Supports anonymization mode
+    where personally identifiable information (PII) is not stored or is
+    replaced with anonymized identifiers.
+
+    Attributes:
+        patient_id: Unique patient identifier from HL7 PID-3 field (primary key)
+        anonymized: Boolean flag indicating if patient data is anonymized
+        anonymized_id: Human-readable anonymized identifier (e.g., "Patient_001")
+        patient_name: Patient's full name (None if anonymized)
+        date_of_birth: Patient's date of birth (None if anonymized)
+        gender: Patient gender code - 'M' (male), 'F' (female), 'O' (other), 'U' (unknown)
+        created_at: Timestamp when record was first created
+        updated_at: Timestamp when record was last updated
+        transmissions: Relationship to all Transmission records for this patient
+
+    Example:
+        >>> patient = Patient(
+        ...     patient_id="PT12345",
+        ...     patient_name="John Doe",
+        ...     date_of_birth=datetime(1960, 5, 15).date(),
+        ...     gender="M"
+        ... )
+        >>> session.add(patient)
+        >>> session.commit()
     """
 
     __tablename__ = "patients"
@@ -59,7 +82,37 @@ class Transmission(Base):
     """
     A single HL7 ORU^R01 message transmission.
 
-    Represents one remote monitoring report or in-clinic interrogation.
+    Represents one remote monitoring report or in-clinic interrogation session.
+    Each transmission contains metadata about the device interrogation and
+    links to multiple Observation records containing the actual measurements.
+
+    Attributes:
+        transmission_id: Auto-incrementing unique identifier (primary key)
+        patient_id: Foreign key linking to Patient record
+        transmission_date: Date/time when device was interrogated (from MSH-7)
+        transmission_type: Type of transmission - "remote" or "in_clinic"
+        message_control_id: Unique message ID from HL7 MSH-10 field
+        sending_application: Application that sent the message (MSH-3)
+        sending_facility: Facility that sent the message (MSH-4)
+        device_manufacturer: Pacemaker manufacturer (Medtronic, Boston Scientific, etc.)
+        device_model: Device model number/name
+        device_serial: Device serial number
+        device_firmware: Firmware version running on device
+        hl7_filename: Original filename of imported HL7 file
+        imported_at: Timestamp when data was imported into database
+        patient: Relationship to Patient record
+        observations: Relationship to all Observation records for this transmission
+        episodes: Relationship to all ArrhythmiaEpisode records for this transmission
+
+    Example:
+        >>> transmission = Transmission(
+        ...     patient_id="PT12345",
+        ...     transmission_date=datetime(2024, 1, 15, 10, 30),
+        ...     transmission_type="remote",
+        ...     device_manufacturer="Medtronic"
+        ... )
+        >>> session.add(transmission)
+        >>> session.commit()
     """
 
     __tablename__ = "transmissions"
@@ -103,6 +156,43 @@ class Observation(Base):
     Individual observation from HL7 OBX segment.
 
     Stores both raw vendor codes and normalized universal variables.
+    Each observation represents a single measured parameter (e.g., battery voltage,
+    lead impedance, heart rate) at a specific point in time.
+
+    The variable_name field contains normalized names like "battery_voltage",
+    "atrial_impedance", etc., while vendor_code preserves the original
+    manufacturer-specific code.
+
+    Attributes:
+        observation_id: Auto-incrementing unique identifier (primary key)
+        transmission_id: Foreign key linking to parent Transmission
+        observation_time: Date/time when observation was recorded
+        sequence_number: Sequential order of OBX segment in HL7 message
+        variable_name: Normalized universal variable name (e.g., "battery_voltage")
+        loinc_code: LOINC code if applicable (standardized medical terminology)
+        vendor_code: Original vendor-specific code from OBX-3
+        value_numeric: Numeric value (for quantitative observations)
+        value_text: Text value (for qualitative observations)
+        value_blob: Binary data (for EGM waveforms, stored as bytes)
+        unit: Unit of measurement (e.g., "V", "Ohms", "bpm")
+        reference_range: Normal reference range (e.g., "200-1500")
+        abnormal_flag: Abnormality indicator - 'N' (normal), 'H' (high), 'L' (low),
+                      'A' (abnormal), 'AA' (very abnormal)
+        observation_status: Result status - 'F' (final), 'P' (preliminary),
+                           'C' (corrected), 'X' (cancelled)
+        transmission: Relationship back to parent Transmission
+
+    Example:
+        >>> observation = Observation(
+        ...     transmission_id=123,
+        ...     observation_time=datetime(2024, 1, 15, 10, 30),
+        ...     variable_name="battery_voltage",
+        ...     value_numeric=2.78,
+        ...     unit="V",
+        ...     reference_range="2.5-2.8",
+        ...     abnormal_flag="N"
+        ... )
+        >>> session.add(observation)
     """
 
     __tablename__ = "observations"
@@ -149,7 +239,39 @@ class LongitudinalTrend(Base):
     """
     Pre-computed longitudinal trends for fast visualization.
 
-    Aggregates observations over time for specific variables.
+    Aggregates observations over time for specific variables. This table stores
+    pre-computed time series data to avoid expensive queries when rendering
+    trend charts. Trends are cached and invalidated when new data is imported.
+
+    The time_points and values arrays are parallel arrays stored as JSON,
+    allowing efficient storage and retrieval of time series data.
+
+    Attributes:
+        trend_id: Auto-incrementing unique identifier (primary key)
+        patient_id: Foreign key linking to Patient record
+        variable_name: Variable being trended (e.g., "battery_voltage")
+        time_points: JSON array of ISO 8601 timestamp strings
+        values: JSON array of numeric values (parallel to time_points)
+        min_value: Minimum value in the dataset
+        max_value: Maximum value in the dataset
+        mean_value: Mean (average) of all values
+        std_dev: Standard deviation of values
+        start_date: Date of first observation in trend
+        end_date: Date of last observation in trend
+        computed_at: Timestamp when trend was computed (for cache invalidation)
+
+    Example:
+        >>> trend = LongitudinalTrend(
+        ...     patient_id="PT12345",
+        ...     variable_name="battery_voltage",
+        ...     time_points=["2024-01-01T00:00:00", "2024-02-01T00:00:00"],
+        ...     values=[2.80, 2.78],
+        ...     min_value=2.78,
+        ...     max_value=2.80,
+        ...     mean_value=2.79,
+        ...     start_date=datetime(2024, 1, 1),
+        ...     end_date=datetime(2024, 2, 1)
+        ... )
     """
 
     __tablename__ = "longitudinal_trends"

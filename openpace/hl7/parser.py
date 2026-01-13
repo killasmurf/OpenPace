@@ -11,12 +11,162 @@ OBX → Observation Segment (actual data)
 """
 
 import hl7
+import re
+import logging
 from datetime import datetime
 from typing import Dict, List, Optional
 from sqlalchemy.orm import Session
 
 from openpace.database.models import Patient, Transmission, Observation
 from openpace.hl7.translators.base_translator import get_translator
+from openpace.exceptions import (
+    HL7ValidationError,
+    ValidationError,
+    PatientIDValidationError,
+    format_validation_error
+)
+from openpace.constants import FileLimits
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+
+class DataSanitizer:
+    """
+    Data sanitization and validation utilities for HL7 data.
+
+    Prevents injection attacks and ensures data integrity by:
+    - Removing control characters
+    - Validating format with regex patterns
+    - Enforcing length limits
+    - Sanitizing patient IDs and names
+    """
+
+    # Regex patterns for validation
+    PATIENT_ID_PATTERN = re.compile(r'^[A-Za-z0-9\-_\.]{1,100}$')
+    PATIENT_NAME_PATTERN = re.compile(r'^[A-Za-z0-9\s\'\-\.\,]{1,200}$')
+
+    # Control characters to remove (C0 and C1 control codes except tab, newline, carriage return)
+    CONTROL_CHARS_PATTERN = re.compile(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]')
+
+    @classmethod
+    def sanitize_patient_id(cls, patient_id: str) -> str:
+        """
+        Sanitize and validate patient ID.
+
+        Args:
+            patient_id: Raw patient ID from HL7 message
+
+        Returns:
+            Sanitized patient ID
+
+        Raises:
+            PatientIDValidationError: If patient ID is invalid
+        """
+        if not patient_id:
+            raise PatientIDValidationError("Patient ID cannot be empty")
+
+        # Remove control characters
+        sanitized = cls.CONTROL_CHARS_PATTERN.sub('', patient_id)
+
+        # Enforce length limit
+        if len(sanitized) > FileLimits.MAX_PATIENT_ID_LENGTH:
+            raise PatientIDValidationError(
+                format_validation_error(
+                    "patient_id",
+                    sanitized,
+                    f"exceeds maximum length of {FileLimits.MAX_PATIENT_ID_LENGTH}"
+                )
+            )
+
+        # Validate format (alphanumeric, hyphens, underscores, dots only)
+        if not cls.PATIENT_ID_PATTERN.match(sanitized):
+            raise PatientIDValidationError(
+                format_validation_error(
+                    "patient_id",
+                    sanitized,
+                    "contains invalid characters (allowed: A-Z, a-z, 0-9, -, _, .)"
+                )
+            )
+
+        logger.debug(f"Sanitized patient ID: '{patient_id}' -> '{sanitized}'")
+        return sanitized
+
+    @classmethod
+    def sanitize_patient_name(cls, patient_name: str) -> str:
+        """
+        Sanitize and validate patient name.
+
+        Args:
+            patient_name: Raw patient name from HL7 message
+
+        Returns:
+            Sanitized patient name
+
+        Raises:
+            ValidationError: If patient name is invalid
+        """
+        if not patient_name:
+            return ""
+
+        # Remove control characters
+        sanitized = cls.CONTROL_CHARS_PATTERN.sub('', patient_name)
+
+        # Enforce length limit
+        if len(sanitized) > FileLimits.MAX_PATIENT_NAME_LENGTH:
+            raise ValidationError(
+                format_validation_error(
+                    "patient_name",
+                    sanitized,
+                    f"exceeds maximum length of {FileLimits.MAX_PATIENT_NAME_LENGTH}"
+                )
+            )
+
+        # Validate format (letters, numbers, spaces, apostrophes, hyphens, dots, commas)
+        if sanitized and not cls.PATIENT_NAME_PATTERN.match(sanitized):
+            raise ValidationError(
+                format_validation_error(
+                    "patient_name",
+                    sanitized,
+                    "contains invalid characters"
+                )
+            )
+
+        logger.debug(f"Sanitized patient name: '{patient_name}' -> '{sanitized}'")
+        return sanitized.strip()
+
+    @classmethod
+    def sanitize_text_field(cls, text: str, max_length: int = 500) -> str:
+        """
+        Sanitize general text fields.
+
+        Args:
+            text: Raw text from HL7 message
+            max_length: Maximum allowed length
+
+        Returns:
+            Sanitized text
+
+        Raises:
+            ValidationError: If text exceeds length limit
+        """
+        if not text:
+            return ""
+
+        # Remove control characters
+        sanitized = cls.CONTROL_CHARS_PATTERN.sub('', text)
+
+        # Enforce length limit
+        if len(sanitized) > max_length:
+            raise ValidationError(
+                format_validation_error(
+                    "text_field",
+                    sanitized,
+                    f"exceeds maximum length of {max_length}"
+                )
+            )
+
+        return sanitized.strip()
 
 
 class HL7Parser:
@@ -37,6 +187,53 @@ class HL7Parser:
         self.session = db_session
         self.anonymize = anonymize
 
+    def validate_hl7_message(self, hl7_message_text: str) -> None:
+        """
+        Validate HL7 message before parsing.
+
+        Prevents DoS attacks through:
+        - Size limit validation (MAX 50MB)
+        - Format validation (must start with MSH)
+        - Basic structure validation
+
+        Args:
+            hl7_message_text: Raw HL7 message string
+
+        Raises:
+            HL7ValidationError: If message fails validation
+        """
+        if not hl7_message_text:
+            raise HL7ValidationError("HL7 message cannot be empty")
+
+        # Check message size to prevent DoS through memory exhaustion
+        message_size = len(hl7_message_text.encode('utf-8'))
+        if message_size < FileLimits.MIN_HL7_MESSAGE_SIZE:
+            raise HL7ValidationError(
+                f"HL7 message too small ({message_size} bytes). "
+                f"Minimum size: {FileLimits.MIN_HL7_MESSAGE_SIZE} bytes"
+            )
+
+        if message_size > FileLimits.MAX_HL7_MESSAGE_SIZE:
+            raise HL7ValidationError(
+                f"HL7 message too large ({message_size} bytes). "
+                f"Maximum allowed: {FileLimits.MAX_HL7_MESSAGE_SIZE} bytes (50 MB)"
+            )
+
+        # Validate message format - must start with MSH segment
+        normalized = hl7_message_text.replace('\r\n', '\r').replace('\n', '\r')
+        if not normalized.startswith('MSH'):
+            raise HL7ValidationError(
+                "Invalid HL7 message format: must start with 'MSH' segment"
+            )
+
+        # Check for minimum required segments (MSH and PID)
+        if 'PID' not in normalized:
+            raise HL7ValidationError(
+                "Invalid HL7 message: missing required PID (Patient Identification) segment"
+            )
+
+        logger.info(f"HL7 message validation passed: {message_size} bytes")
+
     def parse_message(self, hl7_message_text: str, filename: str = None) -> Transmission:
         """
         Parse a complete HL7 ORU^R01 message.
@@ -49,8 +246,12 @@ class HL7Parser:
             Transmission object representing the parsed message
 
         Raises:
+            HL7ValidationError: If message fails validation
             ValueError: If message is not valid HL7 ORU^R01
         """
+        # Validate message before parsing (security check)
+        self.validate_hl7_message(hl7_message_text)
+
         # Parse HL7 message
         # python-hl7 expects segments separated by \r, normalize line endings
         hl7_message_normalized = hl7_message_text.replace('\r\n', '\r').replace('\n', '\r')
@@ -58,6 +259,7 @@ class HL7Parser:
         try:
             msg = hl7.parse(hl7_message_normalized)
         except Exception as e:
+            logger.error(f"HL7 parsing failed: {e}")
             raise ValueError(f"Failed to parse HL7 message: {e}")
 
         # Verify message type
@@ -170,7 +372,7 @@ class HL7Parser:
 
     def parse_pid(self, pid_segment) -> Dict:
         """
-        Parse PID (Patient Identification) segment.
+        Parse PID (Patient Identification) segment with input validation.
 
         PID|1||PATIENT_ID^^^FACILITY||LAST^FIRST||DOB|GENDER|||...
 
@@ -178,12 +380,19 @@ class HL7Parser:
             pid_segment: PID segment from hl7 message
 
         Returns:
-            Dictionary with patient data
+            Dictionary with sanitized patient data
+
+        Raises:
+            PatientIDValidationError: If patient ID is invalid
+            ValidationError: If patient name is invalid
         """
         # Extract patient ID (PID-3)
         patient_id_field = str(pid_segment[3])
         # Handle complex ID format: ID^^^FACILITY
-        patient_id = patient_id_field.split('^')[0] if '^' in patient_id_field else patient_id_field
+        raw_patient_id = patient_id_field.split('^')[0] if '^' in patient_id_field else patient_id_field
+
+        # Sanitize patient ID (critical for SQL injection prevention)
+        patient_id = DataSanitizer.sanitize_patient_id(raw_patient_id)
 
         # Extract patient name (PID-5)
         patient_name = None
@@ -194,9 +403,13 @@ class HL7Parser:
                 parts = name_field.split('^')
                 last = parts[0] if len(parts) > 0 else ''
                 first = parts[1] if len(parts) > 1 else ''
-                patient_name = f"{first} {last}".strip()
+                raw_name = f"{first} {last}".strip()
             else:
-                patient_name = name_field
+                raw_name = name_field
+
+            # Sanitize patient name
+            if raw_name and raw_name not in ('', 'None'):
+                patient_name = DataSanitizer.sanitize_patient_name(raw_name)
 
         # Extract date of birth (PID-7)
         dob = None
@@ -204,8 +417,11 @@ class HL7Parser:
             dob_str = str(pid_segment[7])
             dob = self._parse_hl7_date(dob_str)
 
-        # Extract gender (PID-8)
-        gender = str(pid_segment[8]) if len(pid_segment) > 8 else None
+        # Extract gender (PID-8) - validate single character
+        gender_raw = str(pid_segment[8]) if len(pid_segment) > 8 else None
+        gender = None
+        if gender_raw and gender_raw in ('M', 'F', 'O', 'U', 'm', 'f', 'o', 'u'):
+            gender = gender_raw.upper()
 
         return {
             'patient_id': patient_id,
@@ -267,7 +483,14 @@ class HL7Parser:
         observation_id_field = str(obx_segment[3])
         parts = observation_id_field.split('^')
         observation_id = parts[0]
-        observation_text = parts[1] if len(parts) > 1 else ''
+
+        # Sanitize observation text to prevent injection
+        raw_observation_text = parts[1] if len(parts) > 1 else ''
+        observation_text = DataSanitizer.sanitize_text_field(
+            raw_observation_text,
+            max_length=FileLimits.MAX_OBSERVATION_TEXT_LENGTH
+        )
+
         coding_system = parts[2] if len(parts) > 2 else ''
 
         # OBX-5: Observation value

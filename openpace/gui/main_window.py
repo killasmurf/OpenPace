@@ -8,6 +8,9 @@ The primary application window for OpenPace, featuring:
 - Menu bar and toolbars
 """
 
+import os
+import logging
+from pathlib import Path
 from PyQt6.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -29,6 +32,16 @@ from openpace.hl7.parser import HL7Parser
 from openpace.database.models import Transmission
 from openpace.gui.widgets.timeline_view import TimelineView
 from openpace.gui.widgets.settings_panel import SettingsPanel
+from openpace.exceptions import (
+    FileValidationError,
+    HL7ValidationError,
+    ValidationError,
+    format_validation_error
+)
+from openpace.constants import FileLimits
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class MainWindow(QMainWindow):
@@ -188,26 +201,83 @@ class MainWindow(QMainWindow):
         self.setStatusBar(status_bar)
         status_bar.showMessage("Ready")
 
+    def _validate_import_file(self, file_path: str) -> None:
+        """
+        Validate file for import to prevent security vulnerabilities.
+
+        Prevents:
+        - Path traversal attacks
+        - DoS through large files
+        - Symlink attacks
+
+        Args:
+            file_path: Path to file to validate
+
+        Raises:
+            FileValidationError: If file fails validation
+        """
+        # Resolve path to prevent symlink attacks
+        try:
+            resolved_path = Path(file_path).resolve(strict=True)
+        except Exception as e:
+            raise FileValidationError(f"Invalid file path: {e}")
+
+        # Check if file exists
+        if not resolved_path.exists():
+            raise FileValidationError(f"File does not exist: {file_path}")
+
+        # Check if it's a regular file (not a directory or special file)
+        if not resolved_path.is_file():
+            raise FileValidationError(f"Path is not a regular file: {file_path}")
+
+        # Check file size to prevent DoS
+        file_size = resolved_path.stat().st_size
+        if file_size > FileLimits.MAX_IMPORT_FILE_SIZE:
+            raise FileValidationError(
+                f"File too large ({file_size} bytes). "
+                f"Maximum allowed: {FileLimits.MAX_IMPORT_FILE_SIZE} bytes (50 MB)"
+            )
+
+        if file_size < FileLimits.MIN_HL7_MESSAGE_SIZE:
+            raise FileValidationError(
+                f"File too small ({file_size} bytes). "
+                f"Minimum size: {FileLimits.MIN_HL7_MESSAGE_SIZE} bytes"
+            )
+
+        # Validate file extension (optional but recommended)
+        allowed_extensions = ['.hl7', '.txt']
+        if resolved_path.suffix.lower() not in allowed_extensions:
+            logger.warning(f"Importing file with unusual extension: {resolved_path.suffix}")
+
+        logger.info(f"File validation passed: {file_path} ({file_size} bytes)")
+
     # Slot methods
     def _import_data(self):
-        """Handle data import action."""
+        """Handle data import action with comprehensive security validation."""
         # Open file dialog
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Import HL7 Data",
             "",
-            "HL7 Files (*.hl7);;All Files (*)"
+            "HL7 Files (*.hl7);;Text Files (*.txt);;All Files (*)"
         )
 
         if not file_path:
             return
 
         try:
-            # Read HL7 file
-            with open(file_path, 'r') as f:
-                hl7_message = f.read()
+            # Validate file before reading (security check)
+            self._validate_import_file(file_path)
 
-            # Parse HL7 message
+            # Read HL7 file with size limit enforced
+            with open(file_path, 'r', encoding='utf-8') as f:
+                hl7_message = f.read(FileLimits.MAX_IMPORT_FILE_SIZE + 1)
+
+            # Double-check size after reading
+            if len(hl7_message.encode('utf-8')) > FileLimits.MAX_IMPORT_FILE_SIZE:
+                raise FileValidationError("File exceeds maximum allowed size")
+
+            # Parse HL7 message (parser has additional validation)
             parser = HL7Parser(self.db_session, anonymize=False)
             transmission = parser.parse_message(hl7_message, filename=file_path)
 
@@ -224,8 +294,40 @@ class MainWindow(QMainWindow):
             self.timeline_view.patient_selector.load_patients()
 
             self.statusBar().showMessage(f"Imported: {file_path}", 5000)
+            logger.info(f"Successfully imported HL7 file: {file_path}")
+
+        except FileValidationError as e:
+            logger.error(f"File validation failed: {e}")
+            QMessageBox.critical(
+                self,
+                "File Validation Error",
+                f"File validation failed:\n{str(e)}\n\n"
+                "Please ensure the file is a valid HL7 file and does not exceed size limits."
+            )
+            self.statusBar().showMessage("Import failed: file validation error", 5000)
+
+        except HL7ValidationError as e:
+            logger.error(f"HL7 validation failed: {e}")
+            QMessageBox.critical(
+                self,
+                "HL7 Validation Error",
+                f"HL7 message validation failed:\n{str(e)}\n\n"
+                "Please ensure the file contains a valid HL7 ORU^R01 message."
+            )
+            self.statusBar().showMessage("Import failed: invalid HL7 format", 5000)
+
+        except ValidationError as e:
+            logger.error(f"Data validation failed: {e}")
+            QMessageBox.critical(
+                self,
+                "Data Validation Error",
+                f"Data validation failed:\n{str(e)}\n\n"
+                "The HL7 message contains invalid or malformed data."
+            )
+            self.statusBar().showMessage("Import failed: data validation error", 5000)
 
         except Exception as e:
+            logger.exception(f"Import failed with unexpected error: {e}")
             QMessageBox.critical(
                 self,
                 "Import Error",

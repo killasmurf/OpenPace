@@ -12,6 +12,9 @@ import logging
 import numpy as np
 from scipy import signal
 
+from openpace.constants import EGMConstants
+from openpace.exceptions import EGMDecodeError
+
 logger = logging.getLogger(__name__)
 
 
@@ -66,8 +69,8 @@ class EGMDecoder:
         Returns:
             Decoded EGM dictionary
         """
-        if len(blob) < 100:
-            return {'error': 'Blob too small', 'size': len(blob)}
+        if len(blob) < EGMConstants.TYPICAL_HEADER_SIZE:
+            return {'error': 'Blob too small for valid EGM', 'size': len(blob)}
 
         try:
             # Simple heuristic: try both endianness
@@ -101,7 +104,8 @@ class EGMDecoder:
             return {'error': str(e), 'size': len(blob)}
 
     @staticmethod
-    def _parse_samples(blob: bytes, byteorder: str, header_size: int = 64) -> np.ndarray:
+    def _parse_samples(blob: bytes, byteorder: str,
+                      header_size: int = EGMConstants.TYPICAL_HEADER_SIZE) -> np.ndarray:
         """
         Parse samples from binary blob.
 
@@ -143,15 +147,15 @@ class EGMDecoder:
         Returns:
             Estimated sample rate in Hz
         """
-        # Common sample rates
-        common_rates = [256, 512, 1000, 2000]
-
-        # Assume typical strip duration of 10 seconds
-        assumed_duration = 10
+        # Assume typical strip duration
+        assumed_duration = EGMConstants.DEFAULT_STRIP_DURATION
         estimated_rate = sample_count / assumed_duration
 
         # Find closest common rate
-        closest_rate = min(common_rates, key=lambda r: abs(r - estimated_rate))
+        closest_rate = min(
+            EGMConstants.COMMON_SAMPLE_RATES,
+            key=lambda r: abs(r - estimated_rate)
+        )
         return closest_rate
 
     @staticmethod
@@ -202,7 +206,8 @@ class EGMProcessor:
 
     @staticmethod
     def filter_signal(samples: List[float], sample_rate: int,
-                     lowcut: float = 0.5, highcut: float = 100) -> np.ndarray:
+                     lowcut: float = EGMConstants.BANDPASS_LOW_CUTOFF,
+                     highcut: float = EGMConstants.BANDPASS_HIGH_CUTOFF) -> np.ndarray:
         """
         Apply bandpass filter to remove noise.
 
@@ -224,8 +229,8 @@ class EGMProcessor:
             low = lowcut / nyquist
             high = highcut / nyquist
 
-            # Butterworth filter (4th order)
-            b, a = signal.butter(4, [low, high], btype='band')
+            # Butterworth filter
+            b, a = signal.butter(EGMConstants.FILTER_ORDER, [low, high], btype='band')
 
             # Apply filter
             filtered = signal.filtfilt(b, a, signal_array)
@@ -238,7 +243,7 @@ class EGMProcessor:
 
     @staticmethod
     def detect_peaks(samples: List[float], sample_rate: int,
-                    min_distance_ms: int = 200) -> List[int]:
+                    min_distance_ms: int = EGMConstants.DEFAULT_MIN_PEAK_DISTANCE_MS) -> List[int]:
         """
         Detect R-peaks (QRS complexes) in EGM.
 
@@ -307,8 +312,9 @@ class EGMProcessor:
             return {}
 
         # Convert RR intervals to heart rates
-        # HR (bpm) = 60000 / RR_interval_ms
-        heart_rates = [60000 / rr for rr in rr_intervals if rr > 0]
+        # HR (bpm) = 60000 ms/min / RR_interval_ms
+        from openpace.constants import StatisticalThresholds
+        heart_rates = [StatisticalThresholds.MS_PER_MINUTE / rr for rr in rr_intervals if rr > 0]
 
         if not heart_rates:
             return {}

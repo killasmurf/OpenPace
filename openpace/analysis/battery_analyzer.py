@@ -10,6 +10,8 @@ from datetime import datetime, timedelta
 from scipy import stats
 
 from openpace.database.models import LongitudinalTrend
+from openpace.constants import BatteryThresholds, StatisticalThresholds, TimeWindows
+from openpace.exceptions import AnalysisError, InsufficientDataError
 
 
 class BatteryAnalyzer:
@@ -20,8 +22,9 @@ class BatteryAnalyzer:
     Elective Replacement Indicator (ERI) threshold.
     """
 
-    ERI_THRESHOLD = 2.2  # Volts
-    EOL_THRESHOLD = 2.0  # End of Life threshold
+    # Use constants from centralized configuration
+    ERI_THRESHOLD = BatteryThresholds.ERI_THRESHOLD
+    EOL_THRESHOLD = BatteryThresholds.EOL_THRESHOLD
 
     @staticmethod
     def analyze_depletion(trend: LongitudinalTrend) -> Dict[str, Any]:
@@ -43,17 +46,18 @@ class BatteryAnalyzer:
         if trend.variable_name != 'battery_voltage':
             raise ValueError("Trend must be for battery_voltage")
 
-        if len(trend.values) < 3:
-            return {
-                'error': 'Insufficient data points for analysis',
-                'min_points_required': 3,
-                'current_points': len(trend.values)
-            }
+        if len(trend.values) < StatisticalThresholds.MIN_POINTS_TREND_ANALYSIS:
+            raise InsufficientDataError(
+                'Insufficient data points for trend analysis',
+                required_points=StatisticalThresholds.MIN_POINTS_TREND_ANALYSIS,
+                actual_points=len(trend.values)
+            )
 
         # Convert time points to days since first observation
         time_points = [datetime.fromisoformat(tp) for tp in trend.time_points]
         start_time = time_points[0]
-        days = [(tp - start_time).total_seconds() / 86400 for tp in time_points]
+        days = [(tp - start_time).total_seconds() / StatisticalThresholds.SECONDS_PER_DAY
+                for tp in time_points]
 
         # Linear regression
         slope, intercept, r_value, p_value, std_err = stats.linregress(days, trend.values)
@@ -76,7 +80,7 @@ class BatteryAnalyzer:
                 eol_date = start_time + timedelta(days=days_to_eol)
 
         # Calculate depletion rate (V/year)
-        depletion_rate_per_year = slope * 365.25
+        depletion_rate_per_year = slope * StatisticalThresholds.DAYS_PER_YEAR
 
         # Determine confidence level
         confidence = BatteryAnalyzer._calculate_confidence(
@@ -87,10 +91,9 @@ class BatteryAnalyzer:
 
         # Calculate remaining capacity percentage
         current_voltage = trend.values[-1]
-        nominal_voltage = 2.8  # Typical new pacemaker battery
         remaining_capacity = max(0, min(100,
-            ((current_voltage - BatteryAnalyzer.ERI_THRESHOLD) /
-             (nominal_voltage - BatteryAnalyzer.ERI_THRESHOLD)) * 100
+            ((current_voltage - BatteryThresholds.ERI_THRESHOLD) /
+             (BatteryThresholds.NOMINAL_VOLTAGE - BatteryThresholds.ERI_THRESHOLD)) * 100
         ))
 
         return {
@@ -107,8 +110,8 @@ class BatteryAnalyzer:
             'predicted_eol_date': eol_date.isoformat() if eol_date else None,
             'days_to_eri': days_to_eri,
             'days_to_eol': days_to_eol,
-            'years_to_eri': days_to_eri / 365.25 if days_to_eri else None,
-            'years_to_eol': days_to_eol / 365.25 if days_to_eol else None,
+            'years_to_eri': days_to_eri / StatisticalThresholds.DAYS_PER_YEAR if days_to_eri else None,
+            'years_to_eol': days_to_eol / StatisticalThresholds.DAYS_PER_YEAR if days_to_eol else None,
             'remaining_capacity_percent': remaining_capacity,
             'confidence': confidence,
             'data_points': len(trend.values),
@@ -128,9 +131,13 @@ class BatteryAnalyzer:
         Returns:
             Confidence level: 'high', 'medium', or 'low'
         """
-        if r_squared > 0.9 and n_points >= 5 and p_value < 0.05:
+        if (r_squared > StatisticalThresholds.HIGH_R_SQUARED and
+            n_points >= StatisticalThresholds.MIN_POINTS_HIGH_CONFIDENCE and
+            p_value < StatisticalThresholds.SIGNIFICANT_P_VALUE):
             return 'high'
-        elif r_squared > 0.7 and n_points >= 3 and p_value < 0.1:
+        elif (r_squared > StatisticalThresholds.MEDIUM_R_SQUARED and
+              n_points >= StatisticalThresholds.MIN_POINTS_TREND_ANALYSIS and
+              p_value < StatisticalThresholds.MARGINAL_P_VALUE):
             return 'medium'
         else:
             return 'low'
@@ -146,9 +153,9 @@ class BatteryAnalyzer:
         Returns:
             Color code: 'green', 'yellow', or 'red'
         """
-        if voltage >= 2.5:
+        if voltage >= BatteryThresholds.GREEN_THRESHOLD:
             return 'green'
-        elif voltage >= 2.3:
+        elif voltage >= BatteryThresholds.YELLOW_THRESHOLD:
             return 'yellow'
         else:
             return 'red'
@@ -170,12 +177,12 @@ class BatteryAnalyzer:
         voltage = analysis['current_voltage']
         years_to_eri = analysis.get('years_to_eri')
 
-        if voltage < BatteryAnalyzer.ERI_THRESHOLD:
+        if voltage < BatteryThresholds.ERI_THRESHOLD:
             return "URGENT: Battery at ERI. Schedule device replacement immediately."
-        elif voltage < 2.3:
+        elif voltage < BatteryThresholds.YELLOW_THRESHOLD:
             return "WARNING: Battery approaching ERI. Plan replacement soon."
-        elif years_to_eri and years_to_eri < 0.5:
-            return "CAUTION: Battery may reach ERI within 6 months. Monitor closely."
+        elif years_to_eri and years_to_eri < (TimeWindows.ERI_URGENT_MONTHS / 12):
+            return f"CAUTION: Battery may reach ERI within {TimeWindows.ERI_URGENT_MONTHS} months. Monitor closely."
         elif years_to_eri and years_to_eri < 1:
             return "Battery expected to reach ERI within 1 year. Continue monitoring."
         else:
