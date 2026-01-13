@@ -13,16 +13,20 @@ from PyQt6.QtWidgets import (
     QComboBox, QPushButton, QScrollArea, QGroupBox,
     QSplitter, QToolButton, QSizePolicy
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QSize
-from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import Qt, pyqtSignal, QSize, QPoint, QTimer
+from PyQt6.QtGui import QIcon, QPainter, QColor, QPen
 from sqlalchemy.orm import Session
 
 from openpace.database.models import Patient, Transmission, LongitudinalTrend
 from openpace.processing.trend_calculator import TrendCalculator
+from openpace.gui.layouts import GridLayoutManager, LayoutMode, LayoutSerializer
+from openpace.config import get_config
 from .battery_widget import BatteryTrendWidget
 from .impedance_widget import ImpedanceTrendWidget
 from .burden_widget import BurdenWidget
 from .settings_panel import SettingsPanel
+from .draggable_panel import DraggablePanel
+from .resize_handle import ResizeHandleManager
 
 
 class CollapsiblePanel(QWidget):
@@ -198,7 +202,8 @@ class TimelineView(QWidget):
     """
     Main timeline view widget.
 
-    OSCAR-style layout with collapsible, resizable trend panels.
+    OSCAR-style layout with collapsible, draggable, resizable trend panels.
+    Uses GridLayoutManager for flexible panel positioning.
     """
 
     # Signals for panel visibility changes (for menu synchronization)
@@ -208,16 +213,35 @@ class TimelineView(QWidget):
     burden_visibility_changed = pyqtSignal(bool)
     settings_visibility_changed = pyqtSignal(bool)
 
-    def __init__(self, db_session: Session, parent=None):
+    # Signal for layout changes
+    layout_mode_changed = pyqtSignal(LayoutMode)
+
+    def __init__(self, db_session: Session, parent=None, use_grid_layout: bool = True):
         super().__init__(parent)
         self.session = db_session
         self.current_patient_id = None
 
-        # Dictionary to track panels
+        # Feature flag for new grid layout
+        self.use_grid_layout = use_grid_layout
+
+        # Dictionary to track panels by panel_id
         self.panels = {}
 
-        # Current orientation
+        # Current orientation (for legacy QSplitter mode)
         self.current_orientation = Qt.Orientation.Vertical
+
+        # Grid layout manager
+        self.grid_manager = None
+
+        # Drop zone visualization
+        self.drop_zone_rect = None
+        self.dragging_panel_id = None
+
+        # Debounce timer for layout saves
+        self.save_timer = QTimer(self)
+        self.save_timer.setSingleShot(True)
+        self.save_timer.setInterval(1000)  # 1 second debounce
+        self.save_timer.timeout.connect(self._save_layout_to_file)
 
         self._init_ui()
 
@@ -232,17 +256,82 @@ class TimelineView(QWidget):
         self.patient_selector.patient_selected.connect(self.load_patient_data)
         layout.addWidget(self.patient_selector)
 
-        # Splitter for resizable panels
-        self.splitter = QSplitter(Qt.Orientation.Vertical)
-        self.splitter.setHandleWidth(4)
-        self.splitter.setChildrenCollapsible(False)
-
         # Create trend widgets
         self.battery_widget = BatteryTrendWidget()
         self.atrial_impedance_widget = ImpedanceTrendWidget()
         self.vent_impedance_widget = ImpedanceTrendWidget()
         self.burden_widget = BurdenWidget()
         self.settings_panel = SettingsPanel()
+
+        if self.use_grid_layout:
+            # Use new grid layout system
+            self._init_grid_layout(layout)
+        else:
+            # Use legacy QSplitter layout
+            self._init_splitter_layout(layout)
+
+    def _init_grid_layout(self, parent_layout: QVBoxLayout):
+        """Initialize grid-based layout system."""
+        # Create container for grid
+        grid_container = QWidget()
+        grid_container.setMinimumSize(800, 600)
+
+        # Create grid layout manager
+        self.grid_manager = GridLayoutManager(grid_container, rows=12, cols=12)
+        self.grid_manager.layout_changed.connect(self._on_layout_changed)
+
+        # Create draggable panels
+        self.battery_panel = DraggablePanel("battery", "Battery Voltage", self.battery_widget)
+        self.battery_panel.visibility_changed.connect(self.battery_visibility_changed.emit)
+        self.battery_panel.drag_started.connect(self._on_drag_started)
+        self.battery_panel.drag_moved.connect(self._on_drag_moved)
+        self.battery_panel.drag_ended.connect(self._on_drag_ended)
+        self.panels['battery'] = self.battery_panel
+
+        self.atrial_panel = DraggablePanel("atrial_impedance", "Atrial Lead Impedance",
+                                          self.atrial_impedance_widget)
+        self.atrial_panel.visibility_changed.connect(self.atrial_impedance_visibility_changed.emit)
+        self.atrial_panel.drag_started.connect(self._on_drag_started)
+        self.atrial_panel.drag_moved.connect(self._on_drag_moved)
+        self.atrial_panel.drag_ended.connect(self._on_drag_ended)
+        self.panels['atrial_impedance'] = self.atrial_panel
+
+        self.vent_panel = DraggablePanel("vent_impedance", "Ventricular Lead Impedance",
+                                        self.vent_impedance_widget)
+        self.vent_panel.visibility_changed.connect(self.vent_impedance_visibility_changed.emit)
+        self.vent_panel.drag_started.connect(self._on_drag_started)
+        self.vent_panel.drag_moved.connect(self._on_drag_moved)
+        self.vent_panel.drag_ended.connect(self._on_drag_ended)
+        self.panels['vent_impedance'] = self.vent_panel
+
+        self.burden_panel = DraggablePanel("burden", "Arrhythmia Burden", self.burden_widget)
+        self.burden_panel.visibility_changed.connect(self.burden_visibility_changed.emit)
+        self.burden_panel.drag_started.connect(self._on_drag_started)
+        self.burden_panel.drag_moved.connect(self._on_drag_moved)
+        self.burden_panel.drag_ended.connect(self._on_drag_ended)
+        self.panels['burden'] = self.burden_panel
+
+        self.settings_panel_widget = DraggablePanel("settings", "Device Settings", self.settings_panel)
+        self.settings_panel_widget.visibility_changed.connect(self.settings_visibility_changed.emit)
+        self.settings_panel_widget.drag_started.connect(self._on_drag_started)
+        self.settings_panel_widget.drag_moved.connect(self._on_drag_moved)
+        self.settings_panel_widget.drag_ended.connect(self._on_drag_ended)
+        self.panels['settings'] = self.settings_panel_widget
+
+        # Set default vertical layout
+        self._set_default_vertical_layout()
+
+        # Load saved layout if available (do this after panels are added)
+        self._load_layout_from_file()
+
+        parent_layout.addWidget(grid_container)
+
+    def _init_splitter_layout(self, parent_layout: QVBoxLayout):
+        """Initialize legacy QSplitter layout."""
+        # Splitter for resizable panels
+        self.splitter = QSplitter(Qt.Orientation.Vertical)
+        self.splitter.setHandleWidth(4)
+        self.splitter.setChildrenCollapsible(False)
 
         # Create collapsible panels
         self.battery_panel = CollapsiblePanel("Battery Voltage", self.battery_widget)
@@ -274,17 +363,244 @@ class TimelineView(QWidget):
         sizes = [200] * 5
         self.splitter.setSizes(sizes)
 
-        layout.addWidget(self.splitter)
+        parent_layout.addWidget(self.splitter)
+
+    def _set_default_vertical_layout(self):
+        """Set default vertical (stacked) layout."""
+        if not self.grid_manager:
+            return
+
+        # All panels full width, stacked vertically
+        # Each panel gets 2-3 rows, total 12 rows
+        self.grid_manager.add_panel("battery", self.battery_panel, row=0, col=0, row_span=2, col_span=12)
+        self.grid_manager.add_panel("atrial_impedance", self.atrial_panel, row=2, col=0,
+                                   row_span=2, col_span=12)
+        self.grid_manager.add_panel("vent_impedance", self.vent_panel, row=4, col=0,
+                                   row_span=2, col_span=12)
+        self.grid_manager.add_panel("burden", self.burden_panel, row=6, col=0, row_span=3, col_span=12)
+        self.grid_manager.add_panel("settings", self.settings_panel_widget, row=9, col=0,
+                                   row_span=3, col_span=12)
+
+    def _set_default_horizontal_layout(self):
+        """Set default horizontal (side-by-side) layout."""
+        if not self.grid_manager:
+            return
+
+        # Battery panel full width at top
+        self.grid_manager.add_panel("battery", self.battery_panel, row=0, col=0, row_span=3, col_span=12)
+
+        # Four panels below in 2x2 grid
+        self.grid_manager.add_panel("atrial_impedance", self.atrial_panel, row=3, col=0,
+                                   row_span=4, col_span=6)
+        self.grid_manager.add_panel("vent_impedance", self.vent_panel, row=3, col=6,
+                                   row_span=4, col_span=6)
+        self.grid_manager.add_panel("burden", self.burden_panel, row=7, col=0, row_span=5, col_span=6)
+        self.grid_manager.add_panel("settings", self.settings_panel_widget, row=7, col=6,
+                                   row_span=5, col_span=6)
+
+    def _on_drag_started(self, panel_id: str, start_position: QPoint):
+        """Handle drag start event."""
+        self.dragging_panel_id = panel_id
+        # Enable drop zone visualization
+        self.setMouseTracking(True)
+
+    def _on_drag_moved(self, panel_id: str, current_position: QPoint):
+        """Handle drag move event."""
+        if not self.grid_manager:
+            return
+
+        # Calculate drop zone
+        drop_zone = self.grid_manager.get_drop_zone(current_position)
+
+        if drop_zone:
+            row, col = drop_zone
+            # Update drop zone visualization
+            self.drop_zone_rect = (row, col)
+            self.update()  # Trigger repaint
+
+    def _on_drag_ended(self, panel_id: str, end_position: QPoint):
+        """Handle drag end event."""
+        if not self.grid_manager:
+            return
+
+        # Calculate final drop zone
+        drop_zone = self.grid_manager.get_drop_zone(end_position)
+
+        if drop_zone:
+            row, col = drop_zone
+            # Move panel to new position
+            self.grid_manager.move_panel(panel_id, row, col)
+
+        # Clear drop zone visualization
+        self.drop_zone_rect = None
+        self.dragging_panel_id = None
+        self.setMouseTracking(False)
+        self.update()
+
+        # Schedule layout save
+        self._schedule_layout_save()
+
+    def _on_layout_changed(self):
+        """Handle layout change event."""
+        # Schedule layout save
+        self._schedule_layout_save()
+
+    def _schedule_layout_save(self):
+        """Schedule a debounced layout save."""
+        if self.save_timer:
+            self.save_timer.start()
+
+    def _save_layout_to_file(self):
+        """Save current layout to file."""
+        if not self.grid_manager:
+            return
+
+        try:
+            # Get config
+            config = get_config()
+
+            # Check if saving is enabled
+            if not config.ui.save_panel_layouts:
+                return
+
+            # Serialize layout
+            layout_data = LayoutSerializer.serialize(self.grid_manager)
+
+            # Save to default location
+            layout_path = LayoutSerializer.get_default_layout_path()
+            LayoutSerializer.save_to_file(layout_data, layout_path)
+
+            # Also save to config
+            config.ui.panel_layouts['default'] = layout_data
+            config.save_to_file()
+
+        except Exception as e:
+            print(f"Failed to save layout: {e}")
+
+    def _load_layout_from_file(self):
+        """Load layout from file if available."""
+        if not self.grid_manager:
+            return
+
+        try:
+            # Get config
+            config = get_config()
+
+            # Check if saved layouts exist
+            if not config.ui.save_panel_layouts:
+                return
+
+            # Try to load from file first
+            layout_path = LayoutSerializer.get_default_layout_path()
+            layout_data = LayoutSerializer.load_from_file(layout_path)
+
+            # If no file, try config
+            if not layout_data:
+                layout_data = config.ui.panel_layouts.get('default')
+
+            # If we have layout data, restore it
+            if layout_data and LayoutSerializer.validate_layout(layout_data):
+                LayoutSerializer.deserialize(layout_data, self.grid_manager)
+            else:
+                # No saved layout, use default based on config
+                default_mode = config.ui.default_layout_mode
+                if default_mode == "horizontal":
+                    self._set_default_horizontal_layout()
+                else:
+                    self._set_default_vertical_layout()
+
+        except Exception as e:
+            print(f"Failed to load layout: {e}")
+            # Fall back to default vertical layout
+            self._set_default_vertical_layout()
+
+    def set_layout_mode(self, mode: LayoutMode):
+        """
+        Set the layout mode.
+
+        Args:
+            mode: The layout mode (FREE_GRID, VERTICAL, or HORIZONTAL)
+        """
+        if not self.grid_manager:
+            return
+
+        self.grid_manager.set_mode(mode)
+        self.layout_mode_changed.emit(mode)
+
+    def get_layout_mode(self) -> Optional[LayoutMode]:
+        """Get current layout mode."""
+        if self.grid_manager:
+            return self.grid_manager.mode
+        return None
+
+    def save_layout(self) -> Dict:
+        """
+        Serialize current panel layout.
+
+        Returns:
+            Dictionary containing layout data
+        """
+        if self.grid_manager:
+            return self.grid_manager.serialize_layout()
+        return {}
+
+    def restore_layout(self, layout_data: Dict):
+        """
+        Restore panel layout from saved state.
+
+        Args:
+            layout_data: Dictionary containing layout data
+        """
+        if self.grid_manager:
+            self.grid_manager.restore_layout(layout_data)
+
+    def paintEvent(self, event):
+        """Custom paint event to show drop zones."""
+        super().paintEvent(event)
+
+        if self.drop_zone_rect and self.grid_manager:
+            painter = QPainter(self)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+            # Calculate drop zone rectangle
+            row, col = self.drop_zone_rect
+            cell_width = self.grid_manager.cell_width
+            cell_height = self.grid_manager.cell_height
+
+            # Get panel info to determine size
+            if self.dragging_panel_id:
+                panel_info = self.grid_manager.get_panel_info(self.dragging_panel_id)
+                if panel_info:
+                    rect = QRect(
+                        int(col * cell_width),
+                        int(row * cell_height),
+                        int(panel_info.col_span * cell_width),
+                        int(panel_info.row_span * cell_height)
+                    )
+
+                    # Draw drop zone indicator
+                    pen = QPen(QColor(0, 120, 215), 2)  # Blue border
+                    painter.setPen(pen)
+                    painter.setBrush(QColor(0, 120, 215, 30))  # Semi-transparent fill
+                    painter.drawRect(rect)
 
     def show_panel(self, panel_name: str):
         """Show a specific panel by name."""
         if panel_name in self.panels:
             self.panels[panel_name].show_panel()
 
+            # If using grid layout, show in grid manager
+            if self.grid_manager:
+                self.grid_manager.show_panel(panel_name)
+
     def hide_panel(self, panel_name: str):
         """Hide a specific panel by name."""
         if panel_name in self.panels:
             self.panels[panel_name].hide_panel()
+
+            # If using grid layout, hide in grid manager
+            if self.grid_manager:
+                self.grid_manager.hide_panel(panel_name)
 
     def toggle_panel(self, panel_name: str, visible: bool):
         """Toggle panel visibility."""
@@ -300,20 +616,28 @@ class TimelineView(QWidget):
         Args:
             orientation: Qt.Orientation.Vertical or Qt.Orientation.Horizontal
         """
-        if orientation == self.current_orientation:
-            return
+        if self.use_grid_layout:
+            # Map Qt orientation to LayoutMode
+            if orientation == Qt.Orientation.Vertical:
+                self.set_layout_mode(LayoutMode.VERTICAL)
+            else:
+                self.set_layout_mode(LayoutMode.HORIZONTAL)
+        else:
+            # Legacy QSplitter mode
+            if orientation == self.current_orientation:
+                return
 
-        self.current_orientation = orientation
+            self.current_orientation = orientation
 
-        # Get current panel sizes before changing orientation
-        current_sizes = self.splitter.sizes()
+            # Get current panel sizes before changing orientation
+            current_sizes = self.splitter.sizes()
 
-        # Change splitter orientation
-        self.splitter.setOrientation(orientation)
+            # Change splitter orientation
+            self.splitter.setOrientation(orientation)
 
-        # Restore sizes (they'll be applied to the new orientation)
-        if len(current_sizes) == 5:
-            self.splitter.setSizes(current_sizes)
+            # Restore sizes (they'll be applied to the new orientation)
+            if len(current_sizes) == 5:
+                self.splitter.setSizes(current_sizes)
 
     def load_patient_data(self, patient_id: str):
         """

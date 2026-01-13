@@ -32,6 +32,7 @@ from openpace.hl7.parser import HL7Parser
 from openpace.database.models import Transmission
 from openpace.gui.widgets.timeline_view import TimelineView
 from openpace.gui.widgets.settings_panel import SettingsPanel
+from openpace.gui.layouts import LayoutMode, LayoutSerializer
 from openpace.exceptions import (
     FileValidationError,
     HL7ValidationError,
@@ -126,17 +127,53 @@ class MainWindow(QMainWindow):
         # Layout submenu
         layout_menu = view_menu.addMenu("&Layout")
 
+        # Layout modes
+        modes_menu = layout_menu.addMenu("Layout &Mode")
+
         self.vertical_layout_action = QAction("Vertical (Stacked)", self)
         self.vertical_layout_action.setCheckable(True)
         self.vertical_layout_action.setChecked(True)
+        self.vertical_layout_action.setShortcut("Ctrl+1")
         self.vertical_layout_action.triggered.connect(self._set_vertical_layout)
-        layout_menu.addAction(self.vertical_layout_action)
+        modes_menu.addAction(self.vertical_layout_action)
 
         self.horizontal_layout_action = QAction("Horizontal (Side-by-Side)", self)
         self.horizontal_layout_action.setCheckable(True)
         self.horizontal_layout_action.setChecked(False)
+        self.horizontal_layout_action.setShortcut("Ctrl+2")
         self.horizontal_layout_action.triggered.connect(self._set_horizontal_layout)
-        layout_menu.addAction(self.horizontal_layout_action)
+        modes_menu.addAction(self.horizontal_layout_action)
+
+        self.free_grid_layout_action = QAction("Free Grid", self)
+        self.free_grid_layout_action.setCheckable(True)
+        self.free_grid_layout_action.setChecked(False)
+        self.free_grid_layout_action.setShortcut("Ctrl+3")
+        self.free_grid_layout_action.triggered.connect(self._set_free_grid_layout)
+        modes_menu.addAction(self.free_grid_layout_action)
+
+        layout_menu.addSeparator()
+
+        # Layout management actions
+        save_layout_action = QAction("&Save Layout As...", self)
+        save_layout_action.setShortcut("Ctrl+Shift+S")
+        save_layout_action.triggered.connect(self._save_layout)
+        layout_menu.addAction(save_layout_action)
+
+        load_layout_action = QAction("&Load Layout...", self)
+        load_layout_action.setShortcut("Ctrl+Shift+L")
+        load_layout_action.triggered.connect(self._load_layout)
+        layout_menu.addAction(load_layout_action)
+
+        reset_layout_action = QAction("&Reset to Default", self)
+        reset_layout_action.triggered.connect(self._reset_layout)
+        layout_menu.addAction(reset_layout_action)
+
+        layout_menu.addSeparator()
+
+        # Grid settings
+        grid_settings_action = QAction("&Grid Settings...", self)
+        grid_settings_action.triggered.connect(self._show_grid_settings)
+        layout_menu.addAction(grid_settings_action)
 
         view_menu.addSeparator()
 
@@ -345,6 +382,7 @@ class MainWindow(QMainWindow):
         self.timeline_view.set_orientation(Qt.Orientation.Vertical)
         self.vertical_layout_action.setChecked(True)
         self.horizontal_layout_action.setChecked(False)
+        self.free_grid_layout_action.setChecked(False)
         self.statusBar().showMessage("Layout: Vertical (Stacked)", 3000)
 
     def _set_horizontal_layout(self):
@@ -352,7 +390,122 @@ class MainWindow(QMainWindow):
         self.timeline_view.set_orientation(Qt.Orientation.Horizontal)
         self.vertical_layout_action.setChecked(False)
         self.horizontal_layout_action.setChecked(True)
+        self.free_grid_layout_action.setChecked(False)
         self.statusBar().showMessage("Layout: Horizontal (Side-by-Side)", 3000)
+
+    def _set_free_grid_layout(self):
+        """Set free grid panel layout."""
+        self.timeline_view.set_layout_mode(LayoutMode.FREE_GRID)
+        self.vertical_layout_action.setChecked(False)
+        self.horizontal_layout_action.setChecked(False)
+        self.free_grid_layout_action.setChecked(True)
+        self.statusBar().showMessage("Layout: Free Grid", 3000)
+
+    def _save_layout(self):
+        """Save current layout as a preset."""
+        from PyQt6.QtWidgets import QInputDialog
+
+        # Get preset name from user
+        preset_name, ok = QInputDialog.getText(
+            self,
+            "Save Layout",
+            "Enter a name for this layout preset:"
+        )
+
+        if ok and preset_name:
+            # Get current layout
+            layout_data = self.timeline_view.save_layout()
+
+            # Save as preset
+            if LayoutSerializer.save_preset(layout_data, preset_name):
+                QMessageBox.information(
+                    self,
+                    "Layout Saved",
+                    f"Layout '{preset_name}' saved successfully."
+                )
+                self.statusBar().showMessage(f"Layout '{preset_name}' saved", 3000)
+            else:
+                QMessageBox.warning(
+                    self,
+                    "Save Failed",
+                    f"Failed to save layout '{preset_name}'."
+                )
+
+    def _load_layout(self):
+        """Load a saved layout preset."""
+        from PyQt6.QtWidgets import QInputDialog
+
+        # Get list of available presets
+        presets = LayoutSerializer.list_presets()
+
+        if not presets:
+            QMessageBox.information(
+                self,
+                "No Presets",
+                "No saved layout presets found. Use 'Save Layout As...' to create one."
+            )
+            return
+
+        # Let user select a preset
+        preset_name, ok = QInputDialog.getItem(
+            self,
+            "Load Layout",
+            "Select a layout preset to load:",
+            presets,
+            0,
+            False
+        )
+
+        if ok and preset_name:
+            # Load preset
+            layout_data = LayoutSerializer.load_preset(preset_name)
+
+            if layout_data:
+                self.timeline_view.restore_layout(layout_data)
+                QMessageBox.information(
+                    self,
+                    "Layout Loaded",
+                    f"Layout '{preset_name}' loaded successfully."
+                )
+                self.statusBar().showMessage(f"Layout '{preset_name}' loaded", 3000)
+            else:
+                QMessageBox.warning(
+                    self,
+                    "Load Failed",
+                    f"Failed to load layout '{preset_name}'."
+                )
+
+    def _reset_layout(self):
+        """Reset layout to default."""
+        reply = QMessageBox.question(
+            self,
+            "Reset Layout",
+            "Reset panel layout to default? This will discard your current layout.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            # Get default layout based on current mode
+            mode = self.timeline_view.get_layout_mode()
+
+            if mode == LayoutMode.HORIZONTAL:
+                layout_data = LayoutSerializer.create_default_horizontal_layout()
+            else:
+                layout_data = LayoutSerializer.create_default_vertical_layout()
+
+            self.timeline_view.restore_layout(layout_data)
+            self.statusBar().showMessage("Layout reset to default", 3000)
+
+    def _show_grid_settings(self):
+        """Show grid settings dialog."""
+        from openpace.gui.dialogs.grid_settings_dialog import GridSettingsDialog
+
+        # Create and show dialog
+        dialog = GridSettingsDialog(self)
+        if dialog.exec():
+            # Settings were saved, apply them
+            self.statusBar().showMessage("Grid settings updated", 3000)
 
     def _show_settings_window(self):
         """Show device settings in a separate window."""

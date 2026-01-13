@@ -87,6 +87,17 @@ class UIConfig:
     max_plot_points: int = 10000             # Downsample plots with more points
     language: str = "en"                     # Interface language
 
+    # Panel layout settings
+    use_grid_layout: bool = True             # Use new grid layout system
+    save_panel_layouts: bool = True          # Save panel layout preferences
+    panel_layouts: Dict[str, Any] = field(default_factory=dict)  # Stored panel layouts
+    default_layout_mode: str = "vertical"    # Default layout: vertical, horizontal, free_grid
+    panel_min_height: int = 150              # Minimum panel height in pixels
+    panel_min_width: int = 200               # Minimum panel width in pixels
+    grid_rows: int = 12                      # Number of grid rows
+    grid_cols: int = 12                      # Number of grid columns
+    snap_to_grid: bool = True                # Snap panels to grid when dragging
+
 
 @dataclass
 class AnalysisConfig:
