@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import QWidget, QToolButton, QLabel, QMenu
 from PyQt6.QtCore import Qt, pyqtSignal, QPoint, QSize, QRect
 from PyQt6.QtGui import QMouseEvent, QPainter, QColor, QPen, QCursor, QResizeEvent, QAction
 
-from .timeline_view import CollapsiblePanel
+from .collapsible_panel import CollapsiblePanel
 from .resize_handle import ResizeHandleManager
 
 
