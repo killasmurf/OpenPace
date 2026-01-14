@@ -26,6 +26,7 @@ from .impedance_widget import ImpedanceTrendWidget
 from .burden_widget import BurdenWidget
 from .settings_panel import SettingsPanel
 from .device_settings_widget import DeviceSettingsWidget
+from .heart_rate_widget import HeartRateTimelineWidget
 from .collapsible_panel import CollapsiblePanel
 from .draggable_panel import DraggablePanel
 from .resize_handle import ResizeHandleManager
@@ -113,6 +114,7 @@ class TimelineView(QWidget):
     atrial_impedance_visibility_changed = pyqtSignal(bool)
     vent_impedance_visibility_changed = pyqtSignal(bool)
     burden_visibility_changed = pyqtSignal(bool)
+    heart_rate_visibility_changed = pyqtSignal(bool)
     settings_visibility_changed = pyqtSignal(bool)
     device_settings_visibility_changed = pyqtSignal(bool)
 
@@ -164,6 +166,7 @@ class TimelineView(QWidget):
         self.atrial_impedance_widget = ImpedanceTrendWidget()
         self.vent_impedance_widget = ImpedanceTrendWidget()
         self.burden_widget = BurdenWidget()
+        self.heart_rate_widget = HeartRateTimelineWidget()
         self.settings_panel = SettingsPanel()
         self.device_settings_widget = DeviceSettingsWidget()
 
@@ -223,6 +226,11 @@ class TimelineView(QWidget):
         setup_panel(self.device_settings_panel, self.device_settings_visibility_changed)
         self.panels['device_settings'] = self.device_settings_panel
 
+        self.heart_rate_panel = DraggablePanel("heart_rate", "Heart Rate Timeline",
+                                               self.heart_rate_widget)
+        setup_panel(self.heart_rate_panel, self.heart_rate_visibility_changed)
+        self.panels['heart_rate'] = self.heart_rate_panel
+
         # Set default vertical layout
         self._set_default_vertical_layout()
 
@@ -274,26 +282,28 @@ class TimelineView(QWidget):
         parent_layout.addWidget(self.splitter)
 
     def _set_default_vertical_layout(self):
-        """Set default 3x2 grid layout for panels."""
+        """Set default grid layout for panels with heart rate timeline at bottom."""
         if not self.grid_manager:
             return
 
-        # 3x2 grid layout (3 columns, 2 rows of panels)
-        # Each panel is 4 columns wide, 6 rows tall in a 12x12 grid
-        # Row 1: Battery, Atrial Impedance, Ventricular Impedance
+        # Grid layout with heart rate timeline spanning full width at bottom
+        # Row 1 (rows 0-4): Battery, Atrial Impedance, Ventricular Impedance
         self.grid_manager.add_panel("battery", self.battery_panel,
-                                   row=0, col=0, row_span=6, col_span=4)
+                                   row=0, col=0, row_span=4, col_span=4)
         self.grid_manager.add_panel("atrial_impedance", self.atrial_panel,
-                                   row=0, col=4, row_span=6, col_span=4)
+                                   row=0, col=4, row_span=4, col_span=4)
         self.grid_manager.add_panel("vent_impedance", self.vent_panel,
-                                   row=0, col=8, row_span=6, col_span=4)
-        # Row 2: Burden, Settings, Device Settings
+                                   row=0, col=8, row_span=4, col_span=4)
+        # Row 2 (rows 4-8): Burden, Settings, Device Settings
         self.grid_manager.add_panel("burden", self.burden_panel,
-                                   row=6, col=0, row_span=6, col_span=4)
+                                   row=4, col=0, row_span=4, col_span=4)
         self.grid_manager.add_panel("settings", self.settings_panel_widget,
-                                   row=6, col=4, row_span=6, col_span=4)
+                                   row=4, col=4, row_span=4, col_span=4)
         self.grid_manager.add_panel("device_settings", self.device_settings_panel,
-                                   row=6, col=8, row_span=6, col_span=4)
+                                   row=4, col=8, row_span=4, col_span=4)
+        # Row 3 (rows 8-12): Heart Rate Timeline (full width)
+        self.grid_manager.add_panel("heart_rate", self.heart_rate_panel,
+                                   row=8, col=0, row_span=4, col_span=12)
 
     def _set_default_horizontal_layout(self):
         """Set default horizontal (side-by-side) layout."""
@@ -305,16 +315,19 @@ class TimelineView(QWidget):
 
         # Impedance panels side-by-side
         self.grid_manager.add_panel("atrial_impedance", self.atrial_panel, row=2, col=0,
-                                   row_span=3, col_span=6)
+                                   row_span=2, col_span=6)
         self.grid_manager.add_panel("vent_impedance", self.vent_panel, row=2, col=6,
-                                   row_span=3, col_span=6)
+                                   row_span=2, col_span=6)
         # Burden and settings side-by-side
-        self.grid_manager.add_panel("burden", self.burden_panel, row=5, col=0, row_span=3, col_span=6)
-        self.grid_manager.add_panel("settings", self.settings_panel_widget, row=5, col=6,
-                                   row_span=3, col_span=6)
-        # Device settings full width at bottom
-        self.grid_manager.add_panel("device_settings", self.device_settings_panel, row=8, col=0,
-                                   row_span=4, col_span=12)
+        self.grid_manager.add_panel("burden", self.burden_panel, row=4, col=0, row_span=2, col_span=6)
+        self.grid_manager.add_panel("settings", self.settings_panel_widget, row=4, col=6,
+                                   row_span=2, col_span=6)
+        # Device settings half width
+        self.grid_manager.add_panel("device_settings", self.device_settings_panel, row=6, col=0,
+                                   row_span=2, col_span=6)
+        # Heart rate timeline (spans remaining space)
+        self.grid_manager.add_panel("heart_rate", self.heart_rate_panel, row=6, col=6,
+                                   row_span=6, col_span=6)
 
     def _on_drag_started(self, panel_id: str, start_position: QPoint):
         """Handle drag start event."""
@@ -656,11 +669,28 @@ class TimelineView(QWidget):
             # Organize trends by variable
             trends_by_var = {t.variable_name: t for t in trends}
 
-            # Load battery trend
-            if 'battery_voltage' in trends_by_var:
-                trend = trends_by_var['battery_voltage']
+            # Debug: print available variables
+            print(f"[DEBUG] Available trend variables: {list(trends_by_var.keys())}")
+
+            # If still no trends (single transmission), load raw observations
+            if not trends_by_var:
+                print(f"[DEBUG] No trends available, loading raw observations...")
+                self._load_raw_observations(patient_id)
+                return
+
+            # Load battery trend - try multiple variable names
+            battery_var = None
+            for var in ['battery_voltage', 'battery_longevity', 'battery_percentage']:
+                if var in trends_by_var:
+                    battery_var = var
+                    break
+
+            if battery_var:
+                trend = trends_by_var[battery_var]
                 time_points = [datetime.fromisoformat(tp) for tp in trend.time_points]
                 self.battery_widget.set_data(time_points, trend.values)
+            else:
+                print(f"[DEBUG] No battery data found")
 
             # Load atrial impedance
             if 'lead_impedance_atrial' in trends_by_var:
@@ -680,6 +710,49 @@ class TimelineView(QWidget):
                 time_points = [datetime.fromisoformat(tp) for tp in trend.time_points]
                 self.burden_widget.set_data("AFib", time_points, trend.values)
 
+            # Load heart rate data
+            hr_time_points = None
+            hr_values = None
+            hr_max_values = None
+            hr_min_values = None
+
+            # Try heart_rate_mean first, fall back to heart_rate
+            hr_var = 'heart_rate_mean' if 'heart_rate_mean' in trends_by_var else 'heart_rate'
+            if hr_var in trends_by_var:
+                trend = trends_by_var[hr_var]
+                hr_time_points = [datetime.fromisoformat(tp) for tp in trend.time_points]
+                hr_values = trend.values
+
+            if 'heart_rate_max' in trends_by_var:
+                trend = trends_by_var['heart_rate_max']
+                hr_max_values = trend.values
+
+            if 'heart_rate_min' in trends_by_var:
+                trend = trends_by_var['heart_rate_min']
+                hr_min_values = trend.values
+
+            # Set heart rate data if available
+            if hr_time_points and hr_values:
+                self.heart_rate_widget.set_heart_rate_data(
+                    hr_time_points, hr_values, hr_max_values, hr_min_values
+                )
+
+            # Try to load rate limits from trends
+            lower_rate = self.heart_rate_widget.DEFAULT_LOWER_RATE
+            upper_rate = self.heart_rate_widget.DEFAULT_UPPER_RATE
+
+            if 'lower_rate_limit' in trends_by_var:
+                trend = trends_by_var['lower_rate_limit']
+                if trend.values:
+                    lower_rate = trend.values[-1]  # Use most recent value
+
+            if 'upper_rate_limit' in trends_by_var:
+                trend = trends_by_var['upper_rate_limit']
+                if trend.values:
+                    upper_rate = trend.values[-1]  # Use most recent value
+
+            self.heart_rate_widget.set_rate_limits(lower_rate, upper_rate)
+
             # Load device settings from most recent transmission
             most_recent_transmission = self.session.query(Transmission).filter_by(
                 patient_id=patient_id
@@ -697,11 +770,94 @@ class TimelineView(QWidget):
             import traceback
             traceback.print_exc()
 
+    def _load_raw_observations(self, patient_id: str):
+        """
+        Load raw observations directly when trend data is insufficient.
+
+        Used when there's only a single transmission (not enough data for trends).
+
+        Args:
+            patient_id: Patient identifier
+        """
+        from openpace.database.models import Observation
+
+        # Query all numeric observations for this patient
+        observations = self.session.query(Observation).join(
+            Observation.transmission
+        ).filter(
+            Observation.transmission.has(patient_id=patient_id),
+            Observation.value_numeric.isnot(None)
+        ).all()
+
+        # Group observations by variable name
+        obs_by_var = {}
+        for obs in observations:
+            if obs.variable_name not in obs_by_var:
+                obs_by_var[obs.variable_name] = []
+            obs_by_var[obs.variable_name].append(obs)
+
+        print(f"[DEBUG] Raw observation variables: {list(obs_by_var.keys())}")
+
+        # Load battery data - try multiple variable names
+        for var in ['battery_voltage', 'battery_longevity', 'battery_percentage']:
+            if var in obs_by_var:
+                obs_list = obs_by_var[var]
+                time_points = [obs.observation_time for obs in obs_list]
+                values = [obs.value_numeric for obs in obs_list]
+                self.battery_widget.set_data(time_points, values)
+                print(f"[DEBUG] Loaded battery data ({var}): {len(values)} points")
+                break
+
+        # Load atrial impedance
+        if 'lead_impedance_atrial' in obs_by_var:
+            obs_list = obs_by_var['lead_impedance_atrial']
+            time_points = [obs.observation_time for obs in obs_list]
+            values = [obs.value_numeric for obs in obs_list]
+            self.atrial_impedance_widget.set_data("Atrial", time_points, values)
+            print(f"[DEBUG] Loaded atrial impedance: {len(values)} points")
+
+        # Load ventricular impedance
+        if 'lead_impedance_ventricular' in obs_by_var:
+            obs_list = obs_by_var['lead_impedance_ventricular']
+            time_points = [obs.observation_time for obs in obs_list]
+            values = [obs.value_numeric for obs in obs_list]
+            self.vent_impedance_widget.set_data("Ventricular", time_points, values)
+            print(f"[DEBUG] Loaded ventricular impedance: {len(values)} points")
+
+        # Load AFib burden
+        if 'afib_burden_percent' in obs_by_var:
+            obs_list = obs_by_var['afib_burden_percent']
+            time_points = [obs.observation_time for obs in obs_list]
+            values = [obs.value_numeric for obs in obs_list]
+            self.burden_widget.set_data("AFib", time_points, values)
+            print(f"[DEBUG] Loaded AFib burden: {len(values)} points")
+
+        # Load heart rate data
+        hr_var = 'heart_rate_mean' if 'heart_rate_mean' in obs_by_var else 'heart_rate'
+        if hr_var in obs_by_var:
+            obs_list = obs_by_var[hr_var]
+            time_points = [obs.observation_time for obs in obs_list]
+            values = [obs.value_numeric for obs in obs_list]
+            hr_max = [obs.value_numeric for obs in obs_by_var.get('heart_rate_max', [])] or None
+            hr_min = [obs.value_numeric for obs in obs_by_var.get('heart_rate_min', [])] or None
+            self.heart_rate_widget.set_heart_rate_data(time_points, values, hr_max, hr_min)
+            print(f"[DEBUG] Loaded heart rate: {len(values)} points")
+
+        # Load device settings from most recent transmission
+        most_recent_transmission = self.session.query(Transmission).filter_by(
+            patient_id=patient_id
+        ).order_by(Transmission.transmission_date.desc()).first()
+
+        if most_recent_transmission:
+            self.settings_panel.load_transmission(most_recent_transmission)
+            self.device_settings_widget.load_transmission(most_recent_transmission)
+
     def clear_all(self):
         """Clear all chart data."""
         self.battery_widget.clear()
         self.atrial_impedance_widget.clear()
         self.vent_impedance_widget.clear()
         self.burden_widget.clear()
+        self.heart_rate_widget.clear()
         self.settings_panel.clear()
         self.device_settings_widget.clear()

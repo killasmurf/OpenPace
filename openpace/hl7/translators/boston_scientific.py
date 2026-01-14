@@ -105,36 +105,37 @@ class BostonScientificTranslator(VendorTranslator):
     }
 
     # Measurement codes (MSMT_) - device-reported measurements
+    # Maps to UNIVERSAL variable names for widget compatibility
     BATTERY_MSMT_CODES = {
         "721216": "msmt_battery_datetime",
-        "721280": "msmt_battery_status",
-        "721472": "msmt_battery_remaining_longevity",
-        "721536": "msmt_battery_remaining_percentage",
+        "721280": "battery_status",
+        "721472": "battery_longevity",  # Universal name
+        "721536": "battery_percentage",  # Universal name
     }
 
     CAPACITOR_MSMT_CODES = {
         "721664": "msmt_cap_charge_datetime",
-        "721728": "msmt_cap_charge_time",
+        "721728": "capacitor_charge_time",
         "721856": "msmt_cap_charge_type",
     }
 
     LEADCHNL_MSMT_CODES = {
         "721921": "msmt_leadchnl_ra_datetime",
         "721925": "msmt_leadchnl_rv_datetime",
-        "722051": "msmt_leadchnl_ra_sensing_amplitude",
-        "722055": "msmt_leadchnl_rv_sensing_amplitude",
+        "722051": "atrial_sensing_amplitude",
+        "722055": "ventricular_sensing_amplitude",
         "722112": "msmt_leadchnl_ra_sensing_polarity",
         "722113": "msmt_leadchnl_rv_sensing_polarity",
-        "722176": "msmt_leadchnl_ra_pacing_threshold_amplitude",
-        "722177": "msmt_leadchnl_rv_pacing_threshold_amplitude",
+        "722176": "atrial_pacing_threshold",
+        "722177": "ventricular_pacing_threshold",
         "722240": "msmt_leadchnl_ra_pacing_threshold_pulsewidth",
         "722241": "msmt_leadchnl_rv_pacing_threshold_pulsewidth",
         "722304": "msmt_leadchnl_ra_pacing_threshold_method",
         "722305": "msmt_leadchnl_rv_pacing_threshold_method",
         "722368": "msmt_leadchnl_ra_pacing_threshold_polarity",
         "722369": "msmt_leadchnl_rv_pacing_threshold_polarity",
-        "722432": "msmt_leadchnl_ra_impedance",
-        "722433": "msmt_leadchnl_rv_impedance",
+        "722432": "lead_impedance_atrial",  # Universal name for widgets
+        "722433": "lead_impedance_ventricular",  # Universal name for widgets
         "722496": "msmt_leadchnl_ra_impedance_polarity",
         "722497": "msmt_leadchnl_rv_impedance_polarity",
     }
@@ -146,29 +147,30 @@ class BostonScientificTranslator(VendorTranslator):
     }
 
     # Statistics codes (STAT_)
+    # Maps to UNIVERSAL variable names for widget compatibility
     STAT_CODES = {
         "737489": "stat_datetime_start",
         "737490": "stat_datetime_end",
         "737505": "stat_brady_datetime_start",
         "737506": "stat_brady_datetime_end",
-        "737520": "stat_brady_ra_percent_paced",
-        "737536": "stat_brady_rv_percent_paced",
+        "737520": "pacing_percent_atrial",  # Universal name
+        "737536": "pacing_percent_ventricular",  # Universal name
         "737665": "stat_at_datetime_start",
         "737666": "stat_at_datetime_end",
-        "737696": "stat_at_burden_percent",
-        "737824": "stat_tachy_shocks_delivered_recent",
-        "737840": "stat_tachy_shocks_delivered_total",
-        "737856": "stat_tachy_shocks_aborted_recent",
-        "737872": "stat_tachy_shocks_aborted_total",
-        "737888": "stat_tachy_atp_delivered_recent",
-        "737904": "stat_tachy_atp_delivered_total",
+        "737696": "afib_burden_percent",  # Universal name for widgets
+        "737824": "shocks_delivered_recent",
+        "737840": "shocks_delivered_total",
+        "737856": "shocks_aborted_recent",
+        "737872": "shocks_aborted_total",
+        "737888": "atp_delivered_recent",
+        "737904": "atp_delivered_total",
         "737921": "stat_tachy_total_datetime_start",
         "737922": "stat_tachy_total_datetime_end",
         "737937": "stat_tachy_recent_datetime_start",
         "737938": "stat_tachy_recent_datetime_end",
         "737952": "stat_episode_type",
         "737984": "stat_episode_vendor_type",
-        "738000": "stat_episode_recent_count",
+        "738000": "episode_count_recent",
         "738017": "stat_episode_recent_count_datetime_start",
         "738018": "stat_episode_recent_count_datetime_end",
     }

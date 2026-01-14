@@ -128,6 +128,12 @@ class MainWindow(QMainWindow):
         self.device_settings_panel_action.triggered.connect(lambda checked: self.timeline_view.toggle_panel('device_settings', checked))
         panels_menu.addAction(self.device_settings_panel_action)
 
+        self.heart_rate_panel_action = QAction("Heart Rate Timeline", self)
+        self.heart_rate_panel_action.setCheckable(True)
+        self.heart_rate_panel_action.setChecked(True)
+        self.heart_rate_panel_action.triggered.connect(lambda checked: self.timeline_view.toggle_panel('heart_rate', checked))
+        panels_menu.addAction(self.heart_rate_panel_action)
+
         view_menu.addSeparator()
 
         # Layout submenu
@@ -254,6 +260,7 @@ class MainWindow(QMainWindow):
         self.timeline_view.burden_visibility_changed.connect(self.burden_panel_action.setChecked)
         self.timeline_view.settings_visibility_changed.connect(self.settings_panel_action.setChecked)
         self.timeline_view.device_settings_visibility_changed.connect(self.device_settings_panel_action.setChecked)
+        self.timeline_view.heart_rate_visibility_changed.connect(self.heart_rate_panel_action.setChecked)
 
     def _create_status_bar(self):
         """Create the status bar."""

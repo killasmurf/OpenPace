@@ -11,6 +11,7 @@ from .egm_viewer import EGMViewerWidget
 from .episode_selector import EpisodeSelectorWidget
 from .settings_panel import SettingsPanel
 from .device_settings_widget import DeviceSettingsWidget
+from .heart_rate_widget import HeartRateTimelineWidget
 from .collapsible_panel import CollapsiblePanel
 from .draggable_panel import DraggablePanel
 
@@ -24,6 +25,7 @@ __all__ = [
     'EpisodeSelectorWidget',
     'SettingsPanel',
     'DeviceSettingsWidget',
+    'HeartRateTimelineWidget',
     'CollapsiblePanel',
     'DraggablePanel',
 ]

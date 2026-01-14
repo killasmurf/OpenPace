@@ -277,7 +277,7 @@ class LayoutSerializer:
     @staticmethod
     def create_default_vertical_layout() -> Dict[str, Any]:
         """
-        Create default 3x2 grid layout data.
+        Create default grid layout data with heart rate timeline.
 
         Returns:
             Dictionary containing default grid layout
@@ -292,7 +292,7 @@ class LayoutSerializer:
                 'battery': {
                     'row': 0,
                     'col': 0,
-                    'row_span': 6,
+                    'row_span': 4,
                     'col_span': 4,
                     'visible': True,
                     'collapsed': False
@@ -300,7 +300,7 @@ class LayoutSerializer:
                 'atrial_impedance': {
                     'row': 0,
                     'col': 4,
-                    'row_span': 6,
+                    'row_span': 4,
                     'col_span': 4,
                     'visible': True,
                     'collapsed': False
@@ -308,32 +308,40 @@ class LayoutSerializer:
                 'vent_impedance': {
                     'row': 0,
                     'col': 8,
-                    'row_span': 6,
+                    'row_span': 4,
                     'col_span': 4,
                     'visible': True,
                     'collapsed': False
                 },
                 'burden': {
-                    'row': 6,
+                    'row': 4,
                     'col': 0,
-                    'row_span': 6,
+                    'row_span': 4,
                     'col_span': 4,
                     'visible': True,
                     'collapsed': False
                 },
                 'settings': {
-                    'row': 6,
+                    'row': 4,
                     'col': 4,
-                    'row_span': 6,
+                    'row_span': 4,
                     'col_span': 4,
                     'visible': True,
                     'collapsed': False
                 },
                 'device_settings': {
-                    'row': 6,
+                    'row': 4,
                     'col': 8,
-                    'row_span': 6,
+                    'row_span': 4,
                     'col_span': 4,
+                    'visible': True,
+                    'collapsed': False
+                },
+                'heart_rate': {
+                    'row': 8,
+                    'col': 0,
+                    'row_span': 4,
+                    'col_span': 12,
                     'visible': True,
                     'collapsed': False
                 }
@@ -366,7 +374,7 @@ class LayoutSerializer:
                 'atrial_impedance': {
                     'row': 2,
                     'col': 0,
-                    'row_span': 3,
+                    'row_span': 2,
                     'col_span': 6,
                     'visible': True,
                     'collapsed': False
@@ -374,32 +382,40 @@ class LayoutSerializer:
                 'vent_impedance': {
                     'row': 2,
                     'col': 6,
-                    'row_span': 3,
+                    'row_span': 2,
                     'col_span': 6,
                     'visible': True,
                     'collapsed': False
                 },
                 'burden': {
-                    'row': 5,
+                    'row': 4,
                     'col': 0,
-                    'row_span': 3,
+                    'row_span': 2,
                     'col_span': 6,
                     'visible': True,
                     'collapsed': False
                 },
                 'settings': {
-                    'row': 5,
+                    'row': 4,
                     'col': 6,
-                    'row_span': 3,
+                    'row_span': 2,
                     'col_span': 6,
                     'visible': True,
                     'collapsed': False
                 },
                 'device_settings': {
-                    'row': 8,
+                    'row': 6,
                     'col': 0,
-                    'row_span': 4,
-                    'col_span': 12,
+                    'row_span': 2,
+                    'col_span': 6,
+                    'visible': True,
+                    'collapsed': False
+                },
+                'heart_rate': {
+                    'row': 6,
+                    'col': 6,
+                    'row_span': 6,
+                    'col_span': 6,
                     'visible': True,
                     'collapsed': False
                 }

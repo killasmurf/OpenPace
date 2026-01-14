@@ -59,9 +59,12 @@ class TrendCalculator:
 
         observations = query.order_by(Observation.observation_time).all()
 
-        if len(observations) < 2:
-            logger.info(f"Insufficient data for trend: {variable_name} (only {len(observations)} points)")
+        if len(observations) == 0:
+            logger.info(f"No data for trend: {variable_name}")
             return None
+
+        # Allow single point trends for basic visualization
+        # (statistical analysis requires 2+ points)
 
         # Extract time points and values
         time_points = [obs.observation_time.isoformat() for obs in observations]
