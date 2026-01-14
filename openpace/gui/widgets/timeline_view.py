@@ -276,57 +276,50 @@ class TimelineView(QWidget):
     def _init_grid_layout(self, parent_layout: QVBoxLayout):
         """Initialize grid-based layout system."""
         # Create container for grid
-        grid_container = QWidget()
-        grid_container.setMinimumSize(800, 600)
+        self.grid_container = QWidget()
+        self.grid_container.setMinimumSize(800, 600)
 
         # Create grid layout manager
-        self.grid_manager = GridLayoutManager(grid_container, rows=12, cols=12)
+        self.grid_manager = GridLayoutManager(self.grid_container, rows=12, cols=12)
         self.grid_manager.layout_changed.connect(self._on_layout_changed)
+
+        # Layout editing mode (enabled by default)
+        self.layout_edit_mode = True
+
+        # Helper function to connect all panel signals
+        def setup_panel(panel: DraggablePanel, visibility_signal):
+            panel.visibility_changed.connect(visibility_signal.emit)
+            panel.drag_started.connect(self._on_drag_started)
+            panel.drag_moved.connect(self._on_drag_moved)
+            panel.drag_ended.connect(self._on_drag_ended)
+            panel.resize_grid_requested.connect(self._on_panel_resize_requested)
 
         # Create draggable panels
         self.battery_panel = DraggablePanel("battery", "Battery Voltage", self.battery_widget)
-        self.battery_panel.visibility_changed.connect(self.battery_visibility_changed.emit)
-        self.battery_panel.drag_started.connect(self._on_drag_started)
-        self.battery_panel.drag_moved.connect(self._on_drag_moved)
-        self.battery_panel.drag_ended.connect(self._on_drag_ended)
+        setup_panel(self.battery_panel, self.battery_visibility_changed)
         self.panels['battery'] = self.battery_panel
 
         self.atrial_panel = DraggablePanel("atrial_impedance", "Atrial Lead Impedance",
                                           self.atrial_impedance_widget)
-        self.atrial_panel.visibility_changed.connect(self.atrial_impedance_visibility_changed.emit)
-        self.atrial_panel.drag_started.connect(self._on_drag_started)
-        self.atrial_panel.drag_moved.connect(self._on_drag_moved)
-        self.atrial_panel.drag_ended.connect(self._on_drag_ended)
+        setup_panel(self.atrial_panel, self.atrial_impedance_visibility_changed)
         self.panels['atrial_impedance'] = self.atrial_panel
 
         self.vent_panel = DraggablePanel("vent_impedance", "Ventricular Lead Impedance",
                                         self.vent_impedance_widget)
-        self.vent_panel.visibility_changed.connect(self.vent_impedance_visibility_changed.emit)
-        self.vent_panel.drag_started.connect(self._on_drag_started)
-        self.vent_panel.drag_moved.connect(self._on_drag_moved)
-        self.vent_panel.drag_ended.connect(self._on_drag_ended)
+        setup_panel(self.vent_panel, self.vent_impedance_visibility_changed)
         self.panels['vent_impedance'] = self.vent_panel
 
         self.burden_panel = DraggablePanel("burden", "Arrhythmia Burden", self.burden_widget)
-        self.burden_panel.visibility_changed.connect(self.burden_visibility_changed.emit)
-        self.burden_panel.drag_started.connect(self._on_drag_started)
-        self.burden_panel.drag_moved.connect(self._on_drag_moved)
-        self.burden_panel.drag_ended.connect(self._on_drag_ended)
+        setup_panel(self.burden_panel, self.burden_visibility_changed)
         self.panels['burden'] = self.burden_panel
 
         self.settings_panel_widget = DraggablePanel("settings", "Device Settings", self.settings_panel)
-        self.settings_panel_widget.visibility_changed.connect(self.settings_visibility_changed.emit)
-        self.settings_panel_widget.drag_started.connect(self._on_drag_started)
-        self.settings_panel_widget.drag_moved.connect(self._on_drag_moved)
-        self.settings_panel_widget.drag_ended.connect(self._on_drag_ended)
+        setup_panel(self.settings_panel_widget, self.settings_visibility_changed)
         self.panels['settings'] = self.settings_panel_widget
 
         self.device_settings_panel = DraggablePanel("device_settings", "Device Settings (Fixed/Operator)",
                                                      self.device_settings_widget)
-        self.device_settings_panel.visibility_changed.connect(self.device_settings_visibility_changed.emit)
-        self.device_settings_panel.drag_started.connect(self._on_drag_started)
-        self.device_settings_panel.drag_moved.connect(self._on_drag_moved)
-        self.device_settings_panel.drag_ended.connect(self._on_drag_ended)
+        setup_panel(self.device_settings_panel, self.device_settings_visibility_changed)
         self.panels['device_settings'] = self.device_settings_panel
 
         # Set default vertical layout
@@ -335,7 +328,10 @@ class TimelineView(QWidget):
         # Load saved layout if available (do this after panels are added)
         self._load_layout_from_file()
 
-        parent_layout.addWidget(grid_container)
+        parent_layout.addWidget(self.grid_container)
+
+        # Initialize cell sizes after layout is set up (delayed to ensure widget is sized)
+        QTimer.singleShot(200, self._update_panel_cell_sizes)
 
     def _init_splitter_layout(self, parent_layout: QVBoxLayout):
         """Initialize legacy QSplitter layout."""
@@ -382,15 +378,17 @@ class TimelineView(QWidget):
             return
 
         # All panels full width, stacked vertically
-        # Each panel gets 2-3 rows, total 12 rows
+        # Each panel gets 2 rows, total 12 rows available
         self.grid_manager.add_panel("battery", self.battery_panel, row=0, col=0, row_span=2, col_span=12)
         self.grid_manager.add_panel("atrial_impedance", self.atrial_panel, row=2, col=0,
                                    row_span=2, col_span=12)
         self.grid_manager.add_panel("vent_impedance", self.vent_panel, row=4, col=0,
                                    row_span=2, col_span=12)
-        self.grid_manager.add_panel("burden", self.burden_panel, row=6, col=0, row_span=3, col_span=12)
-        self.grid_manager.add_panel("settings", self.settings_panel_widget, row=9, col=0,
-                                   row_span=3, col_span=12)
+        self.grid_manager.add_panel("burden", self.burden_panel, row=6, col=0, row_span=2, col_span=12)
+        self.grid_manager.add_panel("settings", self.settings_panel_widget, row=8, col=0,
+                                   row_span=2, col_span=12)
+        self.grid_manager.add_panel("device_settings", self.device_settings_panel, row=10, col=0,
+                                   row_span=2, col_span=12)
 
     def _set_default_horizontal_layout(self):
         """Set default horizontal (side-by-side) layout."""
@@ -398,16 +396,20 @@ class TimelineView(QWidget):
             return
 
         # Battery panel full width at top
-        self.grid_manager.add_panel("battery", self.battery_panel, row=0, col=0, row_span=3, col_span=12)
+        self.grid_manager.add_panel("battery", self.battery_panel, row=0, col=0, row_span=2, col_span=12)
 
-        # Four panels below in 2x2 grid
-        self.grid_manager.add_panel("atrial_impedance", self.atrial_panel, row=3, col=0,
-                                   row_span=4, col_span=6)
-        self.grid_manager.add_panel("vent_impedance", self.vent_panel, row=3, col=6,
-                                   row_span=4, col_span=6)
-        self.grid_manager.add_panel("burden", self.burden_panel, row=7, col=0, row_span=5, col_span=6)
-        self.grid_manager.add_panel("settings", self.settings_panel_widget, row=7, col=6,
-                                   row_span=5, col_span=6)
+        # Impedance panels side-by-side
+        self.grid_manager.add_panel("atrial_impedance", self.atrial_panel, row=2, col=0,
+                                   row_span=3, col_span=6)
+        self.grid_manager.add_panel("vent_impedance", self.vent_panel, row=2, col=6,
+                                   row_span=3, col_span=6)
+        # Burden and settings side-by-side
+        self.grid_manager.add_panel("burden", self.burden_panel, row=5, col=0, row_span=3, col_span=6)
+        self.grid_manager.add_panel("settings", self.settings_panel_widget, row=5, col=6,
+                                   row_span=3, col_span=6)
+        # Device settings full width at bottom
+        self.grid_manager.add_panel("device_settings", self.device_settings_panel, row=8, col=0,
+                                   row_span=4, col_span=12)
 
     def _on_drag_started(self, panel_id: str, start_position: QPoint):
         """Handle drag start event."""
@@ -455,6 +457,81 @@ class TimelineView(QWidget):
         """Handle layout change event."""
         # Schedule layout save
         self._schedule_layout_save()
+        # Update cell sizes for resize handles
+        self._update_panel_cell_sizes()
+
+    def _on_panel_resize_requested(self, panel_id: str, delta_rows: int, delta_cols: int):
+        """
+        Handle panel resize request from drag handles or context menu.
+
+        Args:
+            panel_id: ID of the panel to resize
+            delta_rows: Number of rows to add (positive) or remove (negative)
+            delta_cols: Number of columns to add (positive) or remove (negative)
+        """
+        if not self.grid_manager:
+            return
+
+        panel_info = self.grid_manager.get_panel_info(panel_id)
+        if not panel_info:
+            return
+
+        # Calculate new dimensions
+        new_row_span = max(1, panel_info.row_span + delta_rows)
+        new_col_span = max(1, panel_info.col_span + delta_cols)
+
+        # Ensure we don't exceed grid bounds
+        max_row_span = self.grid_manager.rows - panel_info.row
+        max_col_span = self.grid_manager.cols - panel_info.col
+        new_row_span = min(new_row_span, max_row_span)
+        new_col_span = min(new_col_span, max_col_span)
+
+        # Apply resize
+        self.grid_manager.resize_panel(panel_id, new_row_span, new_col_span)
+
+        # Schedule layout save
+        self._schedule_layout_save()
+
+    def _update_panel_cell_sizes(self):
+        """Update cell sizes for all panels based on current grid container size."""
+        if not self.grid_manager or not hasattr(self, 'grid_container'):
+            return
+
+        # Calculate cell dimensions
+        container_size = self.grid_container.size()
+        cell_width = max(1, container_size.width() // self.grid_manager.cols)
+        cell_height = max(1, container_size.height() // self.grid_manager.rows)
+
+        # Update all draggable panels
+        for panel_id, panel in self.panels.items():
+            if hasattr(panel, 'set_cell_size'):
+                panel.set_cell_size(cell_width, cell_height)
+
+    def set_edit_mode(self, enabled: bool):
+        """
+        Enable or disable layout editing mode.
+
+        When disabled, panels cannot be dragged or resized.
+
+        Args:
+            enabled: True to enable editing, False to disable
+        """
+        self.layout_edit_mode = enabled
+
+        # Update all draggable panels
+        for panel_id, panel in self.panels.items():
+            if hasattr(panel, 'set_edit_mode'):
+                panel.set_edit_mode(enabled)
+
+    def is_edit_mode(self) -> bool:
+        """Check if layout editing is enabled."""
+        return getattr(self, 'layout_edit_mode', True)
+
+    def resizeEvent(self, event):
+        """Handle resize to update cell sizes."""
+        super().resizeEvent(event)
+        # Update cell sizes when the widget is resized
+        QTimer.singleShot(100, self._update_panel_cell_sizes)
 
     def _schedule_layout_save(self):
         """Schedule a debounced layout save."""

@@ -7,7 +7,7 @@ or edges of a panel to allow the user to resize by dragging.
 
 from enum import Enum
 from PyQt6.QtWidgets import QWidget
-from PyQt6.QtCore import Qt, pyqtSignal, QPoint, QSize, QRect
+from PyQt6.QtCore import Qt, pyqtSignal, QPoint, QSize, QRect, QObject
 from PyQt6.QtGui import QMouseEvent, QPainter, QColor, QCursor
 
 
@@ -179,14 +179,21 @@ class ResizeHandle(QWidget):
         self.raise_()
 
 
-class ResizeHandleManager:
+class ResizeHandleManager(QObject):
     """
     Manages multiple resize handles for a widget.
 
     Creates and positions handles at corners and/or edges of a widget.
+    Emits signals for grid-based resizing.
+
+    Signals:
+        resize_requested: Emitted when resize is requested (delta_rows, delta_cols, handle_position)
     """
 
-    def __init__(self, widget: QWidget, corners: bool = True, edges: bool = False):
+    resize_requested = pyqtSignal(int, int, str)  # delta_rows, delta_cols, handle_position
+
+    def __init__(self, widget: QWidget, corners: bool = True, edges: bool = True,
+                 cell_height: int = 50, cell_width: int = 50):
         """
         Initialize resize handle manager.
 
@@ -194,22 +201,25 @@ class ResizeHandleManager:
             widget: Widget to add resize handles to
             corners: Add corner handles
             edges: Add edge handles
+            cell_height: Height of one grid cell (for calculating row changes)
+            cell_width: Width of one grid cell (for calculating column changes)
         """
+        super().__init__()
         self.widget = widget
         self.handles = []
+        self.cell_height = cell_height
+        self.cell_width = cell_width
+        self.accumulated_delta_x = 0
+        self.accumulated_delta_y = 0
+        self.current_handle_position = None
 
         # Create corner handles
         if corners:
-            self.handles.append(ResizeHandle(HandlePosition.TOP_LEFT, widget))
-            self.handles.append(ResizeHandle(HandlePosition.TOP_RIGHT, widget))
-            self.handles.append(ResizeHandle(HandlePosition.BOTTOM_LEFT, widget))
             self.handles.append(ResizeHandle(HandlePosition.BOTTOM_RIGHT, widget))
 
-        # Create edge handles
+        # Create edge handles (only bottom and right for grid layouts)
         if edges:
-            self.handles.append(ResizeHandle(HandlePosition.TOP, widget))
             self.handles.append(ResizeHandle(HandlePosition.BOTTOM, widget))
-            self.handles.append(ResizeHandle(HandlePosition.LEFT, widget))
             self.handles.append(ResizeHandle(HandlePosition.RIGHT, widget))
 
         # Connect signals from all handles
@@ -218,31 +228,48 @@ class ResizeHandleManager:
             handle.resize_moved.connect(self._on_resize_moved)
             handle.resize_ended.connect(self._on_resize_ended)
 
-        # Initially hide handles
-        self.set_visible(False)
+        # Initially show handles
+        self.set_visible(True)
+
+    def set_cell_size(self, cell_width: int, cell_height: int):
+        """Update the grid cell size for resize calculations."""
+        self.cell_width = max(1, cell_width)
+        self.cell_height = max(1, cell_height)
 
     def _on_resize_started(self, position: QPoint):
         """Handle resize start from any handle."""
-        # Store initial size
         self.initial_size = self.widget.size()
         self.initial_pos = self.widget.pos()
+        self.accumulated_delta_x = 0
+        self.accumulated_delta_y = 0
+
+        # Determine which handle started the resize
+        sender = self.sender()
+        if isinstance(sender, ResizeHandle):
+            self.current_handle_position = sender.position.value
 
     def _on_resize_moved(self, delta_x: int, delta_y: int):
-        """Handle resize movement from any handle."""
-        # Calculate new size
-        new_width = max(100, self.initial_size.width() + delta_x)  # Min width 100
-        new_height = max(100, self.initial_size.height() + delta_y)  # Min height 100
+        """Handle resize movement - accumulate and convert to grid units."""
+        self.accumulated_delta_x += delta_x
+        self.accumulated_delta_y += delta_y
 
-        # Resize widget
-        self.widget.resize(new_width, new_height)
-
-        # Update handle positions
-        self.update_positions()
+        # No live preview - just accumulate deltas
 
     def _on_resize_ended(self, final_size: QSize):
-        """Handle resize end from any handle."""
-        # Final update
-        self.update_positions()
+        """Handle resize end - emit signal with grid-based delta."""
+        # Calculate row/column changes based on accumulated pixel delta
+        delta_rows = round(self.accumulated_delta_y / self.cell_height) if self.cell_height > 0 else 0
+        delta_cols = round(self.accumulated_delta_x / self.cell_width) if self.cell_width > 0 else 0
+
+        # Only emit if there's an actual change
+        if delta_rows != 0 or delta_cols != 0:
+            handle_pos = self.current_handle_position or "bottom_right"
+            self.resize_requested.emit(delta_rows, delta_cols, handle_pos)
+
+        # Reset accumulators
+        self.accumulated_delta_x = 0
+        self.accumulated_delta_y = 0
+        self.current_handle_position = None
 
     def update_positions(self):
         """Update positions of all handles."""

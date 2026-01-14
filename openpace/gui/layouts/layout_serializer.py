@@ -316,17 +316,25 @@ class LayoutSerializer:
                 'burden': {
                     'row': 6,
                     'col': 0,
-                    'row_span': 3,
+                    'row_span': 2,
                     'col_span': 12,
                     'visible': True,
                     'collapsed': False
                 },
                 'settings': {
-                    'row': 9,
+                    'row': 8,
                     'col': 0,
-                    'row_span': 3,
+                    'row_span': 2,
                     'col_span': 12,
-                    'visible': False,
+                    'visible': True,
+                    'collapsed': False
+                },
+                'device_settings': {
+                    'row': 10,
+                    'col': 0,
+                    'row_span': 2,
+                    'col_span': 12,
+                    'visible': True,
                     'collapsed': False
                 }
             }
@@ -350,41 +358,49 @@ class LayoutSerializer:
                 'battery': {
                     'row': 0,
                     'col': 0,
-                    'row_span': 3,
+                    'row_span': 2,
                     'col_span': 12,
                     'visible': True,
                     'collapsed': False
                 },
                 'atrial_impedance': {
-                    'row': 3,
+                    'row': 2,
                     'col': 0,
-                    'row_span': 4,
+                    'row_span': 3,
                     'col_span': 6,
                     'visible': True,
                     'collapsed': False
                 },
                 'vent_impedance': {
-                    'row': 3,
+                    'row': 2,
                     'col': 6,
-                    'row_span': 4,
+                    'row_span': 3,
                     'col_span': 6,
                     'visible': True,
                     'collapsed': False
                 },
                 'burden': {
-                    'row': 7,
+                    'row': 5,
                     'col': 0,
-                    'row_span': 5,
+                    'row_span': 3,
                     'col_span': 6,
                     'visible': True,
                     'collapsed': False
                 },
                 'settings': {
-                    'row': 7,
+                    'row': 5,
                     'col': 6,
-                    'row_span': 5,
+                    'row_span': 3,
                     'col_span': 6,
-                    'visible': False,
+                    'visible': True,
+                    'collapsed': False
+                },
+                'device_settings': {
+                    'row': 8,
+                    'col': 0,
+                    'row_span': 4,
+                    'col_span': 12,
+                    'visible': True,
                     'collapsed': False
                 }
             }

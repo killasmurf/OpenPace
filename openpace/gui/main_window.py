@@ -122,6 +122,12 @@ class MainWindow(QMainWindow):
         self.settings_panel_action.triggered.connect(lambda checked: self.timeline_view.toggle_panel('settings', checked))
         panels_menu.addAction(self.settings_panel_action)
 
+        self.device_settings_panel_action = QAction("Device Settings (Fixed/Operator)", self)
+        self.device_settings_panel_action.setCheckable(True)
+        self.device_settings_panel_action.setChecked(True)
+        self.device_settings_panel_action.triggered.connect(lambda checked: self.timeline_view.toggle_panel('device_settings', checked))
+        panels_menu.addAction(self.device_settings_panel_action)
+
         view_menu.addSeparator()
 
         # Layout submenu
@@ -150,6 +156,22 @@ class MainWindow(QMainWindow):
         self.free_grid_layout_action.setShortcut("Ctrl+3")
         self.free_grid_layout_action.triggered.connect(self._set_free_grid_layout)
         modes_menu.addAction(self.free_grid_layout_action)
+
+        layout_menu.addSeparator()
+
+        # Edit mode toggle
+        self.edit_layout_action = QAction("&Edit Layout Mode", self)
+        self.edit_layout_action.setCheckable(True)
+        self.edit_layout_action.setChecked(True)
+        self.edit_layout_action.setShortcut("Ctrl+E")
+        self.edit_layout_action.setToolTip("Enable/disable panel dragging and resizing")
+        self.edit_layout_action.triggered.connect(self._toggle_edit_mode)
+        layout_menu.addAction(self.edit_layout_action)
+
+        # Lock all panels action
+        self.lock_all_panels_action = QAction("&Lock All Panels", self)
+        self.lock_all_panels_action.triggered.connect(self._lock_all_panels)
+        layout_menu.addAction(self.lock_all_panels_action)
 
         layout_menu.addSeparator()
 
@@ -231,6 +253,7 @@ class MainWindow(QMainWindow):
         self.timeline_view.vent_impedance_visibility_changed.connect(self.vent_panel_action.setChecked)
         self.timeline_view.burden_visibility_changed.connect(self.burden_panel_action.setChecked)
         self.timeline_view.settings_visibility_changed.connect(self.settings_panel_action.setChecked)
+        self.timeline_view.device_settings_visibility_changed.connect(self.device_settings_panel_action.setChecked)
 
     def _create_status_bar(self):
         """Create the status bar."""
@@ -400,6 +423,18 @@ class MainWindow(QMainWindow):
         self.horizontal_layout_action.setChecked(False)
         self.free_grid_layout_action.setChecked(True)
         self.statusBar().showMessage("Layout: Free Grid", 3000)
+
+    def _toggle_edit_mode(self, enabled: bool):
+        """Toggle layout editing mode."""
+        self.timeline_view.set_edit_mode(enabled)
+        mode = "enabled" if enabled else "disabled"
+        self.statusBar().showMessage(f"Layout editing {mode}", 3000)
+
+    def _lock_all_panels(self):
+        """Lock all panels to prevent movement."""
+        self.timeline_view.set_edit_mode(False)
+        self.edit_layout_action.setChecked(False)
+        self.statusBar().showMessage("All panels locked", 3000)
 
     def _save_layout(self):
         """Save current layout as a preset."""
