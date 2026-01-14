@@ -97,6 +97,7 @@ class GenericTranslator(VendorTranslator):
         # EGM/Waveforms
         "11524-6": "egm_strip",
         "11525-3": "ecg_waveform",
+        "18750-0": "cardiac_ep_report",  # Cardiac Electrophysiology Report (PDF)
 
         # Device parameters
         "8899-7": "lower_rate_limit",

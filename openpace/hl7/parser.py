@@ -556,6 +556,9 @@ class HL7Parser:
 
         # Parse value based on type
         if value_type == 'NM':  # Numeric
+            if not value or not value.strip():
+                # Empty numeric value - skip this observation
+                return None
             try:
                 observation.value_numeric = float(value)
             except ValueError:
@@ -563,15 +566,19 @@ class HL7Parser:
                 return None
 
         elif value_type == 'ST':  # String/Text
-            # Try to convert to numeric if it looks like a number
-            # Many devices send numeric data as ST type
-            try:
-                # Remove common non-numeric characters and try conversion
-                cleaned_value = value.strip().replace(',', '.')
-                observation.value_numeric = float(cleaned_value)
-            except (ValueError, AttributeError):
-                # Not a number, store as text
-                observation.value_text = value
+            if not value or not value.strip():
+                # Empty string value - store as empty text
+                observation.value_text = ""
+            else:
+                # Try to convert to numeric if it looks like a number
+                # Many devices send numeric data as ST type
+                try:
+                    # Remove common non-numeric characters and try conversion
+                    cleaned_value = value.strip().replace(',', '.')
+                    observation.value_numeric = float(cleaned_value)
+                except (ValueError, AttributeError):
+                    # Not a number, store as text
+                    observation.value_text = value
 
         elif value_type == 'ED':  # Encapsulated Data (base64 blob)
             blob_data = self._extract_base64_from_ed(value)
