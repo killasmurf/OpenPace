@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (
     QComboBox, QPushButton, QScrollArea, QGroupBox,
     QSplitter, QToolButton, QSizePolicy
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QSize, QPoint, QTimer
+from PyQt6.QtCore import Qt, pyqtSignal, QSize, QPoint, QTimer, QRect
 from PyQt6.QtGui import QIcon, QPainter, QColor, QPen
 from sqlalchemy.orm import Session
 
