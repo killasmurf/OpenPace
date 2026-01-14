@@ -277,10 +277,10 @@ class LayoutSerializer:
     @staticmethod
     def create_default_vertical_layout() -> Dict[str, Any]:
         """
-        Create default vertical layout data.
+        Create default 3x2 grid layout data.
 
         Returns:
-            Dictionary containing default vertical layout
+            Dictionary containing default grid layout
         """
         return {
             'version': '1.0',
@@ -292,48 +292,48 @@ class LayoutSerializer:
                 'battery': {
                     'row': 0,
                     'col': 0,
-                    'row_span': 2,
-                    'col_span': 12,
+                    'row_span': 6,
+                    'col_span': 4,
                     'visible': True,
                     'collapsed': False
                 },
                 'atrial_impedance': {
-                    'row': 2,
-                    'col': 0,
-                    'row_span': 2,
-                    'col_span': 12,
+                    'row': 0,
+                    'col': 4,
+                    'row_span': 6,
+                    'col_span': 4,
                     'visible': True,
                     'collapsed': False
                 },
                 'vent_impedance': {
-                    'row': 4,
-                    'col': 0,
-                    'row_span': 2,
-                    'col_span': 12,
+                    'row': 0,
+                    'col': 8,
+                    'row_span': 6,
+                    'col_span': 4,
                     'visible': True,
                     'collapsed': False
                 },
                 'burden': {
                     'row': 6,
                     'col': 0,
-                    'row_span': 2,
-                    'col_span': 12,
+                    'row_span': 6,
+                    'col_span': 4,
                     'visible': True,
                     'collapsed': False
                 },
                 'settings': {
-                    'row': 8,
-                    'col': 0,
-                    'row_span': 2,
-                    'col_span': 12,
+                    'row': 6,
+                    'col': 4,
+                    'row_span': 6,
+                    'col_span': 4,
                     'visible': True,
                     'collapsed': False
                 },
                 'device_settings': {
-                    'row': 10,
-                    'col': 0,
-                    'row_span': 2,
-                    'col_span': 12,
+                    'row': 6,
+                    'col': 8,
+                    'row_span': 6,
+                    'col_span': 4,
                     'visible': True,
                     'collapsed': False
                 }

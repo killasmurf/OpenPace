@@ -274,22 +274,26 @@ class TimelineView(QWidget):
         parent_layout.addWidget(self.splitter)
 
     def _set_default_vertical_layout(self):
-        """Set default vertical (stacked) layout."""
+        """Set default 3x2 grid layout for panels."""
         if not self.grid_manager:
             return
 
-        # All panels full width, stacked vertically
-        # Each panel gets 2 rows, total 12 rows available
-        self.grid_manager.add_panel("battery", self.battery_panel, row=0, col=0, row_span=2, col_span=12)
-        self.grid_manager.add_panel("atrial_impedance", self.atrial_panel, row=2, col=0,
-                                   row_span=2, col_span=12)
-        self.grid_manager.add_panel("vent_impedance", self.vent_panel, row=4, col=0,
-                                   row_span=2, col_span=12)
-        self.grid_manager.add_panel("burden", self.burden_panel, row=6, col=0, row_span=2, col_span=12)
-        self.grid_manager.add_panel("settings", self.settings_panel_widget, row=8, col=0,
-                                   row_span=2, col_span=12)
-        self.grid_manager.add_panel("device_settings", self.device_settings_panel, row=10, col=0,
-                                   row_span=2, col_span=12)
+        # 3x2 grid layout (3 columns, 2 rows of panels)
+        # Each panel is 4 columns wide, 6 rows tall in a 12x12 grid
+        # Row 1: Battery, Atrial Impedance, Ventricular Impedance
+        self.grid_manager.add_panel("battery", self.battery_panel,
+                                   row=0, col=0, row_span=6, col_span=4)
+        self.grid_manager.add_panel("atrial_impedance", self.atrial_panel,
+                                   row=0, col=4, row_span=6, col_span=4)
+        self.grid_manager.add_panel("vent_impedance", self.vent_panel,
+                                   row=0, col=8, row_span=6, col_span=4)
+        # Row 2: Burden, Settings, Device Settings
+        self.grid_manager.add_panel("burden", self.burden_panel,
+                                   row=6, col=0, row_span=6, col_span=4)
+        self.grid_manager.add_panel("settings", self.settings_panel_widget,
+                                   row=6, col=4, row_span=6, col_span=4)
+        self.grid_manager.add_panel("device_settings", self.device_settings_panel,
+                                   row=6, col=8, row_span=6, col_span=4)
 
     def _set_default_horizontal_layout(self):
         """Set default horizontal (side-by-side) layout."""
