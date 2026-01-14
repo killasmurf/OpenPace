@@ -213,11 +213,9 @@ def get_translator(vendor: str) -> VendorTranslator:
     if "MEDTRONIC" in vendor_upper:
         from openpace.hl7.translators.medtronic import MedtronicTranslator
         return MedtronicTranslator()
-    elif "BOSTON" in vendor_upper or "BSC" in vendor_upper:
-        # from openpace.hl7.translators.boston_scientific import BostonScientificTranslator
-        # return BostonScientificTranslator()
-        # Placeholder - use generic for now
-        return GenericTranslator()
+    elif "BOSTON" in vendor_upper or "BSC" in vendor_upper or "LATITUDE" in vendor_upper:
+        from openpace.hl7.translators.boston_scientific import BostonScientificTranslator
+        return BostonScientificTranslator()
     elif "ABBOTT" in vendor_upper or "SJM" in vendor_upper:
         # from openpace.hl7.translators.abbott import AbbottTranslator
         # return AbbottTranslator()

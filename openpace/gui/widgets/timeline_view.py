@@ -25,6 +25,7 @@ from .battery_widget import BatteryTrendWidget
 from .impedance_widget import ImpedanceTrendWidget
 from .burden_widget import BurdenWidget
 from .settings_panel import SettingsPanel
+from .device_settings_widget import DeviceSettingsWidget
 from .draggable_panel import DraggablePanel
 from .resize_handle import ResizeHandleManager
 
@@ -212,6 +213,7 @@ class TimelineView(QWidget):
     vent_impedance_visibility_changed = pyqtSignal(bool)
     burden_visibility_changed = pyqtSignal(bool)
     settings_visibility_changed = pyqtSignal(bool)
+    device_settings_visibility_changed = pyqtSignal(bool)
 
     # Signal for layout changes
     layout_mode_changed = pyqtSignal(LayoutMode)
@@ -262,6 +264,7 @@ class TimelineView(QWidget):
         self.vent_impedance_widget = ImpedanceTrendWidget()
         self.burden_widget = BurdenWidget()
         self.settings_panel = SettingsPanel()
+        self.device_settings_widget = DeviceSettingsWidget()
 
         if self.use_grid_layout:
             # Use new grid layout system
@@ -317,6 +320,14 @@ class TimelineView(QWidget):
         self.settings_panel_widget.drag_moved.connect(self._on_drag_moved)
         self.settings_panel_widget.drag_ended.connect(self._on_drag_ended)
         self.panels['settings'] = self.settings_panel_widget
+
+        self.device_settings_panel = DraggablePanel("device_settings", "Device Settings (Fixed/Operator)",
+                                                     self.device_settings_widget)
+        self.device_settings_panel.visibility_changed.connect(self.device_settings_visibility_changed.emit)
+        self.device_settings_panel.drag_started.connect(self._on_drag_started)
+        self.device_settings_panel.drag_moved.connect(self._on_drag_moved)
+        self.device_settings_panel.drag_ended.connect(self._on_drag_ended)
+        self.panels['device_settings'] = self.device_settings_panel
 
         # Set default vertical layout
         self._set_default_vertical_layout()
@@ -694,8 +705,10 @@ class TimelineView(QWidget):
 
             if most_recent_transmission:
                 self.settings_panel.load_transmission(most_recent_transmission)
+                self.device_settings_widget.load_transmission(most_recent_transmission)
             else:
                 self.settings_panel.clear()
+                self.device_settings_widget.clear()
 
         except Exception as e:
             print(f"Error loading patient data: {e}")
@@ -709,3 +722,4 @@ class TimelineView(QWidget):
         self.vent_impedance_widget.clear()
         self.burden_widget.clear()
         self.settings_panel.clear()
+        self.device_settings_widget.clear()

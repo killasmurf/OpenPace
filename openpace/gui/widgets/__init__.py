@@ -10,6 +10,7 @@ from .summary_panel import SummaryPanel
 from .egm_viewer import EGMViewerWidget
 from .episode_selector import EpisodeSelectorWidget
 from .settings_panel import SettingsPanel
+from .device_settings_widget import DeviceSettingsWidget
 
 __all__ = [
     'BatteryTrendWidget',
@@ -20,4 +21,5 @@ __all__ = [
     'EGMViewerWidget',
     'EpisodeSelectorWidget',
     'SettingsPanel',
+    'DeviceSettingsWidget',
 ]
