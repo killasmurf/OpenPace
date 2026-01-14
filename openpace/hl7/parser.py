@@ -563,7 +563,15 @@ class HL7Parser:
                 return None
 
         elif value_type == 'ST':  # String/Text
-            observation.value_text = value
+            # Try to convert to numeric if it looks like a number
+            # Many devices send numeric data as ST type
+            try:
+                # Remove common non-numeric characters and try conversion
+                cleaned_value = value.strip().replace(',', '.')
+                observation.value_numeric = float(cleaned_value)
+            except (ValueError, AttributeError):
+                # Not a number, store as text
+                observation.value_text = value
 
         elif value_type == 'ED':  # Encapsulated Data (base64 blob)
             blob_data = self._extract_base64_from_ed(value)
