@@ -526,6 +526,15 @@ class HL7Parser:
         # OBX-11: Observation result status (F=final, P=preliminary)
         obs_status = str(obx_segment[11]) if len(obx_segment) > 11 else 'F'
 
+        # OBX-14: Date/Time of the Observation (use this if available, otherwise use transmission time)
+        obs_datetime = observation_time
+        if len(obx_segment) > 14:
+            obx14_value = str(obx_segment[14]).strip()
+            if obx14_value and obx14_value not in ('', 'None'):
+                parsed_dt = self._parse_hl7_datetime(obx14_value)
+                if parsed_dt:
+                    obs_datetime = parsed_dt
+
         # OBX-1: Sequence number
         sequence = int(str(obx_segment[1])) if len(obx_segment) > 1 else None
 
@@ -543,7 +552,7 @@ class HL7Parser:
         # Create observation object
         observation = Observation(
             transmission_id=transmission_id,
-            observation_time=observation_time,
+            observation_time=obs_datetime,  # Use OBX-14 date if available
             sequence_number=sequence,
             variable_name=universal_var,
             loinc_code=loinc_code,
