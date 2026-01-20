@@ -760,6 +760,9 @@ class TimelineView(QWidget):
 
             self.heart_rate_widget.set_rate_limits(lower_rate, upper_rate)
 
+            # Load episodes for heart rate widget
+            self._load_episodes(patient_id)
+
             # Load device settings from most recent transmission
             most_recent_transmission = self.session.query(Transmission).filter_by(
                 patient_id=patient_id
@@ -865,6 +868,82 @@ class TimelineView(QWidget):
         if most_recent_transmission:
             self.settings_panel.load_transmission(most_recent_transmission)
             self.device_settings_widget.load_transmission(most_recent_transmission)
+
+        # Load episodes for heart rate widget
+        self._load_episodes(patient_id)
+
+    def _load_episodes(self, patient_id: str):
+        """
+        Load episodes from observations and display in heart rate widget.
+
+        Args:
+            patient_id: Patient identifier
+        """
+        from openpace.database.models import Observation
+
+        # Query episode-related observations
+        episode_obs = self.session.query(Observation).join(
+            Observation.transmission
+        ).filter(
+            Observation.transmission.has(patient_id=patient_id),
+            Observation.variable_name.like('episode_%')
+        ).all()
+
+        if not episode_obs:
+            print(f"[DEBUG] No episode observations found")
+            return
+
+        # Group observations by sub_id (which identifies each episode)
+        episodes_by_sub_id = {}
+        for obs in episode_obs:
+            sub_id = obs.sub_id or '1'
+            if sub_id not in episodes_by_sub_id:
+                episodes_by_sub_id[sub_id] = {}
+            episodes_by_sub_id[sub_id][obs.variable_name] = obs
+
+        # Build episode list for the widget
+        episodes = []
+        for sub_id, obs_dict in episodes_by_sub_id.items():
+            episode = {}
+
+            # Get episode datetime
+            if 'episode_datetime' in obs_dict:
+                episode['start_time'] = obs_dict['episode_datetime'].observation_time
+            elif 'episode_id' in obs_dict:
+                episode['start_time'] = obs_dict['episode_id'].observation_time
+            else:
+                continue  # Skip if no time available
+
+            # Get episode type
+            if 'episode_type' in obs_dict:
+                episode['type'] = obs_dict['episode_type'].value_text or 'Unknown'
+                # Extract short type from MDC codes like "MDC_IDC_ENUM_EPISODE_TYPE_Epis_PeriodicEGM"
+                if 'Epis_' in episode['type']:
+                    episode['type'] = episode['type'].split('Epis_')[-1]
+                elif '_' in episode['type']:
+                    episode['type'] = episode['type'].split('_')[-1]
+            else:
+                episode['type'] = 'Unknown'
+
+            # Get duration if available
+            if 'episode_duration' in obs_dict and obs_dict['episode_duration'].value_numeric:
+                duration = obs_dict['episode_duration'].value_numeric
+                episode['duration_seconds'] = duration
+                # Calculate end time
+                from datetime import timedelta
+                episode['end_time'] = episode['start_time'] + timedelta(seconds=duration)
+
+            # Get episode ID for reference
+            if 'episode_id' in obs_dict:
+                episode['episode_id'] = obs_dict['episode_id'].value_text
+
+            episodes.append(episode)
+
+        if episodes:
+            print(f"[DEBUG] Loaded {len(episodes)} episodes")
+            self.heart_rate_widget.set_episodes(episodes)
+        else:
+            print(f"[DEBUG] No valid episodes found")
 
     def clear_all(self):
         """Clear all chart data."""
