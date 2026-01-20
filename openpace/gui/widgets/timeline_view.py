@@ -199,7 +199,7 @@ class TimelineView(QWidget):
             panel.resize_grid_requested.connect(self._on_panel_resize_requested)
 
         # Create draggable panels
-        self.battery_panel = DraggablePanel("battery", "Battery Voltage", self.battery_widget)
+        self.battery_panel = DraggablePanel("battery", "Battery Status", self.battery_widget)
         setup_panel(self.battery_panel, self.battery_visibility_changed)
         self.panels['battery'] = self.battery_panel
 
@@ -250,7 +250,7 @@ class TimelineView(QWidget):
         self.splitter.setChildrenCollapsible(False)
 
         # Create collapsible panels
-        self.battery_panel = CollapsiblePanel("Battery Voltage", self.battery_widget)
+        self.battery_panel = CollapsiblePanel("Battery Status", self.battery_widget)
         self.battery_panel.visibility_changed.connect(self.battery_visibility_changed.emit)
         self.panels['battery'] = self.battery_panel
         self.splitter.addWidget(self.battery_panel)
@@ -680,7 +680,7 @@ class TimelineView(QWidget):
 
             # Load battery trend - try multiple variable names
             battery_var = None
-            for var in ['battery_voltage', 'battery_longevity', 'battery_percentage']:
+            for var in ['battery_longevity', 'battery_percentage', 'battery_voltage']:
                 if var in trends_by_var:
                     battery_var = var
                     break
@@ -688,7 +688,14 @@ class TimelineView(QWidget):
             if battery_var:
                 trend = trends_by_var[battery_var]
                 time_points = [datetime.fromisoformat(tp) for tp in trend.time_points]
-                self.battery_widget.set_data(time_points, trend.values)
+                # Determine measurement type from variable name
+                if battery_var == 'battery_longevity':
+                    measurement_type = 'longevity'
+                elif battery_var == 'battery_percentage':
+                    measurement_type = 'percentage'
+                else:
+                    measurement_type = 'voltage'
+                self.battery_widget.set_data(time_points, trend.values, measurement_type)
             else:
                 print(f"[DEBUG] No battery data found")
 
@@ -798,13 +805,20 @@ class TimelineView(QWidget):
 
         print(f"[DEBUG] Raw observation variables: {list(obs_by_var.keys())}")
 
-        # Load battery data - try multiple variable names
-        for var in ['battery_voltage', 'battery_longevity', 'battery_percentage']:
+        # Load battery data - try multiple variable names (prefer longevity/percentage over voltage)
+        for var in ['battery_longevity', 'battery_percentage', 'battery_voltage']:
             if var in obs_by_var:
                 obs_list = obs_by_var[var]
                 time_points = [obs.observation_time for obs in obs_list]
                 values = [obs.value_numeric for obs in obs_list]
-                self.battery_widget.set_data(time_points, values)
+                # Determine measurement type from variable name
+                if var == 'battery_longevity':
+                    measurement_type = 'longevity'
+                elif var == 'battery_percentage':
+                    measurement_type = 'percentage'
+                else:
+                    measurement_type = 'voltage'
+                self.battery_widget.set_data(time_points, values, measurement_type)
                 print(f"[DEBUG] Loaded battery data ({var}): {len(values)} points")
                 break
 
