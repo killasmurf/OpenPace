@@ -321,86 +321,101 @@ class MainWindow(QMainWindow):
     # Slot methods
     def _import_data(self):
         """Handle data import action with comprehensive security validation."""
-        # Open file dialog
-        file_path, _ = QFileDialog.getOpenFileName(
+        # Open file dialog - allow multiple file selection
+        file_paths, _ = QFileDialog.getOpenFileNames(
             self,
             "Import HL7 Data",
             "",
-            "HL7 Files (*.hl7);;Text Files (*.txt);;All Files (*)"
+            "HL7 Files (*.hl7 *.dat);;Text Files (*.txt);;All Files (*)"
         )
 
-        if not file_path:
+        if not file_paths:
             return
 
-        try:
-            # Validate file before reading (security check)
-            self._validate_import_file(file_path)
+        # Track results for summary
+        successful_imports = []
+        failed_imports = []
 
-            # Read HL7 file with size limit enforced
-            with open(file_path, 'r', encoding='utf-8') as f:
-                hl7_message = f.read(FileLimits.MAX_IMPORT_FILE_SIZE + 1)
+        # Create parser once for all files
+        parser = HL7Parser(self.db_session, anonymize=False)
 
-            # Double-check size after reading
-            if len(hl7_message.encode('utf-8')) > FileLimits.MAX_IMPORT_FILE_SIZE:
-                raise FileValidationError("File exceeds maximum allowed size")
+        for file_path in file_paths:
+            try:
+                # Validate file before reading (security check)
+                self._validate_import_file(file_path)
 
-            # Parse HL7 message (parser has additional validation)
-            parser = HL7Parser(self.db_session, anonymize=False)
-            transmission = parser.parse_message(hl7_message, filename=file_path)
+                # Read HL7 file with size limit enforced
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    hl7_message = f.read(FileLimits.MAX_IMPORT_FILE_SIZE + 1)
 
-            # Show success message
-            QMessageBox.information(
-                self,
-                "Import Successful",
-                f"Successfully imported transmission {transmission.transmission_id}\n"
-                f"Patient: {transmission.patient.patient_name}\n"
-                f"Observations: {len(transmission.observations)}"
-            )
+                # Double-check size after reading
+                if len(hl7_message.encode('utf-8')) > FileLimits.MAX_IMPORT_FILE_SIZE:
+                    raise FileValidationError("File exceeds maximum allowed size")
 
-            # Refresh timeline view
+                # Parse HL7 message (parser has additional validation)
+                transmission = parser.parse_message(hl7_message, filename=file_path)
+
+                successful_imports.append({
+                    'file': os.path.basename(file_path),
+                    'transmission_id': transmission.transmission_id,
+                    'patient': transmission.patient.patient_name,
+                    'observations': len(transmission.observations)
+                })
+                logger.info(f"Successfully imported HL7 file: {file_path}")
+
+            except FileValidationError as e:
+                logger.error(f"File validation failed for {file_path}: {e}")
+                failed_imports.append({'file': os.path.basename(file_path), 'error': f"File validation: {str(e)}"})
+
+            except HL7ValidationError as e:
+                logger.error(f"HL7 validation failed for {file_path}: {e}")
+                failed_imports.append({'file': os.path.basename(file_path), 'error': f"HL7 validation: {str(e)}"})
+
+            except ValidationError as e:
+                logger.error(f"Data validation failed for {file_path}: {e}")
+                failed_imports.append({'file': os.path.basename(file_path), 'error': f"Data validation: {str(e)}"})
+
+            except Exception as e:
+                logger.exception(f"Import failed for {file_path}: {e}")
+                failed_imports.append({'file': os.path.basename(file_path), 'error': str(e)})
+
+        # Show summary message
+        if successful_imports or failed_imports:
+            self._show_import_summary(successful_imports, failed_imports)
+
+        # Refresh timeline view
+        if successful_imports:
             self.timeline_view.patient_selector.load_patients()
-
-            self.statusBar().showMessage(f"Imported: {file_path}", 5000)
-            logger.info(f"Successfully imported HL7 file: {file_path}")
-
-        except FileValidationError as e:
-            logger.error(f"File validation failed: {e}")
-            QMessageBox.critical(
-                self,
-                "File Validation Error",
-                f"File validation failed:\n{str(e)}\n\n"
-                "Please ensure the file is a valid HL7 file and does not exceed size limits."
+            self.statusBar().showMessage(
+                f"Imported {len(successful_imports)} file(s), {len(failed_imports)} failed", 5000
             )
-            self.statusBar().showMessage("Import failed: file validation error", 5000)
 
-        except HL7ValidationError as e:
-            logger.error(f"HL7 validation failed: {e}")
-            QMessageBox.critical(
-                self,
-                "HL7 Validation Error",
-                f"HL7 message validation failed:\n{str(e)}\n\n"
-                "Please ensure the file contains a valid HL7 ORU^R01 message."
-            )
-            self.statusBar().showMessage("Import failed: invalid HL7 format", 5000)
+    def _show_import_summary(self, successful: list, failed: list):
+        """Show a summary dialog of import results."""
+        message_parts = []
 
-        except ValidationError as e:
-            logger.error(f"Data validation failed: {e}")
-            QMessageBox.critical(
-                self,
-                "Data Validation Error",
-                f"Data validation failed:\n{str(e)}\n\n"
-                "The HL7 message contains invalid or malformed data."
-            )
-            self.statusBar().showMessage("Import failed: data validation error", 5000)
+        if successful:
+            message_parts.append(f"Successfully imported {len(successful)} file(s):\n")
+            for item in successful:
+                message_parts.append(
+                    f"  • {item['file']}: {item['observations']} observations"
+                )
 
-        except Exception as e:
-            logger.exception(f"Import failed with unexpected error: {e}")
-            QMessageBox.critical(
-                self,
-                "Import Error",
-                f"Failed to import HL7 file:\n{str(e)}"
-            )
-            self.statusBar().showMessage("Import failed", 5000)
+        if failed:
+            if successful:
+                message_parts.append("\n")
+            message_parts.append(f"Failed to import {len(failed)} file(s):\n")
+            for item in failed:
+                message_parts.append(f"  • {item['file']}: {item['error']}")
+
+        message = "\n".join(message_parts)
+
+        if failed and not successful:
+            QMessageBox.critical(self, "Import Failed", message)
+        elif failed:
+            QMessageBox.warning(self, "Import Complete (with errors)", message)
+        else:
+            QMessageBox.information(self, "Import Successful", message)
 
     def _toggle_anonymization(self, checked):
         """Toggle anonymization mode."""
