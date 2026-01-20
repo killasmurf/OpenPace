@@ -47,13 +47,15 @@ class ToggleSwitch(QWidget):
         self.toggle_indicator = QLabel()
         self.toggle_indicator.setFixedSize(40, 20)
         self.toggle_indicator.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._update_indicator_style()
         layout.addWidget(self.toggle_indicator)
 
         # Table label
         self.table_label = QLabel("Table")
         self.table_label.setStyleSheet("font-size: 11px; color: gray;")
         layout.addWidget(self.table_label)
+
+        # Update indicator style after all widgets are created
+        self._update_indicator_style()
 
     def _update_indicator_style(self):
         """Update toggle indicator appearance based on current state."""
