@@ -13,9 +13,10 @@ import pyqtgraph as pg
 import numpy as np
 
 from openpace.processing.trend_calculator import BatteryTrendAnalyzer
+from openpace.gui.widgets.table_chart_mixin import TableChartMixin
 
 
-class BatteryTrendWidget(QWidget):
+class BatteryTrendWidget(QWidget, TableChartMixin):
     """
     Widget displaying battery voltage trend over time.
 
@@ -43,20 +44,7 @@ class BatteryTrendWidget(QWidget):
 
     def _init_ui(self):
         """Initialize the user interface."""
-        layout = QVBoxLayout()
-        self.setLayout(layout)
-
-        # Title
-        self.title_label = QLabel("Battery Voltage Trend")
-        self.title_label.setStyleSheet("font-size: 14px; font-weight: bold;")
-        layout.addWidget(self.title_label)
-
-        # Info label (depletion rate, ERI prediction)
-        self.info_label = QLabel("No data")
-        self.info_label.setStyleSheet("font-size: 11px; color: gray;")
-        layout.addWidget(self.info_label)
-
-        # Plot widget
+        # Create plot widget first
         self.plot_widget = pg.PlotWidget()
         self.plot_widget.setBackground('w')
         self.plot_widget.showGrid(x=True, y=True, alpha=0.3)
@@ -68,10 +56,15 @@ class BatteryTrendWidget(QWidget):
         # Enable mouse interaction
         self.plot_widget.setMouseEnabled(x=True, y=False)
 
-        layout.addWidget(self.plot_widget)
-
         # Legend
         self.plot_widget.addLegend()
+
+        # Initialize the table/chart toggle (from mixin)
+        self.init_table_chart_toggle(
+            title="Battery Voltage Trend",
+            columns=["Date/Time", "Voltage (V)", "Status"],
+            chart_widget=self.plot_widget
+        )
 
         # Set default time range (2020 to current date)
         self._set_default_time_range()
@@ -284,3 +277,30 @@ class BatteryTrendWidget(QWidget):
         self.eri_prediction = None
         self.plot_widget.clear()
         self.info_label.setText("No data")
+
+    def get_table_row_data(self) -> List[List[Any]]:
+        """
+        Get data rows for the table view.
+
+        Returns:
+            List of rows: [Date/Time, Voltage (V), Status]
+        """
+        rows = []
+        for i, (dt, voltage) in enumerate(zip(self.time_points, self.voltages)):
+            # Format datetime
+            date_str = dt.strftime("%Y-%m-%d %H:%M")
+
+            # Format voltage
+            voltage_str = f"{voltage:.2f}"
+
+            # Determine status based on voltage
+            if voltage >= 2.5:
+                status = "Good"
+            elif voltage >= 2.3:
+                status = "Monitor"
+            else:
+                status = "Replace Soon"
+
+            rows.append([date_str, voltage_str, status])
+
+        return rows

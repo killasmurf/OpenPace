@@ -11,8 +11,10 @@ from PyQt6.QtCore import Qt
 import pyqtgraph as pg
 import numpy as np
 
+from openpace.gui.widgets.table_chart_mixin import TableChartMixin
 
-class BurdenWidget(QWidget):
+
+class BurdenWidget(QWidget, TableChartMixin):
     """
     Widget displaying arrhythmia burden as bar chart.
 
@@ -40,20 +42,7 @@ class BurdenWidget(QWidget):
 
     def _init_ui(self):
         """Initialize the user interface."""
-        layout = QVBoxLayout()
-        self.setLayout(layout)
-
-        # Title
-        self.title_label = QLabel("AFib Burden")
-        self.title_label.setStyleSheet("font-size: 14px; font-weight: bold;")
-        layout.addWidget(self.title_label)
-
-        # Info label (mean, trend)
-        self.info_label = QLabel("No data")
-        self.info_label.setStyleSheet("font-size: 11px; color: gray;")
-        layout.addWidget(self.info_label)
-
-        # Plot widget
+        # Create plot widget first
         self.plot_widget = pg.PlotWidget()
         self.plot_widget.setBackground('w')
         self.plot_widget.showGrid(x=False, y=True, alpha=0.3)
@@ -68,10 +57,15 @@ class BurdenWidget(QWidget):
         # Enable mouse interaction
         self.plot_widget.setMouseEnabled(x=True, y=False)
 
-        layout.addWidget(self.plot_widget)
-
         # Legend
         self.plot_widget.addLegend()
+
+        # Initialize the table/chart toggle (from mixin)
+        self.init_table_chart_toggle(
+            title="AFib Burden",
+            columns=["Date/Time", "Burden (%)", "Status"],
+            chart_widget=self.plot_widget
+        )
 
         # Set default time range (2020 to current date)
         self._set_default_time_range()
@@ -269,3 +263,30 @@ class BurdenWidget(QWidget):
         self.burden_values = []
         self.plot_widget.clear()
         self.info_label.setText("No data")
+
+    def get_table_row_data(self) -> List[List[Any]]:
+        """
+        Get data rows for the table view.
+
+        Returns:
+            List of rows: [Date/Time, Burden (%), Status]
+        """
+        rows = []
+        for dt, burden in zip(self.time_points, self.burden_values):
+            # Format datetime
+            date_str = dt.strftime("%Y-%m-%d %H:%M")
+
+            # Format burden
+            burden_str = f"{burden:.1f}"
+
+            # Determine status based on burden level
+            if burden < 10:
+                status = "Low"
+            elif burden < 20:
+                status = "Moderate"
+            else:
+                status = "High"
+
+            rows.append([date_str, burden_str, status])
+
+        return rows

@@ -14,6 +14,7 @@ from .device_settings_widget import DeviceSettingsWidget
 from .heart_rate_widget import HeartRateTimelineWidget
 from .collapsible_panel import CollapsiblePanel
 from .draggable_panel import DraggablePanel
+from .table_chart_mixin import TableChartMixin, ToggleSwitch
 
 __all__ = [
     'BatteryTrendWidget',
@@ -28,4 +29,6 @@ __all__ = [
     'HeartRateTimelineWidget',
     'CollapsiblePanel',
     'DraggablePanel',
+    'TableChartMixin',
+    'ToggleSwitch',
 ]

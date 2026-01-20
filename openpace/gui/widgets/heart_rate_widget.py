@@ -12,8 +12,10 @@ from PyQt6.QtCore import Qt, pyqtSignal
 import pyqtgraph as pg
 import numpy as np
 
+from openpace.gui.widgets.table_chart_mixin import TableChartMixin
 
-class HeartRateTimelineWidget(QWidget):
+
+class HeartRateTimelineWidget(QWidget, TableChartMixin):
     """
     Widget displaying heart rate timeline with limits and events.
 
@@ -61,44 +63,7 @@ class HeartRateTimelineWidget(QWidget):
 
     def _init_ui(self):
         """Initialize the user interface."""
-        layout = QVBoxLayout()
-        layout.setContentsMargins(5, 5, 5, 5)
-        self.setLayout(layout)
-
-        # Header with title and controls
-        header_layout = QHBoxLayout()
-
-        # Title
-        self.title_label = QLabel("Heart Rate Timeline")
-        self.title_label.setStyleSheet("font-size: 14px; font-weight: bold;")
-        header_layout.addWidget(self.title_label)
-
-        header_layout.addStretch()
-
-        # Display toggles
-        self.show_limits_cb = QCheckBox("Rate Limits")
-        self.show_limits_cb.setChecked(True)
-        self.show_limits_cb.toggled.connect(self._update_plot)
-        header_layout.addWidget(self.show_limits_cb)
-
-        self.show_range_cb = QCheckBox("Min/Max Range")
-        self.show_range_cb.setChecked(True)
-        self.show_range_cb.toggled.connect(self._update_plot)
-        header_layout.addWidget(self.show_range_cb)
-
-        self.show_events_cb = QCheckBox("Events")
-        self.show_events_cb.setChecked(True)
-        self.show_events_cb.toggled.connect(self._update_plot)
-        header_layout.addWidget(self.show_events_cb)
-
-        layout.addLayout(header_layout)
-
-        # Info label (statistics)
-        self.info_label = QLabel("No data")
-        self.info_label.setStyleSheet("font-size: 11px; color: gray;")
-        layout.addWidget(self.info_label)
-
-        # Main plot widget
+        # Create main plot widget first
         self.plot_widget = pg.PlotWidget()
         self.plot_widget.setBackground('w')
         self.plot_widget.showGrid(x=True, y=True, alpha=0.3)
@@ -113,10 +78,43 @@ class HeartRateTimelineWidget(QWidget):
         # Connect range change signal
         self.plot_widget.sigRangeChanged.connect(self._on_range_changed)
 
-        layout.addWidget(self.plot_widget, stretch=1)
-
         # Legend
         self.legend = self.plot_widget.addLegend()
+
+        # Initialize the table/chart toggle (from mixin)
+        self.init_table_chart_toggle(
+            title="Heart Rate Timeline",
+            columns=["Date/Time", "HR Mean (bpm)", "HR Min", "HR Max", "Status"],
+            chart_widget=self.plot_widget
+        )
+
+        # Add display toggles to the header (after title, before toggle switch)
+        # Get the header layout (first item in main layout)
+        main_layout = self.layout()
+        header_layout = main_layout.itemAt(0).layout()
+
+        # Insert checkboxes before the stretch (position 1) or find the stretch
+        # The mixin creates: title_label, stretch, view_toggle
+        # We want to insert our checkboxes before the view_toggle
+
+        # Create checkboxes
+        self.show_limits_cb = QCheckBox("Rate Limits")
+        self.show_limits_cb.setChecked(True)
+        self.show_limits_cb.toggled.connect(self._update_plot)
+
+        self.show_range_cb = QCheckBox("Min/Max Range")
+        self.show_range_cb.setChecked(True)
+        self.show_range_cb.toggled.connect(self._update_plot)
+
+        self.show_events_cb = QCheckBox("Events")
+        self.show_events_cb.setChecked(True)
+        self.show_events_cb.toggled.connect(self._update_plot)
+
+        # Insert checkboxes before the toggle switch (which is at the end)
+        # Position: title(0), stretch(1), toggle(2) -> insert at 2, 3, 4
+        header_layout.insertWidget(2, self.show_limits_cb)
+        header_layout.insertWidget(3, self.show_range_cb)
+        header_layout.insertWidget(4, self.show_events_cb)
 
         # Set reasonable Y range for heart rate
         self.plot_widget.setYRange(40, 180, padding=0.05)
@@ -473,3 +471,37 @@ class HeartRateTimelineWidget(QWidget):
         self.pacing_percent_ventricular = []
         self.plot_widget.clear()
         self.info_label.setText("No data")
+
+    def get_table_row_data(self) -> List[List[Any]]:
+        """
+        Get data rows for the table view.
+
+        Returns:
+            List of rows: [Date/Time, HR Mean (bpm), HR Min, HR Max, Status]
+        """
+        rows = []
+        for i, dt in enumerate(self.time_points):
+            # Format datetime
+            date_str = dt.strftime("%Y-%m-%d %H:%M")
+
+            # Heart rate values
+            hr_mean = self.heart_rates[i] if i < len(self.heart_rates) else 0
+            hr_min = self.heart_rates_min[i] if i < len(self.heart_rates_min) else ""
+            hr_max = self.heart_rates_max[i] if i < len(self.heart_rates_max) else ""
+
+            # Format values
+            hr_mean_str = f"{hr_mean:.0f}"
+            hr_min_str = f"{hr_min:.0f}" if hr_min else ""
+            hr_max_str = f"{hr_max:.0f}" if hr_max else ""
+
+            # Determine status based on rate limits
+            if hr_mean < self.lower_rate_limit:
+                status = "Below Limit"
+            elif hr_mean > self.upper_rate_limit:
+                status = "Above Limit"
+            else:
+                status = "Normal"
+
+            rows.append([date_str, hr_mean_str, hr_min_str, hr_max_str, status])
+
+        return rows
