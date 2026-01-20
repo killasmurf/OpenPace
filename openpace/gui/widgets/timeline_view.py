@@ -744,19 +744,25 @@ class TimelineView(QWidget):
                     hr_time_points, hr_values, hr_max_values, hr_min_values
                 )
 
-            # Try to load rate limits from trends
+            # Try to load rate limits from trends (check multiple variable names)
             lower_rate = self.heart_rate_widget.DEFAULT_LOWER_RATE
             upper_rate = self.heart_rate_widget.DEFAULT_UPPER_RATE
 
-            if 'lower_rate_limit' in trends_by_var:
-                trend = trends_by_var['lower_rate_limit']
-                if trend.values:
-                    lower_rate = trend.values[-1]  # Use most recent value
+            # Check for lower rate limit
+            for var in ['lower_rate_limit', 'set_brady_lowrate']:
+                if var in trends_by_var:
+                    trend = trends_by_var[var]
+                    if trend.values:
+                        lower_rate = trend.values[-1]  # Use most recent value
+                        break
 
-            if 'upper_rate_limit' in trends_by_var:
-                trend = trends_by_var['upper_rate_limit']
-                if trend.values:
-                    upper_rate = trend.values[-1]  # Use most recent value
+            # Check for upper rate limit (use max tracking rate or max sensor rate)
+            for var in ['upper_rate_limit', 'set_brady_max_tracking_rate', 'set_brady_max_sensor_rate']:
+                if var in trends_by_var:
+                    trend = trends_by_var[var]
+                    if trend.values:
+                        upper_rate = trend.values[-1]  # Use most recent value
+                        break
 
             self.heart_rate_widget.set_rate_limits(lower_rate, upper_rate)
 
@@ -859,6 +865,27 @@ class TimelineView(QWidget):
             hr_min = [obs.value_numeric for obs in obs_by_var.get('heart_rate_min', [])] or None
             self.heart_rate_widget.set_heart_rate_data(time_points, values, hr_max, hr_min)
             print(f"[DEBUG] Loaded heart rate: {len(values)} points")
+
+        # Load rate limits from observations (check multiple variable names)
+        lower_rate = self.heart_rate_widget.DEFAULT_LOWER_RATE
+        upper_rate = self.heart_rate_widget.DEFAULT_UPPER_RATE
+
+        for var in ['lower_rate_limit', 'set_brady_lowrate']:
+            if var in obs_by_var:
+                obs_list = obs_by_var[var]
+                if obs_list and obs_list[-1].value_numeric:
+                    lower_rate = obs_list[-1].value_numeric
+                    break
+
+        for var in ['upper_rate_limit', 'set_brady_max_tracking_rate', 'set_brady_max_sensor_rate']:
+            if var in obs_by_var:
+                obs_list = obs_by_var[var]
+                if obs_list and obs_list[-1].value_numeric:
+                    upper_rate = obs_list[-1].value_numeric
+                    break
+
+        self.heart_rate_widget.set_rate_limits(lower_rate, upper_rate)
+        print(f"[DEBUG] Rate limits: {lower_rate} - {upper_rate} bpm")
 
         # Load device settings from most recent transmission
         most_recent_transmission = self.session.query(Transmission).filter_by(
