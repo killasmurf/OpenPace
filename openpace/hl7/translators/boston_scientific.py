@@ -185,6 +185,33 @@ class BostonScientificTranslator(VendorTranslator):
         "739712": "episode_duration",
     }
 
+    # Alert codes (ALERT_) - Heart alerts from device
+    # Boston Scientific HeartAlert notifications
+    ALERT_CODES = {
+        # Alert status and counts
+        "738128": "alert_status",
+        "738144": "alert_count",
+        "738160": "alert_datetime",
+        # Alert types
+        "738176": "alert_type",
+        "738192": "alert_vendor_type",
+        "738208": "alert_severity",
+        "738224": "alert_description",
+        # Specific heart alerts
+        "738240": "alert_afib_detected",
+        "738256": "alert_high_ventricular_rate",
+        "738272": "alert_vt_episode",
+        "738288": "alert_low_heart_rate",
+        "738304": "alert_lead_impedance_out_of_range",
+        "738320": "alert_battery_eri",
+        "738336": "alert_nonsustained_vt",
+        "738352": "alert_magnet_detected",
+        "738368": "alert_elective_replacement",
+        "738384": "alert_vf_episode",
+        "738400": "alert_shock_delivered",
+        "738416": "alert_atp_delivered",
+    }
+
     def __init__(self):
         super().__init__()
         self.vendor_name = "Boston Scientific"
@@ -205,6 +232,7 @@ class BostonScientificTranslator(VendorTranslator):
         self._code_map.update(self.HV_CHANNEL_MSMT_CODES)
         self._code_map.update(self.STAT_CODES)
         self._code_map.update(self.EPISODE_CODES)
+        self._code_map.update(self.ALERT_CODES)
 
     def map_observation_id(self, vendor_code: str, observation_text: str = "") -> Optional[str]:
         """
@@ -250,6 +278,31 @@ class BostonScientificTranslator(VendorTranslator):
         # AF burden
         if "burden" in text_lower and ("af" in text_lower or "atrial" in text_lower):
             return "afib_burden_percent"
+
+        # Alert-related observations
+        if "alert" in text_lower or "notification" in text_lower:
+            if "afib" in text_lower or "af " in text_lower or "atrial fibrillation" in text_lower:
+                return "alert_afib_detected"
+            elif "high rate" in text_lower or "high ventricular" in text_lower or "tachycardia" in text_lower:
+                return "alert_high_ventricular_rate"
+            elif "low rate" in text_lower or "bradycardia" in text_lower or "low heart" in text_lower:
+                return "alert_low_heart_rate"
+            elif "vt" in text_lower or "ventricular tachycardia" in text_lower:
+                return "alert_vt_episode"
+            elif "vf" in text_lower or "ventricular fibrillation" in text_lower:
+                return "alert_vf_episode"
+            elif "shock" in text_lower:
+                return "alert_shock_delivered"
+            elif "atp" in text_lower:
+                return "alert_atp_delivered"
+            elif "impedance" in text_lower:
+                return "alert_lead_impedance_out_of_range"
+            elif "battery" in text_lower or "eri" in text_lower:
+                return "alert_battery_eri"
+            elif "magnet" in text_lower:
+                return "alert_magnet_detected"
+            else:
+                return "alert_type"  # Generic alert
 
         return None
 

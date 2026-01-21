@@ -980,6 +980,155 @@ class TimelineView(QWidget):
         else:
             print(f"[DEBUG] No valid episodes found")
 
+        # Also load alerts for this patient
+        self._load_alerts(patient_id)
+
+    def _load_alerts(self, patient_id: str):
+        """
+        Load alerts from observations and display on heart rate timeline.
+
+        Supports:
+        - Boston Scientific HeartAlert notifications
+        - Device-reported alerts (impedance, battery, etc.)
+
+        Args:
+            patient_id: Patient identifier
+        """
+        from openpace.database.models import Observation
+
+        # Query alert-related observations
+        alert_obs = self.session.query(Observation).join(
+            Observation.transmission
+        ).filter(
+            Observation.transmission.has(patient_id=patient_id),
+            Observation.variable_name.like('alert_%')
+        ).order_by(Observation.observation_time).all()
+
+        if not alert_obs:
+            print(f"[DEBUG] No alert observations found")
+            return
+
+        # Group alerts by sub_id (for multi-part alerts)
+        alerts_by_sub_id = {}
+        for obs in alert_obs:
+            sub_id = obs.sub_id or str(obs.observation_id)
+            if sub_id not in alerts_by_sub_id:
+                alerts_by_sub_id[sub_id] = {}
+            alerts_by_sub_id[sub_id][obs.variable_name] = obs
+
+        # Build alert list for the widget
+        alerts = []
+        for sub_id, obs_dict in alerts_by_sub_id.items():
+            alert = {}
+
+            # Get alert datetime
+            if 'alert_datetime' in obs_dict:
+                alert['time'] = obs_dict['alert_datetime'].observation_time
+            else:
+                # Use any available observation time
+                for var_name, obs in obs_dict.items():
+                    if obs.observation_time:
+                        alert['time'] = obs.observation_time
+                        break
+
+            if 'time' not in alert:
+                continue  # Skip if no time available
+
+            # Get alert type and determine severity
+            alert_type = 'Unknown Alert'
+            severity = 'low'
+
+            if 'alert_type' in obs_dict:
+                raw_type = obs_dict['alert_type'].value_text or ''
+                # Parse MDC alert type codes
+                if 'VF' in raw_type.upper() or 'FIBRILLATION' in raw_type.upper():
+                    alert_type = 'VF Alert'
+                    severity = 'high'
+                elif 'VT' in raw_type.upper() or 'TACHYCARDIA' in raw_type.upper():
+                    alert_type = 'VT Alert'
+                    severity = 'high'
+                elif 'SHOCK' in raw_type.upper():
+                    alert_type = 'Shock Delivered'
+                    severity = 'high'
+                elif 'ATP' in raw_type.upper():
+                    alert_type = 'ATP Delivered'
+                    severity = 'medium'
+                elif 'AF' in raw_type.upper() or 'AFIB' in raw_type.upper():
+                    alert_type = 'AFib Alert'
+                    severity = 'medium'
+                elif 'LOW' in raw_type.upper() or 'BRADY' in raw_type.upper():
+                    alert_type = 'Low Rate Alert'
+                    severity = 'medium'
+                elif 'HIGH' in raw_type.upper():
+                    alert_type = 'High Rate Alert'
+                    severity = 'medium'
+                elif 'IMPEDANCE' in raw_type.upper():
+                    alert_type = 'Impedance Alert'
+                    severity = 'medium'
+                elif 'BATTERY' in raw_type.upper() or 'ERI' in raw_type.upper():
+                    alert_type = 'Battery Alert'
+                    severity = 'high'
+                else:
+                    alert_type = raw_type.split('_')[-1] if '_' in raw_type else raw_type
+
+            # Check for specific alert variable names
+            for var_name in obs_dict.keys():
+                if 'vf_episode' in var_name or 'alert_vf' in var_name:
+                    alert_type = 'VF Alert'
+                    severity = 'high'
+                elif 'vt_episode' in var_name or 'alert_vt' in var_name:
+                    alert_type = 'VT Alert'
+                    severity = 'high'
+                elif 'shock_delivered' in var_name:
+                    alert_type = 'Shock Delivered'
+                    severity = 'high'
+                elif 'atp_delivered' in var_name:
+                    alert_type = 'ATP Delivered'
+                    severity = 'medium'
+                elif 'afib' in var_name or 'af_detected' in var_name:
+                    alert_type = 'AFib Alert'
+                    severity = 'medium'
+                elif 'high_ventricular_rate' in var_name:
+                    alert_type = 'High Rate'
+                    severity = 'medium'
+                elif 'low_heart_rate' in var_name:
+                    alert_type = 'Low Rate'
+                    severity = 'medium'
+                elif 'impedance' in var_name:
+                    alert_type = 'Impedance Alert'
+                    severity = 'medium'
+                elif 'battery' in var_name or 'eri' in var_name:
+                    alert_type = 'Battery Alert'
+                    severity = 'high'
+
+            alert['type'] = alert_type
+            alert['severity'] = severity
+
+            # Get alert value if available
+            if 'alert_severity' in obs_dict:
+                sev_text = (obs_dict['alert_severity'].value_text or '').lower()
+                if 'high' in sev_text or 'red' in sev_text or 'critical' in sev_text:
+                    alert['severity'] = 'high'
+                elif 'medium' in sev_text or 'yellow' in sev_text or 'warning' in sev_text:
+                    alert['severity'] = 'medium'
+
+            # Try to get a numeric value (heart rate, etc.)
+            for var_name, obs in obs_dict.items():
+                if obs.value_numeric is not None:
+                    alert['value'] = obs.value_numeric
+                    break
+
+            if 'value' not in alert:
+                alert['value'] = 0  # Default value for display
+
+            alerts.append(alert)
+
+        if alerts:
+            print(f"[DEBUG] Loaded {len(alerts)} alerts")
+            self.heart_rate_widget.set_alerts(alerts)
+        else:
+            print(f"[DEBUG] No valid alerts found")
+
     def clear_all(self):
         """Clear all chart data."""
         self.battery_widget.clear()

@@ -54,6 +54,9 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
         self.alerts: List[Dict[str, Any]] = []
         self.episodes: List[Dict[str, Any]] = []
 
+        # Auto-detected alerts (from rate limit violations)
+        self.auto_alerts: List[Dict[str, Any]] = []
+
         # Pacing data
         self.pacing_percent_atrial: List[float] = []
         self.pacing_percent_ventricular: List[float] = []
@@ -110,11 +113,16 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
         self.show_events_cb.setChecked(True)
         self.show_events_cb.toggled.connect(self._update_plot)
 
+        self.show_alerts_cb = QCheckBox("Alerts")
+        self.show_alerts_cb.setChecked(True)
+        self.show_alerts_cb.toggled.connect(self._update_plot)
+
         # Insert checkboxes before the toggle switch (which is at the end)
-        # Position: title(0), stretch(1), toggle(2) -> insert at 2, 3, 4
+        # Position: title(0), stretch(1), toggle(2) -> insert at 2, 3, 4, 5
         header_layout.insertWidget(2, self.show_limits_cb)
         header_layout.insertWidget(3, self.show_range_cb)
         header_layout.insertWidget(4, self.show_events_cb)
+        header_layout.insertWidget(5, self.show_alerts_cb)
 
         # Set reasonable Y range for heart rate
         self.plot_widget.setYRange(40, 180, padding=0.05)
@@ -195,6 +203,157 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
         self.pacing_percent_atrial = atrial_percent
         self.pacing_percent_ventricular = ventricular_percent
 
+    def _detect_alerts(self):
+        """
+        Auto-detect alerts from heart rate data based on rate limits.
+
+        Detects:
+        - Bradycardia (HR below lower limit) - Yellow alert
+        - Tachycardia (HR above upper limit) - Red alert
+        - Severe bradycardia (HR < 50 bpm) - Red alert
+        - Severe tachycardia (HR > 150 bpm) - Red alert
+        """
+        self.auto_alerts = []
+
+        if not self.time_points or not self.heart_rates:
+            return
+
+        # Use max heart rates for tachycardia detection if available
+        hr_max_data = self.heart_rates_max if self.heart_rates_max else self.heart_rates
+        # Use min heart rates for bradycardia detection if available
+        hr_min_data = self.heart_rates_min if self.heart_rates_min else self.heart_rates
+
+        for i, dt in enumerate(self.time_points):
+            hr_mean = self.heart_rates[i] if i < len(self.heart_rates) else 0
+            hr_max = hr_max_data[i] if i < len(hr_max_data) else hr_mean
+            hr_min = hr_min_data[i] if i < len(hr_min_data) else hr_mean
+
+            # Check for tachycardia (using max HR if available)
+            if hr_max > self.upper_rate_limit:
+                # Determine severity
+                if hr_max > 150:
+                    severity = 'high'
+                    alert_type = 'Severe Tachycardia'
+                elif hr_max > self.upper_rate_limit + 20:
+                    severity = 'medium'
+                    alert_type = 'Tachycardia'
+                else:
+                    severity = 'low'
+                    alert_type = 'High HR'
+
+                self.auto_alerts.append({
+                    'time': dt,
+                    'type': alert_type,
+                    'value': hr_max,
+                    'severity': severity,
+                    'direction': 'high'
+                })
+
+            # Check for bradycardia (using min HR if available)
+            if hr_min < self.lower_rate_limit:
+                # Determine severity
+                if hr_min < 40:
+                    severity = 'high'
+                    alert_type = 'Severe Bradycardia'
+                elif hr_min < 50:
+                    severity = 'medium'
+                    alert_type = 'Bradycardia'
+                else:
+                    severity = 'low'
+                    alert_type = 'Low HR'
+
+                self.auto_alerts.append({
+                    'time': dt,
+                    'type': alert_type,
+                    'value': hr_min,
+                    'severity': severity,
+                    'direction': 'low'
+                })
+
+    def _plot_auto_alerts(self, timestamps: List[float]):
+        """
+        Plot auto-detected alerts as markers on the timeline.
+
+        Uses different symbols and colors:
+        - Red triangle (▲) for high severity
+        - Orange diamond (◆) for medium severity
+        - Yellow circle (●) for low severity
+        """
+        if not self.auto_alerts:
+            return
+
+        # Group alerts by severity for plotting
+        high_alerts = []
+        medium_alerts = []
+        low_alerts = []
+
+        for alert in self.auto_alerts:
+            alert_time = alert['time']
+            if isinstance(alert_time, str):
+                alert_time = datetime.fromisoformat(alert_time)
+
+            alert_ts = alert_time.timestamp()
+            value = alert.get('value', 0)
+            severity = alert.get('severity', 'low')
+
+            if severity == 'high':
+                high_alerts.append((alert_ts, value, alert))
+            elif severity == 'medium':
+                medium_alerts.append((alert_ts, value, alert))
+            else:
+                low_alerts.append((alert_ts, value, alert))
+
+        # Plot high severity alerts (red triangles)
+        if high_alerts:
+            x = [a[0] for a in high_alerts]
+            y = [a[1] for a in high_alerts]
+            self.plot_widget.plot(
+                x, y,
+                pen=None,
+                symbol='t',  # Triangle
+                symbolSize=12,
+                symbolBrush=(255, 0, 0),
+                symbolPen=pg.mkPen((150, 0, 0), width=2),
+                name='High Alert'
+            )
+
+            # Add vertical lines for high alerts
+            for alert_ts, value, alert in high_alerts:
+                line = pg.InfiniteLine(
+                    pos=alert_ts,
+                    angle=90,
+                    pen=pg.mkPen(color=(255, 0, 0, 100), width=1, style=Qt.PenStyle.DotLine)
+                )
+                self.plot_widget.addItem(line)
+
+        # Plot medium severity alerts (orange diamonds)
+        if medium_alerts:
+            x = [a[0] for a in medium_alerts]
+            y = [a[1] for a in medium_alerts]
+            self.plot_widget.plot(
+                x, y,
+                pen=None,
+                symbol='d',  # Diamond
+                symbolSize=10,
+                symbolBrush=(255, 165, 0),
+                symbolPen=pg.mkPen((200, 130, 0), width=2),
+                name='Medium Alert'
+            )
+
+        # Plot low severity alerts (yellow circles)
+        if low_alerts:
+            x = [a[0] for a in low_alerts]
+            y = [a[1] for a in low_alerts]
+            self.plot_widget.plot(
+                x, y,
+                pen=None,
+                symbol='o',  # Circle
+                symbolSize=8,
+                symbolBrush=(255, 255, 0),
+                symbolPen=pg.mkPen((200, 200, 0), width=2),
+                name='Low Alert'
+            )
+
     def _update_plot(self):
         """Update the plot with current data and settings."""
         self.plot_widget.clear()
@@ -205,6 +364,9 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
 
         # Convert datetimes to timestamps
         timestamps = [dt.timestamp() for dt in self.time_points]
+
+        # Auto-detect alerts from heart rate data
+        self._detect_alerts()
 
         # Plot min/max range if available and enabled
         if self.show_range_cb.isChecked() and self.heart_rates_max and self.heart_rates_min:
@@ -219,8 +381,12 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
 
         # Plot events/episodes if enabled
         if self.show_events_cb.isChecked():
-            self._plot_alerts(timestamps)
             self._plot_episodes(timestamps)
+
+        # Plot alerts (auto-detected and manual) if enabled
+        if self.show_alerts_cb.isChecked():
+            self._plot_alerts(timestamps)
+            self._plot_auto_alerts(timestamps)
 
         # Configure time axis
         self._configure_time_axis()
@@ -444,13 +610,30 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
         ]
 
         if below_limit > 0:
-            info_parts.append(f"Below limit: {below_limit}")
+            info_parts.append(f'<span style="color: #0064C8;">Below: {below_limit}</span>')
         if above_limit > 0:
-            info_parts.append(f"Above limit: {above_limit}")
+            info_parts.append(f'<span style="color: #C80000;">Above: {above_limit}</span>')
         if self.episodes:
             info_parts.append(f"Episodes: {len(self.episodes)}")
-        if self.alerts:
-            info_parts.append(f"Alerts: {len(self.alerts)}")
+
+        # Count alerts by severity
+        total_alerts = len(self.alerts) + len(self.auto_alerts)
+        if total_alerts > 0:
+            high_count = sum(1 for a in self.alerts if a.get('severity') == 'high')
+            high_count += sum(1 for a in self.auto_alerts if a.get('severity') == 'high')
+            medium_count = sum(1 for a in self.alerts if a.get('severity') == 'medium')
+            medium_count += sum(1 for a in self.auto_alerts if a.get('severity') == 'medium')
+            low_count = total_alerts - high_count - medium_count
+
+            alert_parts = []
+            if high_count > 0:
+                alert_parts.append(f'<span style="color: #FF0000;">{high_count} high</span>')
+            if medium_count > 0:
+                alert_parts.append(f'<span style="color: #FFA500;">{medium_count} med</span>')
+            if low_count > 0:
+                alert_parts.append(f'<span style="color: #FFD700;">{low_count} low</span>')
+
+            info_parts.append(f"Alerts: {', '.join(alert_parts)}")
 
         self.info_label.setText("  |  ".join(info_parts))
 
@@ -466,6 +649,7 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
         self.heart_rates_max = []
         self.heart_rates_min = []
         self.alerts = []
+        self.auto_alerts = []
         self.episodes = []
         self.pacing_percent_atrial = []
         self.pacing_percent_ventricular = []
