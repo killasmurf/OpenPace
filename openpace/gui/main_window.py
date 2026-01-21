@@ -332,6 +332,10 @@ class MainWindow(QMainWindow):
         if not file_paths:
             return
 
+        # Sort files by filename to ensure consistent chronological order
+        # Files are typically named with dates/sequences (e.g., csc.1002050604.1.dat)
+        file_paths = sorted(file_paths, key=lambda p: os.path.basename(p).lower())
+
         # Track results for summary
         successful_imports = []
         failed_imports = []
