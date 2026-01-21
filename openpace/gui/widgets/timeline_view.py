@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QSize, QPoint, QTimer, QRect
 from PyQt6.QtGui import QIcon, QPainter, QColor, QPen
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from openpace.database.models import Patient, Transmission, LongitudinalTrend
 from openpace.processing.trend_calculator import TrendCalculator
@@ -770,11 +770,15 @@ class TimelineView(QWidget):
             self._load_episodes(patient_id)
 
             # Load device settings from most recent transmission
-            most_recent_transmission = self.session.query(Transmission).filter_by(
+            # Use joinedload to eagerly load observations
+            most_recent_transmission = self.session.query(Transmission).options(
+                joinedload(Transmission.observations)
+            ).filter_by(
                 patient_id=patient_id
             ).order_by(Transmission.transmission_date.desc()).first()
 
             if most_recent_transmission:
+                print(f"[DEBUG] Loading settings from transmission {most_recent_transmission.transmission_id} with {len(most_recent_transmission.observations)} observations")
                 self.settings_panel.load_transmission(most_recent_transmission)
                 self.device_settings_widget.load_transmission(most_recent_transmission)
             else:
@@ -888,11 +892,15 @@ class TimelineView(QWidget):
         print(f"[DEBUG] Rate limits: {lower_rate} - {upper_rate} bpm")
 
         # Load device settings from most recent transmission
-        most_recent_transmission = self.session.query(Transmission).filter_by(
+        # Use joinedload to eagerly load observations
+        most_recent_transmission = self.session.query(Transmission).options(
+            joinedload(Transmission.observations)
+        ).filter_by(
             patient_id=patient_id
         ).order_by(Transmission.transmission_date.desc()).first()
 
         if most_recent_transmission:
+            print(f"[DEBUG] Loading settings from transmission {most_recent_transmission.transmission_id} with {len(most_recent_transmission.observations)} observations")
             self.settings_panel.load_transmission(most_recent_transmission)
             self.device_settings_widget.load_transmission(most_recent_transmission)
 
