@@ -328,10 +328,11 @@ snap_to_grid: bool = True
 
 ## Known Limitations
 
-1. **ResizeHandle Not Integrated**
-   - Implementation complete but not connected
-   - Available for future integration
-   - Current resizing via grid cell spanning
+1. **ResizeHandle Integration** ✅ **RESOLVED**
+   - ~~Implementation complete but not connected~~
+   - **UPDATE (Feb 2026): ResizeHandle is now fully integrated**
+   - Visual resize handles active on all panels
+   - Grid-based resizing with visual feedback
 
 2. **Grid Size Change Requires Restart**
    - Changing grid dimensions needs app restart
@@ -350,7 +351,7 @@ snap_to_grid: bool = True
 ## Future Enhancements
 
 ### Short Term (Next Release)
-- [ ] Integrate ResizeHandle for manual resizing
+- [x] Integrate ResizeHandle for manual resizing ✅ **COMPLETE**
 - [ ] Panel dimension overlay during resize
 - [ ] Smooth panel animations
 - [ ] Enhanced keyboard navigation
