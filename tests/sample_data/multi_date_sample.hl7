@@ -1,0 +1,191 @@
+MSH|^~\&|Medtronic CareLink|Clinic123|OpenPace|Hospital||20240115120000||ORU^R01|MSG00001|P|2.5
+PID|1||P123456^^^Clinic123||Doe^John||19800101|M|||123 Main St^^Anytown^CA^12345
+OBR|1|||REMOTE_MONITOR|||20240115120000
+OBX|1|NM|73990-7^Battery Voltage^LN||2.80|V|2.2-2.8|N|||F
+OBX|2|NM|8889-8^Lead Impedance Atrial^LN||600|Ohm|200-1500|N|||F
+OBX|3|NM|8890-6^Lead Impedance Ventricular^LN||465|Ohm|200-1500|N|||F
+OBX|4|NM|89269-2^AFib Burden^LN||0.0|%|0-100|N|||F
+OBX|5|NM|MDC_PACE_PCT_A^Atrial Pacing Percent^MDC||35.0|%|0-100|N|||F
+OBX|6|NM|MDC_PACE_PCT_V^Ventricular Pacing Percent^MDC||71.0|%|0-100|N|||F
+OBX|7|NM|8867-4^Heart Rate^LN||67|bpm|60-100|N|||F
+OBX|8|NM|MDC_HR_MAX^Maximum Heart Rate^MDC||123|bpm|||N|||F
+OBX|9|NM|MDC_HR_MIN^Minimum Heart Rate^MDC||54|bpm|||N|||F
+OBX|10|ST|MDC_MODE^Pacing Mode^MDC||DDDR||||F
+OBX|11|NM|MDC_RATE_LOWER^Lower Rate Limit^MDC||60|bpm|||N|||F
+OBX|12|NM|MDC_RATE_UPPER^Upper Rate Limit^MDC||130|bpm|||N|||F
+
+MSH|^~\&|Medtronic CareLink|Clinic123|OpenPace|Hospital||20240214120000||ORU^R01|MSG00002|P|2.5
+PID|1||P123456^^^Clinic123||Doe^John||19800101|M|||123 Main St^^Anytown^CA^12345
+OBR|1|||REMOTE_MONITOR|||20240214120000
+OBX|1|NM|73990-7^Battery Voltage^LN||2.77|V|2.2-2.8|N|||F
+OBX|2|NM|8889-8^Lead Impedance Atrial^LN||630|Ohm|200-1500|N|||F
+OBX|3|NM|8890-6^Lead Impedance Ventricular^LN||495|Ohm|200-1500|N|||F
+OBX|4|NM|89269-2^AFib Burden^LN||0.0|%|0-100|N|||F
+OBX|5|NM|MDC_PACE_PCT_A^Atrial Pacing Percent^MDC||45.0|%|0-100|N|||F
+OBX|6|NM|MDC_PACE_PCT_V^Ventricular Pacing Percent^MDC||71.0|%|0-100|N|||F
+OBX|7|NM|8867-4^Heart Rate^LN||67|bpm|60-100|N|||F
+OBX|8|NM|MDC_HR_MAX^Maximum Heart Rate^MDC||123|bpm|||N|||F
+OBX|9|NM|MDC_HR_MIN^Minimum Heart Rate^MDC||60|bpm|||N|||F
+OBX|10|ST|MDC_MODE^Pacing Mode^MDC||DDDR||||F
+OBX|11|NM|MDC_RATE_LOWER^Lower Rate Limit^MDC||60|bpm|||N|||F
+OBX|12|NM|MDC_RATE_UPPER^Upper Rate Limit^MDC||130|bpm|||N|||F
+
+MSH|^~\&|Medtronic CareLink|Clinic123|OpenPace|Hospital||20240315120000||ORU^R01|MSG00003|P|2.5
+PID|1||P123456^^^Clinic123||Doe^John||19800101|M|||123 Main St^^Anytown^CA^12345
+OBR|1|||REMOTE_MONITOR|||20240315120000
+OBX|1|NM|73990-7^Battery Voltage^LN||2.74|V|2.2-2.8|N|||F
+OBX|2|NM|8889-8^Lead Impedance Atrial^LN||610|Ohm|200-1500|N|||F
+OBX|3|NM|8890-6^Lead Impedance Ventricular^LN||485|Ohm|200-1500|N|||F
+OBX|4|NM|89269-2^AFib Burden^LN||0.0|%|0-100|N|||F
+OBX|5|NM|MDC_PACE_PCT_A^Atrial Pacing Percent^MDC||35.0|%|0-100|N|||F
+OBX|6|NM|MDC_PACE_PCT_V^Ventricular Pacing Percent^MDC||71.0|%|0-100|N|||F
+OBX|7|NM|8867-4^Heart Rate^LN||67|bpm|60-100|N|||F
+OBX|8|NM|MDC_HR_MAX^Maximum Heart Rate^MDC||123|bpm|||N|||F
+OBX|9|NM|MDC_HR_MIN^Minimum Heart Rate^MDC||58|bpm|||N|||F
+OBX|10|ST|MDC_MODE^Pacing Mode^MDC||DDDR||||F
+OBX|11|NM|MDC_RATE_LOWER^Lower Rate Limit^MDC||60|bpm|||N|||F
+OBX|12|NM|MDC_RATE_UPPER^Upper Rate Limit^MDC||130|bpm|||N|||F
+
+MSH|^~\&|Medtronic CareLink|Clinic123|OpenPace|Hospital||20240414120000||ORU^R01|MSG00004|P|2.5
+PID|1||P123456^^^Clinic123||Doe^John||19800101|M|||123 Main St^^Anytown^CA^12345
+OBR|1|||REMOTE_MONITOR|||20240414120000
+OBX|1|NM|73990-7^Battery Voltage^LN||2.71|V|2.2-2.8|N|||F
+OBX|2|NM|8889-8^Lead Impedance Atrial^LN||640|Ohm|200-1500|N|||F
+OBX|3|NM|8890-6^Lead Impedance Ventricular^LN||475|Ohm|200-1500|N|||F
+OBX|4|NM|89269-2^AFib Burden^LN||0.0|%|0-100|N|||F
+OBX|5|NM|MDC_PACE_PCT_A^Atrial Pacing Percent^MDC||45.0|%|0-100|N|||F
+OBX|6|NM|MDC_PACE_PCT_V^Ventricular Pacing Percent^MDC||71.0|%|0-100|N|||F
+OBX|7|NM|8867-4^Heart Rate^LN||67|bpm|60-100|N|||F
+OBX|8|NM|MDC_HR_MAX^Maximum Heart Rate^MDC||123|bpm|||N|||F
+OBX|9|NM|MDC_HR_MIN^Minimum Heart Rate^MDC||56|bpm|||N|||F
+OBX|10|ST|MDC_MODE^Pacing Mode^MDC||DDDR||||F
+OBX|11|NM|MDC_RATE_LOWER^Lower Rate Limit^MDC||60|bpm|||N|||F
+OBX|12|NM|MDC_RATE_UPPER^Upper Rate Limit^MDC||130|bpm|||N|||F
+
+MSH|^~\&|Medtronic CareLink|Clinic123|OpenPace|Hospital||20240514120000||ORU^R01|MSG00005|P|2.5
+PID|1||P123456^^^Clinic123||Doe^John||19800101|M|||123 Main St^^Anytown^CA^12345
+OBR|1|||REMOTE_MONITOR|||20240514120000
+OBX|1|NM|73990-7^Battery Voltage^LN||2.68|V|2.2-2.8|N|||F
+OBX|2|NM|8889-8^Lead Impedance Atrial^LN||620|Ohm|200-1500|N|||F
+OBX|3|NM|8890-6^Lead Impedance Ventricular^LN||465|Ohm|200-1500|N|||F
+OBX|4|NM|89269-2^AFib Burden^LN||0.0|%|0-100|N|||F
+OBX|5|NM|MDC_PACE_PCT_A^Atrial Pacing Percent^MDC||35.0|%|0-100|N|||F
+OBX|6|NM|MDC_PACE_PCT_V^Ventricular Pacing Percent^MDC||71.0|%|0-100|N|||F
+OBX|7|NM|8867-4^Heart Rate^LN||67|bpm|60-100|N|||F
+OBX|8|NM|MDC_HR_MAX^Maximum Heart Rate^MDC||123|bpm|||N|||F
+OBX|9|NM|MDC_HR_MIN^Minimum Heart Rate^MDC||54|bpm|||N|||F
+OBX|10|ST|MDC_MODE^Pacing Mode^MDC||DDDR||||F
+OBX|11|NM|MDC_RATE_LOWER^Lower Rate Limit^MDC||60|bpm|||N|||F
+OBX|12|NM|MDC_RATE_UPPER^Upper Rate Limit^MDC||130|bpm|||N|||F
+
+MSH|^~\&|Medtronic CareLink|Clinic123|OpenPace|Hospital||20240613120000||ORU^R01|MSG00006|P|2.5
+PID|1||P123456^^^Clinic123||Doe^John||19800101|M|||123 Main St^^Anytown^CA^12345
+OBR|1|||REMOTE_MONITOR|||20240613120000
+OBX|1|NM|73990-7^Battery Voltage^LN||2.65|V|2.2-2.8|N|||F
+OBX|2|NM|8889-8^Lead Impedance Atrial^LN||600|Ohm|200-1500|N|||F
+OBX|3|NM|8890-6^Lead Impedance Ventricular^LN||495|Ohm|200-1500|N|||F
+OBX|4|NM|89269-2^AFib Burden^LN||0.0|%|0-100|N|||F
+OBX|5|NM|MDC_PACE_PCT_A^Atrial Pacing Percent^MDC||45.0|%|0-100|N|||F
+OBX|6|NM|MDC_PACE_PCT_V^Ventricular Pacing Percent^MDC||71.0|%|0-100|N|||F
+OBX|7|NM|8867-4^Heart Rate^LN||67|bpm|60-100|N|||F
+OBX|8|NM|MDC_HR_MAX^Maximum Heart Rate^MDC||123|bpm|||N|||F
+OBX|9|NM|MDC_HR_MIN^Minimum Heart Rate^MDC||60|bpm|||N|||F
+OBX|10|ST|MDC_MODE^Pacing Mode^MDC||DDDR||||F
+OBX|11|NM|MDC_RATE_LOWER^Lower Rate Limit^MDC||60|bpm|||N|||F
+OBX|12|NM|MDC_RATE_UPPER^Upper Rate Limit^MDC||130|bpm|||N|||F
+
+MSH|^~\&|Medtronic CareLink|Clinic123|OpenPace|Hospital||20240713120000||ORU^R01|MSG00007|P|2.5
+PID|1||P123456^^^Clinic123||Doe^John||19800101|M|||123 Main St^^Anytown^CA^12345
+OBR|1|||REMOTE_MONITOR|||20240713120000
+OBX|1|NM|73990-7^Battery Voltage^LN||2.62|V|2.2-2.8|N|||F
+OBX|2|NM|8889-8^Lead Impedance Atrial^LN||630|Ohm|200-1500|N|||F
+OBX|3|NM|8890-6^Lead Impedance Ventricular^LN||485|Ohm|200-1500|N|||F
+OBX|4|NM|89269-2^AFib Burden^LN||0.0|%|0-100|N|||F
+OBX|5|NM|MDC_PACE_PCT_A^Atrial Pacing Percent^MDC||35.0|%|0-100|N|||F
+OBX|6|NM|MDC_PACE_PCT_V^Ventricular Pacing Percent^MDC||71.0|%|0-100|N|||F
+OBX|7|NM|8867-4^Heart Rate^LN||67|bpm|60-100|N|||F
+OBX|8|NM|MDC_HR_MAX^Maximum Heart Rate^MDC||123|bpm|||N|||F
+OBX|9|NM|MDC_HR_MIN^Minimum Heart Rate^MDC||58|bpm|||N|||F
+OBX|10|ST|MDC_MODE^Pacing Mode^MDC||DDDR||||F
+OBX|11|NM|MDC_RATE_LOWER^Lower Rate Limit^MDC||60|bpm|||N|||F
+OBX|12|NM|MDC_RATE_UPPER^Upper Rate Limit^MDC||130|bpm|||N|||F
+
+MSH|^~\&|Medtronic CareLink|Clinic123|OpenPace|Hospital||20240812120000||ORU^R01|MSG00008|P|2.5
+PID|1||P123456^^^Clinic123||Doe^John||19800101|M|||123 Main St^^Anytown^CA^12345
+OBR|1|||REMOTE_MONITOR|||20240812120000
+OBX|1|NM|73990-7^Battery Voltage^LN||2.59|V|2.2-2.8|N|||F
+OBX|2|NM|8889-8^Lead Impedance Atrial^LN||610|Ohm|200-1500|N|||F
+OBX|3|NM|8890-6^Lead Impedance Ventricular^LN||475|Ohm|200-1500|N|||F
+OBX|4|NM|89269-2^AFib Burden^LN||0.0|%|0-100|N|||F
+OBX|5|NM|MDC_PACE_PCT_A^Atrial Pacing Percent^MDC||45.0|%|0-100|N|||F
+OBX|6|NM|MDC_PACE_PCT_V^Ventricular Pacing Percent^MDC||71.0|%|0-100|N|||F
+OBX|7|NM|8867-4^Heart Rate^LN||67|bpm|60-100|N|||F
+OBX|8|NM|MDC_HR_MAX^Maximum Heart Rate^MDC||123|bpm|||N|||F
+OBX|9|NM|MDC_HR_MIN^Minimum Heart Rate^MDC||56|bpm|||N|||F
+OBX|10|ST|MDC_MODE^Pacing Mode^MDC||DDDR||||F
+OBX|11|NM|MDC_RATE_LOWER^Lower Rate Limit^MDC||60|bpm|||N|||F
+OBX|12|NM|MDC_RATE_UPPER^Upper Rate Limit^MDC||130|bpm|||N|||F
+
+MSH|^~\&|Medtronic CareLink|Clinic123|OpenPace|Hospital||20240911120000||ORU^R01|MSG00009|P|2.5
+PID|1||P123456^^^Clinic123||Doe^John||19800101|M|||123 Main St^^Anytown^CA^12345
+OBR|1|||REMOTE_MONITOR|||20240911120000
+OBX|1|NM|73990-7^Battery Voltage^LN||2.56|V|2.2-2.8|N|||F
+OBX|2|NM|8889-8^Lead Impedance Atrial^LN||640|Ohm|200-1500|N|||F
+OBX|3|NM|8890-6^Lead Impedance Ventricular^LN||465|Ohm|200-1500|N|||F
+OBX|4|NM|89269-2^AFib Burden^LN||0.0|%|0-100|N|||F
+OBX|5|NM|MDC_PACE_PCT_A^Atrial Pacing Percent^MDC||35.0|%|0-100|N|||F
+OBX|6|NM|MDC_PACE_PCT_V^Ventricular Pacing Percent^MDC||71.0|%|0-100|N|||F
+OBX|7|NM|8867-4^Heart Rate^LN||67|bpm|60-100|N|||F
+OBX|8|NM|MDC_HR_MAX^Maximum Heart Rate^MDC||123|bpm|||N|||F
+OBX|9|NM|MDC_HR_MIN^Minimum Heart Rate^MDC||54|bpm|||N|||F
+OBX|10|ST|MDC_MODE^Pacing Mode^MDC||DDDR||||F
+OBX|11|NM|MDC_RATE_LOWER^Lower Rate Limit^MDC||60|bpm|||N|||F
+OBX|12|NM|MDC_RATE_UPPER^Upper Rate Limit^MDC||130|bpm|||N|||F
+
+MSH|^~\&|Medtronic CareLink|Clinic123|OpenPace|Hospital||20241011120000||ORU^R01|MSG00010|P|2.5
+PID|1||P123456^^^Clinic123||Doe^John||19800101|M|||123 Main St^^Anytown^CA^12345
+OBR|1|||REMOTE_MONITOR|||20241011120000
+OBX|1|NM|73990-7^Battery Voltage^LN||2.53|V|2.2-2.8|N|||F
+OBX|2|NM|8889-8^Lead Impedance Atrial^LN||620|Ohm|200-1500|N|||F
+OBX|3|NM|8890-6^Lead Impedance Ventricular^LN||495|Ohm|200-1500|N|||F
+OBX|4|NM|89269-2^AFib Burden^LN||0.0|%|0-100|N|||F
+OBX|5|NM|MDC_PACE_PCT_A^Atrial Pacing Percent^MDC||45.0|%|0-100|N|||F
+OBX|6|NM|MDC_PACE_PCT_V^Ventricular Pacing Percent^MDC||71.0|%|0-100|N|||F
+OBX|7|NM|8867-4^Heart Rate^LN||67|bpm|60-100|N|||F
+OBX|8|NM|MDC_HR_MAX^Maximum Heart Rate^MDC||123|bpm|||N|||F
+OBX|9|NM|MDC_HR_MIN^Minimum Heart Rate^MDC||60|bpm|||N|||F
+OBX|10|ST|MDC_MODE^Pacing Mode^MDC||DDDR||||F
+OBX|11|NM|MDC_RATE_LOWER^Lower Rate Limit^MDC||60|bpm|||N|||F
+OBX|12|NM|MDC_RATE_UPPER^Upper Rate Limit^MDC||130|bpm|||N|||F
+
+MSH|^~\&|Medtronic CareLink|Clinic123|OpenPace|Hospital||20241110120000||ORU^R01|MSG00011|P|2.5
+PID|1||P123456^^^Clinic123||Doe^John||19800101|M|||123 Main St^^Anytown^CA^12345
+OBR|1|||REMOTE_MONITOR|||20241110120000
+OBX|1|NM|73990-7^Battery Voltage^LN||2.50|V|2.2-2.8|N|||F
+OBX|2|NM|8889-8^Lead Impedance Atrial^LN||600|Ohm|200-1500|N|||F
+OBX|3|NM|8890-6^Lead Impedance Ventricular^LN||485|Ohm|200-1500|N|||F
+OBX|4|NM|89269-2^AFib Burden^LN||0.0|%|0-100|N|||F
+OBX|5|NM|MDC_PACE_PCT_A^Atrial Pacing Percent^MDC||35.0|%|0-100|N|||F
+OBX|6|NM|MDC_PACE_PCT_V^Ventricular Pacing Percent^MDC||71.0|%|0-100|N|||F
+OBX|7|NM|8867-4^Heart Rate^LN||67|bpm|60-100|N|||F
+OBX|8|NM|MDC_HR_MAX^Maximum Heart Rate^MDC||123|bpm|||N|||F
+OBX|9|NM|MDC_HR_MIN^Minimum Heart Rate^MDC||58|bpm|||N|||F
+OBX|10|ST|MDC_MODE^Pacing Mode^MDC||DDDR||||F
+OBX|11|NM|MDC_RATE_LOWER^Lower Rate Limit^MDC||60|bpm|||N|||F
+OBX|12|NM|MDC_RATE_UPPER^Upper Rate Limit^MDC||130|bpm|||N|||F
+
+MSH|^~\&|Medtronic CareLink|Clinic123|OpenPace|Hospital||20241210120000||ORU^R01|MSG00012|P|2.5
+PID|1||P123456^^^Clinic123||Doe^John||19800101|M|||123 Main St^^Anytown^CA^12345
+OBR|1|||REMOTE_MONITOR|||20241210120000
+OBX|1|NM|73990-7^Battery Voltage^LN||2.47|V|2.2-2.8|N|||F
+OBX|2|NM|8889-8^Lead Impedance Atrial^LN||630|Ohm|200-1500|N|||F
+OBX|3|NM|8890-6^Lead Impedance Ventricular^LN||475|Ohm|200-1500|N|||F
+OBX|4|NM|89269-2^AFib Burden^LN||0.0|%|0-100|N|||F
+OBX|5|NM|MDC_PACE_PCT_A^Atrial Pacing Percent^MDC||45.0|%|0-100|N|||F
+OBX|6|NM|MDC_PACE_PCT_V^Ventricular Pacing Percent^MDC||71.0|%|0-100|N|||F
+OBX|7|NM|8867-4^Heart Rate^LN||67|bpm|60-100|N|||F
+OBX|8|NM|MDC_HR_MAX^Maximum Heart Rate^MDC||123|bpm|||N|||F
+OBX|9|NM|MDC_HR_MIN^Minimum Heart Rate^MDC||56|bpm|||N|||F
+OBX|10|ST|MDC_MODE^Pacing Mode^MDC||DDDR||||F
+OBX|11|NM|MDC_RATE_LOWER^Lower Rate Limit^MDC||60|bpm|||N|||F
+OBX|12|NM|MDC_RATE_UPPER^Upper Rate Limit^MDC||130|bpm|||N|||F
