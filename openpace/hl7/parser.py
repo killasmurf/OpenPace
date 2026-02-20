@@ -323,8 +323,13 @@ class HL7Parser:
         translator = get_translator(transmission.device_manufacturer or 'Generic')
 
         # Parse OBX segments grouped by their OBR context so that each group
-        # inherits the correct OBR-7 datetime as its tier-2 fallback timestamp.
+        # inherits the correct OBR-7 datetime as its tier-3 fallback timestamp.
         # For messages with a single OBR, all OBX rows share one group.
+        #
+        # Additionally, track "vendor datetime OBX" segments (variable names ending in
+        # '_datetime' with a TS/DT value, e.g. Boston Scientific msmt_battery_datetime).
+        # Their parsed value is stored in datetime_by_sub_id[sub_id] and applied to all
+        # subsequent OBX rows in the same sub-group (tier-2 in the resolution hierarchy).
         obx_count = 0
         try:
             obr_segments = list(msg.segments('OBR'))
@@ -336,7 +341,9 @@ class HL7Parser:
             current_obr_datetime = obr_data.get('observation_datetime')  # first OBR
             obr_iter = iter(obr_segments[1:])  # remaining OBRs (skip the first, already parsed)
             next_obr = next(obr_iter, None)
-            next_obr_seq = int(str(next_obr[1])) if next_obr is not None else None
+
+            # dict[sub_id -> datetime] — populated from vendor datetime OBX segments
+            datetime_by_sub_id: dict = {}
 
             for obx_segment in msg.segments('OBX'):
                 # Advance OBR group when sequence resets (new OBR block starts at seq 1)
@@ -349,6 +356,8 @@ class HL7Parser:
                     obr_dt_str = str(next_obr[7]) if len(next_obr) > 7 else ''
                     current_obr_datetime = self._parse_hl7_datetime(obr_dt_str)
                     next_obr = next(obr_iter, None)
+                    # Reset vendor datetime tracking for the new OBR group
+                    datetime_by_sub_id = {}
 
                 observation = self.parse_obx(
                     obx_segment,
@@ -356,20 +365,43 @@ class HL7Parser:
                     translator,
                     transmission.transmission_date,
                     obr_datetime=current_obr_datetime,
+                    msmt_datetimes=datetime_by_sub_id,
                 )
                 if observation:
+                    # If this OBX is a vendor datetime observation (e.g. BSC
+                    # msmt_battery_datetime), save its parsed value so subsequent OBX rows
+                    # in the same sub-group can use it as their observation timestamp.
+                    if (observation.variable_name and
+                            observation.variable_name.endswith('_datetime') and
+                            observation.value_text):
+                        sub_id = str(obx_segment[4]).strip() if len(obx_segment) > 4 else ''
+                        parsed_dt = self._parse_hl7_datetime(observation.value_text)
+                        if parsed_dt and sub_id:
+                            datetime_by_sub_id[sub_id] = parsed_dt
+
                     self.session.add(observation)
                     obx_count += 1
         else:
             # No OBR segments — fall back to simple loop with MSH date only
+            datetime_by_sub_id: dict = {}
+
             for obx_segment in msg.segments('OBX'):
                 observation = self.parse_obx(
                     obx_segment,
                     transmission.transmission_id,
                     translator,
                     transmission.transmission_date,
+                    msmt_datetimes=datetime_by_sub_id,
                 )
                 if observation:
+                    if (observation.variable_name and
+                            observation.variable_name.endswith('_datetime') and
+                            observation.value_text):
+                        sub_id = str(obx_segment[4]).strip() if len(obx_segment) > 4 else ''
+                        parsed_dt = self._parse_hl7_datetime(observation.value_text)
+                        if parsed_dt and sub_id:
+                            datetime_by_sub_id[sub_id] = parsed_dt
+
                     self.session.add(observation)
                     obx_count += 1
 
@@ -513,7 +545,8 @@ class HL7Parser:
 
     def parse_obx(self, obx_segment, transmission_id: int, translator,
                   observation_time: datetime,
-                  obr_datetime: Optional[datetime] = None) -> Optional[Observation]:
+                  obr_datetime: Optional[datetime] = None,
+                  msmt_datetimes: Optional[dict] = None) -> Optional[Observation]:
         """
         Parse OBX (Observation) segment - the core pacemaker data.
 
@@ -530,11 +563,14 @@ class HL7Parser:
             translator: Vendor-specific translator
             observation_time: Timestamp for the observation (from transmission / MSH-7)
             obr_datetime: OBR-7 observation group datetime (used as fallback between OBX-14 and MSH-7)
+            msmt_datetimes: Dict mapping OBX-4 sub_id to datetimes parsed from preceding
+                            vendor datetime OBX segments (e.g. Boston Scientific msmt_*_datetime).
+                            Applied between OBR-7 and OBX-14 in the resolution hierarchy.
 
         Returns:
             Observation object or None if observation is unknown
         """
-        # OBX-2: Value type (NM=numeric, ST=string, ED=encapsulated data)
+        # OBX-2: Value type (NM=numeric, ST=string, ED=encapsulated data, TS=timestamp)
         value_type = str(obx_segment[2])
 
         # OBX-3: Observation identifier (LOINC code or vendor-specific)
@@ -551,6 +587,11 @@ class HL7Parser:
 
         coding_system = parts[2] if len(parts) > 2 else ''
 
+        # OBX-4: Sub ID - identifies measurement group within an OBR.
+        # Boston Scientific LATITUDE uses this to group a datetime OBX with its
+        # associated measurement OBXs (e.g. sub_id "1" for battery group).
+        sub_id = str(obx_segment[4]).strip() if len(obx_segment) > 4 else ''
+
         # OBX-5: Observation value
         value = str(obx_segment[5])
 
@@ -566,13 +607,19 @@ class HL7Parser:
         # OBX-11: Observation result status (F=final, P=preliminary)
         obs_status = str(obx_segment[11]) if len(obx_segment) > 11 else 'F'
 
-        # Resolve observation timestamp using three-tier fallback:
-        #   1. OBX-14  per-observation datetime  (most precise)
-        #   2. OBR-7   observation group datetime (e.g. different monitoring periods)
-        #   3. MSH-7   whole-message transmission datetime (coarsest)
-        obs_datetime = observation_time  # start with MSH-7 level (tier 3)
+        # Resolve observation timestamp using four-tier fallback:
+        #   1. OBX-14  per-observation datetime            (most precise)
+        #   2. Vendor datetime OBX for this sub_id group   (e.g. BSC msmt_battery_datetime)
+        #   3. OBR-7   observation group datetime
+        #   4. MSH-7   whole-message transmission datetime  (coarsest)
+        obs_datetime = observation_time  # start with MSH-7 level (tier 4)
         if obr_datetime:
-            obs_datetime = obr_datetime  # upgrade to OBR-7 level (tier 2)
+            obs_datetime = obr_datetime  # upgrade to OBR-7 level (tier 3)
+        # Tier 2: vendor measurement datetime from a preceding datetime OBX segment
+        # (e.g. Boston Scientific LATITUDE stores battery/lead datetimes as separate OBX rows
+        # whose value contains the actual clinical measurement date)
+        if msmt_datetimes and sub_id and sub_id in msmt_datetimes:
+            obs_datetime = msmt_datetimes[sub_id]  # upgrade to vendor datetime (tier 2)
         if len(obx_segment) > 14:
             obx14_value = str(obx_segment[14]).strip()
             if obx14_value and obx14_value not in ('', 'None'):
@@ -633,6 +680,14 @@ class HL7Parser:
                 except (ValueError, AttributeError):
                     # Not a number, store as text
                     observation.value_text = value
+
+        elif value_type in ('TS', 'DT', 'DTM'):  # Timestamp / Date
+            # Store as text so the datetime value is preserved.
+            # This is critical for vendor-specific datetime OBX segments (e.g. Boston
+            # Scientific LATITUDE uses separate OBX rows with TS values to convey the
+            # actual clinical measurement date for a group of subsequent observations).
+            if value and value.strip():
+                observation.value_text = value.strip()
 
         elif value_type == 'ED':  # Encapsulated Data (base64 blob)
             blob_data = self._extract_base64_from_ed(value)

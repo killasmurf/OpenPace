@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, pyqtSignal, QSize, QPoint, QTimer, QRect
 from PyQt6.QtGui import QIcon, QPainter, QColor, QPen
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
 
 from openpace.database.models import Patient, Transmission, LongitudinalTrend
 from openpace.processing.trend_calculator import TrendCalculator
@@ -655,16 +656,31 @@ class TimelineView(QWidget):
         self.current_patient_id = patient_id
 
         try:
-            # Query trends for this patient
-            trends = self.session.query(LongitudinalTrend).filter_by(
-                patient_id=patient_id
-            ).all()
+            # Check whether cached trends are stale (i.e. a newer transmission has been
+            # imported since the trends were last computed).  If so, recalculate so that
+            # any parser fixes applied to newly-imported data are reflected immediately.
+            latest_import = self.session.query(func.max(Transmission.imported_at)).filter(
+                Transmission.patient_id == patient_id
+            ).scalar()
+            latest_trend_calc = self.session.query(func.max(LongitudinalTrend.computed_at)).filter(
+                LongitudinalTrend.patient_id == patient_id
+            ).scalar()
 
-            # If no trends, calculate them
-            if not trends:
-                print(f"No pre-computed trends found, calculating...")
+            needs_recalc = (
+                latest_trend_calc is None or
+                latest_import is None or
+                latest_import > latest_trend_calc
+            )
+
+            if needs_recalc:
+                print(f"[DEBUG] Recalculating trends (latest import: {latest_import}, "
+                      f"last calc: {latest_trend_calc})")
                 calculator = TrendCalculator(self.session)
                 trends = calculator.calculate_all_trends(patient_id)
+            else:
+                trends = self.session.query(LongitudinalTrend).filter_by(
+                    patient_id=patient_id
+                ).all()
 
             # Organize trends by variable
             trends_by_var = {t.variable_name: t for t in trends}
