@@ -322,18 +322,56 @@ class HL7Parser:
         # Get appropriate translator based on manufacturer
         translator = get_translator(transmission.device_manufacturer or 'Generic')
 
-        # Parse all OBX segments
+        # Parse OBX segments grouped by their OBR context so that each group
+        # inherits the correct OBR-7 datetime as its tier-2 fallback timestamp.
+        # For messages with a single OBR, all OBX rows share one group.
         obx_count = 0
-        for obx_segment in msg.segments('OBX'):
-            observation = self.parse_obx(
-                obx_segment,
-                transmission.transmission_id,
-                translator,
-                transmission.transmission_date
-            )
-            if observation:
-                self.session.add(observation)
-                obx_count += 1
+        try:
+            obr_segments = list(msg.segments('OBR'))
+        except Exception:
+            obr_segments = []
+
+        if obr_segments:
+            # Walk through all OBX segments, tracking which OBR group they belong to
+            current_obr_datetime = obr_data.get('observation_datetime')  # first OBR
+            obr_iter = iter(obr_segments[1:])  # remaining OBRs (skip the first, already parsed)
+            next_obr = next(obr_iter, None)
+            next_obr_seq = int(str(next_obr[1])) if next_obr is not None else None
+
+            for obx_segment in msg.segments('OBX'):
+                # Advance OBR group when sequence resets (new OBR block starts at seq 1)
+                try:
+                    obx_seq = int(str(obx_segment[1]))
+                except (ValueError, IndexError):
+                    obx_seq = None
+
+                if next_obr is not None and obx_seq == 1:
+                    obr_dt_str = str(next_obr[7]) if len(next_obr) > 7 else ''
+                    current_obr_datetime = self._parse_hl7_datetime(obr_dt_str)
+                    next_obr = next(obr_iter, None)
+
+                observation = self.parse_obx(
+                    obx_segment,
+                    transmission.transmission_id,
+                    translator,
+                    transmission.transmission_date,
+                    obr_datetime=current_obr_datetime,
+                )
+                if observation:
+                    self.session.add(observation)
+                    obx_count += 1
+        else:
+            # No OBR segments — fall back to simple loop with MSH date only
+            for obx_segment in msg.segments('OBX'):
+                observation = self.parse_obx(
+                    obx_segment,
+                    transmission.transmission_id,
+                    translator,
+                    transmission.transmission_date,
+                )
+                if observation:
+                    self.session.add(observation)
+                    obx_count += 1
 
         self.session.commit()
 
@@ -474,7 +512,8 @@ class HL7Parser:
         }
 
     def parse_obx(self, obx_segment, transmission_id: int, translator,
-                  observation_time: datetime) -> Optional[Observation]:
+                  observation_time: datetime,
+                  obr_datetime: Optional[datetime] = None) -> Optional[Observation]:
         """
         Parse OBX (Observation) segment - the core pacemaker data.
 
@@ -489,7 +528,8 @@ class HL7Parser:
             obx_segment: OBX segment from hl7 message
             transmission_id: ID of parent transmission
             translator: Vendor-specific translator
-            observation_time: Timestamp for the observation (from transmission)
+            observation_time: Timestamp for the observation (from transmission / MSH-7)
+            obr_datetime: OBR-7 observation group datetime (used as fallback between OBX-14 and MSH-7)
 
         Returns:
             Observation object or None if observation is unknown
@@ -526,14 +566,19 @@ class HL7Parser:
         # OBX-11: Observation result status (F=final, P=preliminary)
         obs_status = str(obx_segment[11]) if len(obx_segment) > 11 else 'F'
 
-        # OBX-14: Date/Time of the Observation (use this if available, otherwise use transmission time)
-        obs_datetime = observation_time
+        # Resolve observation timestamp using three-tier fallback:
+        #   1. OBX-14  per-observation datetime  (most precise)
+        #   2. OBR-7   observation group datetime (e.g. different monitoring periods)
+        #   3. MSH-7   whole-message transmission datetime (coarsest)
+        obs_datetime = observation_time  # start with MSH-7 level (tier 3)
+        if obr_datetime:
+            obs_datetime = obr_datetime  # upgrade to OBR-7 level (tier 2)
         if len(obx_segment) > 14:
             obx14_value = str(obx_segment[14]).strip()
             if obx14_value and obx14_value not in ('', 'None'):
                 parsed_dt = self._parse_hl7_datetime(obx14_value)
                 if parsed_dt:
-                    obs_datetime = parsed_dt
+                    obs_datetime = parsed_dt  # upgrade to OBX-14 level (tier 1)
 
         # OBX-1: Sequence number
         sequence = int(str(obx_segment[1])) if len(obx_segment) > 1 else None
