@@ -265,20 +265,28 @@ class HistogramParser:
             return {}
 
         # Calculate weighted mean (for numeric bins)
+        # Track numeric bins AND their matching percentages together to avoid
+        # misalignment when non-numeric bins (e.g. 'rest', 'label') are skipped
         weighted_mean = None
         numeric_bins = []
+        numeric_pcts = []
 
         for bin_val, pct in zip(bins, percentages):
             if isinstance(bin_val, tuple):
                 # Range: use midpoint
                 mid = (bin_val[0] + bin_val[1]) / 2
                 numeric_bins.append(mid)
+                numeric_pcts.append(pct)
             elif isinstance(bin_val, (int, float)):
                 numeric_bins.append(float(bin_val))
+                numeric_pcts.append(pct)
 
         if numeric_bins:
-            weighted_sum = sum(val * (pct / 100) for val, pct in zip(numeric_bins, percentages))
-            weighted_mean = weighted_sum
+            total_pct = sum(numeric_pcts) or 100  # Normalize if skipped bins don't sum to 100
+            weighted_mean = sum(
+                val * (pct / total_pct)
+                for val, pct in zip(numeric_bins, numeric_pcts)
+            )
 
         # Find mode (bin with highest percentage)
         max_pct_idx = percentages.index(max(percentages))
