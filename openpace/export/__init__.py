@@ -9,4 +9,4 @@ Handles data export and report generation:
 
 from openpace.export.pdf_report import PDFReportGenerator
 
-__all__ = ['PDFReportGenerator']
+__all__ = ["PDFReportGenerator"]

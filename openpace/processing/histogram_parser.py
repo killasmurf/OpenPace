@@ -44,16 +44,16 @@ class HistogramParser:
         # Try JSON format first
         try:
             data = json.loads(histogram_data)
-            return HistogramParser._parse_json_histogram(data, 'rate')
+            return HistogramParser._parse_json_histogram(data, "rate")
         except (json.JSONDecodeError, TypeError):
             pass
 
         # Try pipe-delimited format: "60-70:10%|70-80:45%|80-90:30%"
-        if '|' in histogram_data:
+        if "|" in histogram_data:
             return HistogramParser._parse_piped_histogram(histogram_data)
 
         # Try comma-separated format: "60-70:10,70-80:45,80-90:30"
-        if ',' in histogram_data and ':' in histogram_data:
+        if "," in histogram_data and ":" in histogram_data:
             return HistogramParser._parse_csv_histogram(histogram_data)
 
         logger.warning(f"Could not parse rate histogram: {histogram_data[:100]}")
@@ -80,18 +80,18 @@ class HistogramParser:
 
         try:
             data = json.loads(histogram_data)
-            return HistogramParser._parse_json_histogram(data, 'activity')
+            return HistogramParser._parse_json_histogram(data, "activity")
         except (json.JSONDecodeError, TypeError):
             pass
 
-        if '|' in histogram_data:
+        if "|" in histogram_data:
             result = HistogramParser._parse_piped_histogram(histogram_data)
             if result:
                 # Convert to activity-specific format
                 return {
-                    'activity_levels': result['bins'],
-                    'percentages': result['percentages'],
-                    'type': 'activity'
+                    "activity_levels": result["bins"],
+                    "percentages": result["percentages"],
+                    "type": "activity",
                 }
 
         return None
@@ -114,18 +114,15 @@ class HistogramParser:
 
         try:
             data = json.loads(histogram_data)
-            return HistogramParser._parse_json_histogram(data, 'pacing')
+            return HistogramParser._parse_json_histogram(data, "pacing")
         except (json.JSONDecodeError, TypeError):
             pass
 
         # Pacing histograms might show: "intrinsic:25%|paced:75%"
-        if '|' in histogram_data or ',' in histogram_data:
+        if "|" in histogram_data or "," in histogram_data:
             result = HistogramParser._parse_piped_histogram(histogram_data)
             if result:
-                return {
-                    **result,
-                    'type': 'pacing'
-                }
+                return {**result, "type": "pacing"}
 
         return None
 
@@ -145,25 +142,25 @@ class HistogramParser:
         bins = []
         percentages = []
 
-        parts = data.split('|')
+        parts = data.split("|")
         for part in parts:
-            if ':' not in part:
+            if ":" not in part:
                 continue
 
-            range_part, pct_part = part.split(':', 1)
+            range_part, pct_part = part.split(":", 1)
 
             # Parse percentage
-            pct_str = pct_part.replace('%', '').strip()
+            pct_str = pct_part.replace("%", "").strip()
             try:
                 pct = float(pct_str)
             except ValueError:
                 continue
 
             # Parse range
-            if '-' in range_part:
+            if "-" in range_part:
                 # Numeric range: "60-70"
                 try:
-                    min_val, max_val = range_part.split('-')
+                    min_val, max_val = range_part.split("-")
                     bins.append((float(min_val.strip()), float(max_val.strip())))
                 except ValueError:
                     # Label range: "rest", "light", etc.
@@ -178,9 +175,9 @@ class HistogramParser:
             return None
 
         return {
-            'bins': bins,
-            'percentages': percentages,
-            'bin_count': len(bins),
+            "bins": bins,
+            "percentages": percentages,
+            "bin_count": len(bins),
         }
 
     @staticmethod
@@ -197,7 +194,7 @@ class HistogramParser:
             Parsed histogram dictionary
         """
         # Convert to pipe format and reuse parser
-        piped_data = data.replace(',', '|')
+        piped_data = data.replace(",", "|")
         return HistogramParser._parse_piped_histogram(piped_data)
 
     @staticmethod
@@ -218,9 +215,9 @@ class HistogramParser:
         Returns:
             Normalized histogram dictionary
         """
-        bins = data.get('bins', [])
-        counts = data.get('counts', [])
-        percentages = data.get('percentages', [])
+        bins = data.get("bins", [])
+        counts = data.get("counts", [])
+        percentages = data.get("percentages", [])
 
         # If counts but no percentages, calculate percentages
         if counts and not percentages:
@@ -234,11 +231,11 @@ class HistogramParser:
             bin_ranges.append((bins[i], bins[i + 1]))
 
         return {
-            'bins': bin_ranges if bin_ranges else bins,
-            'percentages': percentages,
-            'counts': counts,
-            'type': histogram_type,
-            'unit': data.get('unit', ''),
+            "bins": bin_ranges if bin_ranges else bins,
+            "percentages": percentages,
+            "counts": counts,
+            "type": histogram_type,
+            "unit": data.get("unit", ""),
         }
 
     @staticmethod
@@ -255,11 +252,11 @@ class HistogramParser:
                 - mode_bin: Most frequent bin
                 - percentile_50: Median bin
         """
-        if not histogram or 'bins' not in histogram or 'percentages' not in histogram:
+        if not histogram or "bins" not in histogram or "percentages" not in histogram:
             return {}
 
-        bins = histogram['bins']
-        percentages = histogram['percentages']
+        bins = histogram["bins"]
+        percentages = histogram["percentages"]
 
         if len(bins) != len(percentages):
             return {}
@@ -282,10 +279,11 @@ class HistogramParser:
                 numeric_pcts.append(pct)
 
         if numeric_bins:
-            total_pct = sum(numeric_pcts) or 100  # Normalize if skipped bins don't sum to 100
+            total_pct = (
+                sum(numeric_pcts) or 100
+            )  # Normalize if skipped bins don't sum to 100
             weighted_mean = sum(
-                val * (pct / total_pct)
-                for val, pct in zip(numeric_bins, numeric_pcts)
+                val * (pct / total_pct) for val, pct in zip(numeric_bins, numeric_pcts)
             )
 
         # Find mode (bin with highest percentage)
@@ -302,10 +300,10 @@ class HistogramParser:
                 break
 
         return {
-            'weighted_mean': weighted_mean,
-            'mode_bin': mode_bin,
-            'median_bin': median_bin,
-            'max_percentage': max(percentages),
+            "weighted_mean": weighted_mean,
+            "mode_bin": mode_bin,
+            "median_bin": median_bin,
+            "max_percentage": max(percentages),
         }
 
 
@@ -318,16 +316,18 @@ class TimeInZoneCalculator:
 
     # Standard heart rate zones (as percentage of max HR or absolute bpm)
     STANDARD_HR_ZONES = {
-        'bradycardia': (0, 60),
-        'normal_rest': (60, 100),
-        'elevated': (100, 120),
-        'tachycardia': (120, 200),
-        'extreme': (200, 300),
+        "bradycardia": (0, 60),
+        "normal_rest": (60, 100),
+        "elevated": (100, 120),
+        "tachycardia": (120, 200),
+        "extreme": (200, 300),
     }
 
     @staticmethod
-    def calculate_time_in_zones(histogram: Dict[str, Any],
-                                zone_definitions: Dict[str, Tuple[float, float]] = None) -> Dict[str, float]:
+    def calculate_time_in_zones(
+        histogram: Dict[str, Any],
+        zone_definitions: Dict[str, Tuple[float, float]] = None,
+    ) -> Dict[str, float]:
         """
         Calculate percentage of time in predefined zones.
 
@@ -341,8 +341,8 @@ class TimeInZoneCalculator:
         if not zone_definitions:
             zone_definitions = TimeInZoneCalculator.STANDARD_HR_ZONES
 
-        bins = histogram.get('bins', [])
-        percentages = histogram.get('percentages', [])
+        bins = histogram.get("bins", [])
+        percentages = histogram.get("percentages", [])
 
         zone_times = {zone: 0.0 for zone in zone_definitions.keys()}
 

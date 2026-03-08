@@ -15,15 +15,18 @@ from PyQt6.QtGui import QPainter, QColor, QPen
 
 class LayoutMode(Enum):
     """Layout mode enumeration."""
-    FREE_GRID = "free_grid"        # Panels can be positioned anywhere
-    VERTICAL = "vertical"          # Panels snap to full-width rows
-    HORIZONTAL = "horizontal"      # Panels snap to columns
+
+    FREE_GRID = "free_grid"  # Panels can be positioned anywhere
+    VERTICAL = "vertical"  # Panels snap to full-width rows
+    HORIZONTAL = "horizontal"  # Panels snap to columns
 
 
 class PanelInfo:
     """Information about a panel's position and size in the grid."""
 
-    def __init__(self, widget: QWidget, row: int, col: int, row_span: int, col_span: int):
+    def __init__(
+        self, widget: QWidget, row: int, col: int, row_span: int, col_span: int
+    ):
         """
         Initialize panel info.
 
@@ -46,33 +49,33 @@ class PanelInfo:
         """Get the rectangle occupied by this panel in grid coordinates."""
         return QRect(self.col, self.row, self.col_span, self.row_span)
 
-    def overlaps_with(self, other: 'PanelInfo') -> bool:
+    def overlaps_with(self, other: "PanelInfo") -> bool:
         """Check if this panel overlaps with another."""
         return self.get_rect().intersects(other.get_rect())
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
-            'row': self.row,
-            'col': self.col,
-            'row_span': self.row_span,
-            'col_span': self.col_span,
-            'visible': self.visible,
-            'collapsed': self.collapsed
+            "row": self.row,
+            "col": self.col,
+            "row_span": self.row_span,
+            "col_span": self.col_span,
+            "visible": self.visible,
+            "collapsed": self.collapsed,
         }
 
     @classmethod
-    def from_dict(cls, widget: QWidget, data: Dict[str, Any]) -> 'PanelInfo':
+    def from_dict(cls, widget: QWidget, data: Dict[str, Any]) -> "PanelInfo":
         """Create from dictionary."""
         info = cls(
             widget=widget,
-            row=data['row'],
-            col=data['col'],
-            row_span=data['row_span'],
-            col_span=data['col_span']
+            row=data["row"],
+            col=data["col"],
+            row_span=data["row_span"],
+            col_span=data["col_span"],
         )
-        info.visible = data.get('visible', True)
-        info.collapsed = data.get('collapsed', False)
+        info.visible = data.get("visible", True)
+        info.collapsed = data.get("collapsed", False)
         return info
 
 
@@ -163,8 +166,15 @@ class GridLayoutManager(QObject):
                     col += col_width
             self._rebuild_layout()
 
-    def add_panel(self, panel_id: str, widget: QWidget,
-                  row: int, col: int, row_span: int, col_span: int):
+    def add_panel(
+        self,
+        panel_id: str,
+        widget: QWidget,
+        row: int,
+        col: int,
+        row_span: int,
+        col_span: int,
+    ):
         """
         Add a panel to the grid.
 
@@ -178,7 +188,9 @@ class GridLayoutManager(QObject):
         """
         # Validate coordinates
         if not self._is_valid_position(row, col, row_span, col_span):
-            raise ValueError(f"Invalid grid position: ({row}, {col}) with span ({row_span}, {col_span})")
+            raise ValueError(
+                f"Invalid grid position: ({row}, {col}) with span ({row_span}, {col_span})"
+            )
 
         # Check for overlaps
         new_info = PanelInfo(widget, row, col, row_span, col_span)
@@ -329,15 +341,17 @@ class GridLayoutManager(QObject):
 
         return None
 
-    def _is_valid_position(self, row: int, col: int, row_span: int, col_span: int) -> bool:
+    def _is_valid_position(
+        self, row: int, col: int, row_span: int, col_span: int
+    ) -> bool:
         """Check if a position and span are valid within the grid."""
         return (
-            0 <= row < self.rows and
-            0 <= col < self.cols and
-            row + row_span <= self.rows and
-            col + col_span <= self.cols and
-            row_span > 0 and
-            col_span > 0
+            0 <= row < self.rows
+            and 0 <= col < self.cols
+            and row + row_span <= self.rows
+            and col + col_span <= self.cols
+            and row_span > 0
+            and col_span > 0
         )
 
     def _rebuild_layout(self):
@@ -352,11 +366,7 @@ class GridLayoutManager(QObject):
         for panel_id, info in self.panels.items():
             if info.visible:
                 self.grid_layout.addWidget(
-                    info.widget,
-                    info.row,
-                    info.col,
-                    info.row_span,
-                    info.col_span
+                    info.widget, info.row, info.col, info.row_span, info.col_span
                 )
 
     def _update_cell_sizes(self):
@@ -373,13 +383,12 @@ class GridLayoutManager(QObject):
             Dictionary containing layout data
         """
         return {
-            'layout_mode': self.mode.value,
-            'grid_rows': self.rows,
-            'grid_cols': self.cols,
-            'panels': {
-                panel_id: info.to_dict()
-                for panel_id, info in self.panels.items()
-            }
+            "layout_mode": self.mode.value,
+            "grid_rows": self.rows,
+            "grid_cols": self.cols,
+            "panels": {
+                panel_id: info.to_dict() for panel_id, info in self.panels.items()
+            },
         }
 
     def restore_layout(self, layout_data: Dict[str, Any]):
@@ -390,27 +399,27 @@ class GridLayoutManager(QObject):
             layout_data: Dictionary containing layout data
         """
         # Restore mode
-        mode_str = layout_data.get('layout_mode', 'vertical')
+        mode_str = layout_data.get("layout_mode", "vertical")
         try:
             self.mode = LayoutMode(mode_str)
         except ValueError:
             self.mode = LayoutMode.VERTICAL
 
         # Restore grid size
-        self.rows = layout_data.get('grid_rows', 12)
-        self.cols = layout_data.get('grid_cols', 12)
+        self.rows = layout_data.get("grid_rows", 12)
+        self.cols = layout_data.get("grid_cols", 12)
 
         # Restore panel positions
-        panels_data = layout_data.get('panels', {})
+        panels_data = layout_data.get("panels", {})
         for panel_id, panel_data in panels_data.items():
             if panel_id in self.panels:
                 info = self.panels[panel_id]
-                info.row = panel_data.get('row', 0)
-                info.col = panel_data.get('col', 0)
-                info.row_span = panel_data.get('row_span', 1)
-                info.col_span = panel_data.get('col_span', 1)
-                info.visible = panel_data.get('visible', True)
-                info.collapsed = panel_data.get('collapsed', False)
+                info.row = panel_data.get("row", 0)
+                info.col = panel_data.get("col", 0)
+                info.row_span = panel_data.get("row_span", 1)
+                info.col_span = panel_data.get("col_span", 1)
+                info.visible = panel_data.get("visible", True)
+                info.collapsed = panel_data.get("collapsed", False)
 
                 if info.visible:
                     info.widget.show()

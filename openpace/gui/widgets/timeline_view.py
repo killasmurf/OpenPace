@@ -9,9 +9,17 @@ Supports collapsible panels and size adjustment.
 from typing import Optional, Dict, List
 from datetime import datetime
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QComboBox, QPushButton, QScrollArea, QGroupBox,
-    QSplitter, QToolButton, QSizePolicy
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QComboBox,
+    QPushButton,
+    QScrollArea,
+    QGroupBox,
+    QSplitter,
+    QToolButton,
+    QSizePolicy,
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QSize, QPoint, QTimer, QRect
 from PyQt6.QtGui import QIcon, QPainter, QColor, QPen
@@ -80,7 +88,11 @@ class PatientSelectorWidget(QWidget):
             patients = self.session.query(Patient).all()
 
             for patient in patients:
-                display_name = patient.anonymized_id if patient.anonymized else patient.patient_name
+                display_name = (
+                    patient.anonymized_id
+                    if patient.anonymized
+                    else patient.patient_name
+                )
                 self.patient_combo.addItem(display_name, patient.patient_id)
 
             if patients:
@@ -200,37 +212,49 @@ class TimelineView(QWidget):
             panel.resize_grid_requested.connect(self._on_panel_resize_requested)
 
         # Create draggable panels
-        self.battery_panel = DraggablePanel("battery", "Battery Status", self.battery_widget)
+        self.battery_panel = DraggablePanel(
+            "battery", "Battery Status", self.battery_widget
+        )
         setup_panel(self.battery_panel, self.battery_visibility_changed)
-        self.panels['battery'] = self.battery_panel
+        self.panels["battery"] = self.battery_panel
 
-        self.atrial_panel = DraggablePanel("atrial_impedance", "Atrial Lead Impedance",
-                                          self.atrial_impedance_widget)
+        self.atrial_panel = DraggablePanel(
+            "atrial_impedance", "Atrial Lead Impedance", self.atrial_impedance_widget
+        )
         setup_panel(self.atrial_panel, self.atrial_impedance_visibility_changed)
-        self.panels['atrial_impedance'] = self.atrial_panel
+        self.panels["atrial_impedance"] = self.atrial_panel
 
-        self.vent_panel = DraggablePanel("vent_impedance", "Ventricular Lead Impedance",
-                                        self.vent_impedance_widget)
+        self.vent_panel = DraggablePanel(
+            "vent_impedance", "Ventricular Lead Impedance", self.vent_impedance_widget
+        )
         setup_panel(self.vent_panel, self.vent_impedance_visibility_changed)
-        self.panels['vent_impedance'] = self.vent_panel
+        self.panels["vent_impedance"] = self.vent_panel
 
-        self.burden_panel = DraggablePanel("burden", "Arrhythmia Burden", self.burden_widget)
+        self.burden_panel = DraggablePanel(
+            "burden", "Arrhythmia Burden", self.burden_widget
+        )
         setup_panel(self.burden_panel, self.burden_visibility_changed)
-        self.panels['burden'] = self.burden_panel
+        self.panels["burden"] = self.burden_panel
 
-        self.settings_panel_widget = DraggablePanel("settings", "Device Settings", self.settings_panel)
+        self.settings_panel_widget = DraggablePanel(
+            "settings", "Device Settings", self.settings_panel
+        )
         setup_panel(self.settings_panel_widget, self.settings_visibility_changed)
-        self.panels['settings'] = self.settings_panel_widget
+        self.panels["settings"] = self.settings_panel_widget
 
-        self.device_settings_panel = DraggablePanel("device_settings", "Device Settings (Fixed/Operator)",
-                                                     self.device_settings_widget)
+        self.device_settings_panel = DraggablePanel(
+            "device_settings",
+            "Device Settings (Fixed/Operator)",
+            self.device_settings_widget,
+        )
         setup_panel(self.device_settings_panel, self.device_settings_visibility_changed)
-        self.panels['device_settings'] = self.device_settings_panel
+        self.panels["device_settings"] = self.device_settings_panel
 
-        self.heart_rate_panel = DraggablePanel("heart_rate", "Heart Rate Timeline",
-                                               self.heart_rate_widget)
+        self.heart_rate_panel = DraggablePanel(
+            "heart_rate", "Heart Rate Timeline", self.heart_rate_widget
+        )
         setup_panel(self.heart_rate_panel, self.heart_rate_visibility_changed)
-        self.panels['heart_rate'] = self.heart_rate_panel
+        self.panels["heart_rate"] = self.heart_rate_panel
 
         # Set default vertical layout
         self._set_default_vertical_layout()
@@ -252,28 +276,44 @@ class TimelineView(QWidget):
 
         # Create collapsible panels
         self.battery_panel = CollapsiblePanel("Battery Status", self.battery_widget)
-        self.battery_panel.visibility_changed.connect(self.battery_visibility_changed.emit)
-        self.panels['battery'] = self.battery_panel
+        self.battery_panel.visibility_changed.connect(
+            self.battery_visibility_changed.emit
+        )
+        self.panels["battery"] = self.battery_panel
         self.splitter.addWidget(self.battery_panel)
 
-        self.atrial_panel = CollapsiblePanel("Atrial Lead Impedance", self.atrial_impedance_widget)
-        self.atrial_panel.visibility_changed.connect(self.atrial_impedance_visibility_changed.emit)
-        self.panels['atrial_impedance'] = self.atrial_panel
+        self.atrial_panel = CollapsiblePanel(
+            "Atrial Lead Impedance", self.atrial_impedance_widget
+        )
+        self.atrial_panel.visibility_changed.connect(
+            self.atrial_impedance_visibility_changed.emit
+        )
+        self.panels["atrial_impedance"] = self.atrial_panel
         self.splitter.addWidget(self.atrial_panel)
 
-        self.vent_panel = CollapsiblePanel("Ventricular Lead Impedance", self.vent_impedance_widget)
-        self.vent_panel.visibility_changed.connect(self.vent_impedance_visibility_changed.emit)
-        self.panels['vent_impedance'] = self.vent_panel
+        self.vent_panel = CollapsiblePanel(
+            "Ventricular Lead Impedance", self.vent_impedance_widget
+        )
+        self.vent_panel.visibility_changed.connect(
+            self.vent_impedance_visibility_changed.emit
+        )
+        self.panels["vent_impedance"] = self.vent_panel
         self.splitter.addWidget(self.vent_panel)
 
         self.burden_panel = CollapsiblePanel("Arrhythmia Burden", self.burden_widget)
-        self.burden_panel.visibility_changed.connect(self.burden_visibility_changed.emit)
-        self.panels['burden'] = self.burden_panel
+        self.burden_panel.visibility_changed.connect(
+            self.burden_visibility_changed.emit
+        )
+        self.panels["burden"] = self.burden_panel
         self.splitter.addWidget(self.burden_panel)
 
-        self.settings_panel_widget = CollapsiblePanel("Device Settings", self.settings_panel)
-        self.settings_panel_widget.visibility_changed.connect(self.settings_visibility_changed.emit)
-        self.panels['settings'] = self.settings_panel_widget
+        self.settings_panel_widget = CollapsiblePanel(
+            "Device Settings", self.settings_panel
+        )
+        self.settings_panel_widget.visibility_changed.connect(
+            self.settings_visibility_changed.emit
+        )
+        self.panels["settings"] = self.settings_panel_widget
         self.splitter.addWidget(self.settings_panel_widget)
 
         # Set initial sizes (equal distribution)
@@ -289,22 +329,34 @@ class TimelineView(QWidget):
 
         # Grid layout with heart rate timeline spanning full width at bottom
         # Row 1 (rows 0-4): Battery, Atrial Impedance, Ventricular Impedance
-        self.grid_manager.add_panel("battery", self.battery_panel,
-                                   row=0, col=0, row_span=4, col_span=4)
-        self.grid_manager.add_panel("atrial_impedance", self.atrial_panel,
-                                   row=0, col=4, row_span=4, col_span=4)
-        self.grid_manager.add_panel("vent_impedance", self.vent_panel,
-                                   row=0, col=8, row_span=4, col_span=4)
+        self.grid_manager.add_panel(
+            "battery", self.battery_panel, row=0, col=0, row_span=4, col_span=4
+        )
+        self.grid_manager.add_panel(
+            "atrial_impedance", self.atrial_panel, row=0, col=4, row_span=4, col_span=4
+        )
+        self.grid_manager.add_panel(
+            "vent_impedance", self.vent_panel, row=0, col=8, row_span=4, col_span=4
+        )
         # Row 2 (rows 4-8): Burden, Settings, Device Settings
-        self.grid_manager.add_panel("burden", self.burden_panel,
-                                   row=4, col=0, row_span=4, col_span=4)
-        self.grid_manager.add_panel("settings", self.settings_panel_widget,
-                                   row=4, col=4, row_span=4, col_span=4)
-        self.grid_manager.add_panel("device_settings", self.device_settings_panel,
-                                   row=4, col=8, row_span=4, col_span=4)
+        self.grid_manager.add_panel(
+            "burden", self.burden_panel, row=4, col=0, row_span=4, col_span=4
+        )
+        self.grid_manager.add_panel(
+            "settings", self.settings_panel_widget, row=4, col=4, row_span=4, col_span=4
+        )
+        self.grid_manager.add_panel(
+            "device_settings",
+            self.device_settings_panel,
+            row=4,
+            col=8,
+            row_span=4,
+            col_span=4,
+        )
         # Row 3 (rows 8-12): Heart Rate Timeline (full width)
-        self.grid_manager.add_panel("heart_rate", self.heart_rate_panel,
-                                   row=8, col=0, row_span=4, col_span=12)
+        self.grid_manager.add_panel(
+            "heart_rate", self.heart_rate_panel, row=8, col=0, row_span=4, col_span=12
+        )
 
     def _set_default_horizontal_layout(self):
         """Set default horizontal (side-by-side) layout."""
@@ -312,23 +364,37 @@ class TimelineView(QWidget):
             return
 
         # Battery panel full width at top
-        self.grid_manager.add_panel("battery", self.battery_panel, row=0, col=0, row_span=2, col_span=12)
+        self.grid_manager.add_panel(
+            "battery", self.battery_panel, row=0, col=0, row_span=2, col_span=12
+        )
 
         # Impedance panels side-by-side
-        self.grid_manager.add_panel("atrial_impedance", self.atrial_panel, row=2, col=0,
-                                   row_span=2, col_span=6)
-        self.grid_manager.add_panel("vent_impedance", self.vent_panel, row=2, col=6,
-                                   row_span=2, col_span=6)
+        self.grid_manager.add_panel(
+            "atrial_impedance", self.atrial_panel, row=2, col=0, row_span=2, col_span=6
+        )
+        self.grid_manager.add_panel(
+            "vent_impedance", self.vent_panel, row=2, col=6, row_span=2, col_span=6
+        )
         # Burden and settings side-by-side
-        self.grid_manager.add_panel("burden", self.burden_panel, row=4, col=0, row_span=2, col_span=6)
-        self.grid_manager.add_panel("settings", self.settings_panel_widget, row=4, col=6,
-                                   row_span=2, col_span=6)
+        self.grid_manager.add_panel(
+            "burden", self.burden_panel, row=4, col=0, row_span=2, col_span=6
+        )
+        self.grid_manager.add_panel(
+            "settings", self.settings_panel_widget, row=4, col=6, row_span=2, col_span=6
+        )
         # Device settings half width
-        self.grid_manager.add_panel("device_settings", self.device_settings_panel, row=6, col=0,
-                                   row_span=2, col_span=6)
+        self.grid_manager.add_panel(
+            "device_settings",
+            self.device_settings_panel,
+            row=6,
+            col=0,
+            row_span=2,
+            col_span=6,
+        )
         # Heart rate timeline (spans remaining space)
-        self.grid_manager.add_panel("heart_rate", self.heart_rate_panel, row=6, col=6,
-                                   row_span=6, col_span=6)
+        self.grid_manager.add_panel(
+            "heart_rate", self.heart_rate_panel, row=6, col=6, row_span=6, col_span=6
+        )
 
     def _on_drag_started(self, panel_id: str, start_position: QPoint):
         """Handle drag start event."""
@@ -379,7 +445,9 @@ class TimelineView(QWidget):
         # Update cell sizes for resize handles
         self._update_panel_cell_sizes()
 
-    def _on_panel_resize_requested(self, panel_id: str, delta_rows: int, delta_cols: int):
+    def _on_panel_resize_requested(
+        self, panel_id: str, delta_rows: int, delta_cols: int
+    ):
         """
         Handle panel resize request from drag handles or context menu.
 
@@ -413,7 +481,7 @@ class TimelineView(QWidget):
 
     def _update_panel_cell_sizes(self):
         """Update cell sizes for all panels based on current grid container size."""
-        if not self.grid_manager or not hasattr(self, 'grid_container'):
+        if not self.grid_manager or not hasattr(self, "grid_container"):
             return
 
         # Calculate cell dimensions
@@ -423,7 +491,7 @@ class TimelineView(QWidget):
 
         # Update all draggable panels
         for panel_id, panel in self.panels.items():
-            if hasattr(panel, 'set_cell_size'):
+            if hasattr(panel, "set_cell_size"):
                 panel.set_cell_size(cell_width, cell_height)
 
     def set_edit_mode(self, enabled: bool):
@@ -439,12 +507,12 @@ class TimelineView(QWidget):
 
         # Update all draggable panels
         for panel_id, panel in self.panels.items():
-            if hasattr(panel, 'set_edit_mode'):
+            if hasattr(panel, "set_edit_mode"):
                 panel.set_edit_mode(enabled)
 
     def is_edit_mode(self) -> bool:
         """Check if layout editing is enabled."""
-        return getattr(self, 'layout_edit_mode', True)
+        return getattr(self, "layout_edit_mode", True)
 
     def resizeEvent(self, event):
         """Handle resize to update cell sizes."""
@@ -478,7 +546,7 @@ class TimelineView(QWidget):
             LayoutSerializer.save_to_file(layout_data, layout_path)
 
             # Also save to config
-            config.ui.panel_layouts['default'] = layout_data
+            config.ui.panel_layouts["default"] = layout_data
             config.save_to_file()
 
         except Exception as e:
@@ -503,7 +571,7 @@ class TimelineView(QWidget):
 
             # If no file, try config
             if not layout_data:
-                layout_data = config.ui.panel_layouts.get('default')
+                layout_data = config.ui.panel_layouts.get("default")
 
             # If we have layout data, restore it
             if layout_data and LayoutSerializer.validate_layout(layout_data):
@@ -582,7 +650,7 @@ class TimelineView(QWidget):
                         int(col * cell_width),
                         int(row * cell_height),
                         int(panel_info.col_span * cell_width),
-                        int(panel_info.row_span * cell_height)
+                        int(panel_info.row_span * cell_height),
                     )
 
                     # Draw drop zone indicator
@@ -659,28 +727,36 @@ class TimelineView(QWidget):
             # Check whether cached trends are stale (i.e. a newer transmission has been
             # imported since the trends were last computed).  If so, recalculate so that
             # any parser fixes applied to newly-imported data are reflected immediately.
-            latest_import = self.session.query(func.max(Transmission.imported_at)).filter(
-                Transmission.patient_id == patient_id
-            ).scalar()
-            latest_trend_calc = self.session.query(func.max(LongitudinalTrend.computed_at)).filter(
-                LongitudinalTrend.patient_id == patient_id
-            ).scalar()
+            latest_import = (
+                self.session.query(func.max(Transmission.imported_at))
+                .filter(Transmission.patient_id == patient_id)
+                .scalar()
+            )
+            latest_trend_calc = (
+                self.session.query(func.max(LongitudinalTrend.computed_at))
+                .filter(LongitudinalTrend.patient_id == patient_id)
+                .scalar()
+            )
 
             needs_recalc = (
-                latest_trend_calc is None or
-                latest_import is None or
-                latest_import > latest_trend_calc
+                latest_trend_calc is None
+                or latest_import is None
+                or latest_import > latest_trend_calc
             )
 
             if needs_recalc:
-                print(f"[DEBUG] Recalculating trends (latest import: {latest_import}, "
-                      f"last calc: {latest_trend_calc})")
+                print(
+                    f"[DEBUG] Recalculating trends (latest import: {latest_import}, "
+                    f"last calc: {latest_trend_calc})"
+                )
                 calculator = TrendCalculator(self.session)
                 trends = calculator.calculate_all_trends(patient_id)
             else:
-                trends = self.session.query(LongitudinalTrend).filter_by(
-                    patient_id=patient_id
-                ).all()
+                trends = (
+                    self.session.query(LongitudinalTrend)
+                    .filter_by(patient_id=patient_id)
+                    .all()
+                )
 
             # Organize trends by variable
             trends_by_var = {t.variable_name: t for t in trends}
@@ -696,7 +772,7 @@ class TimelineView(QWidget):
 
             # Load battery trend - try multiple variable names
             battery_var = None
-            for var in ['battery_longevity', 'battery_percentage', 'battery_voltage']:
+            for var in ["battery_longevity", "battery_percentage", "battery_voltage"]:
                 if var in trends_by_var:
                     battery_var = var
                     break
@@ -705,31 +781,37 @@ class TimelineView(QWidget):
                 trend = trends_by_var[battery_var]
                 time_points = [datetime.fromisoformat(tp) for tp in trend.time_points]
                 # Determine measurement type from variable name
-                if battery_var == 'battery_longevity':
-                    measurement_type = 'longevity'
-                elif battery_var == 'battery_percentage':
-                    measurement_type = 'percentage'
+                if battery_var == "battery_longevity":
+                    measurement_type = "longevity"
+                elif battery_var == "battery_percentage":
+                    measurement_type = "percentage"
                 else:
-                    measurement_type = 'voltage'
-                self.battery_widget.set_data(time_points, trend.values, measurement_type)
+                    measurement_type = "voltage"
+                self.battery_widget.set_data(
+                    time_points, trend.values, measurement_type
+                )
             else:
                 print(f"[DEBUG] No battery data found")
 
             # Load atrial impedance
-            if 'lead_impedance_atrial' in trends_by_var:
-                trend = trends_by_var['lead_impedance_atrial']
+            if "lead_impedance_atrial" in trends_by_var:
+                trend = trends_by_var["lead_impedance_atrial"]
                 time_points = [datetime.fromisoformat(tp) for tp in trend.time_points]
-                self.atrial_impedance_widget.set_data("Atrial", time_points, trend.values)
+                self.atrial_impedance_widget.set_data(
+                    "Atrial", time_points, trend.values
+                )
 
             # Load ventricular impedance
-            if 'lead_impedance_ventricular' in trends_by_var:
-                trend = trends_by_var['lead_impedance_ventricular']
+            if "lead_impedance_ventricular" in trends_by_var:
+                trend = trends_by_var["lead_impedance_ventricular"]
                 time_points = [datetime.fromisoformat(tp) for tp in trend.time_points]
-                self.vent_impedance_widget.set_data("Ventricular", time_points, trend.values)
+                self.vent_impedance_widget.set_data(
+                    "Ventricular", time_points, trend.values
+                )
 
             # Load AFib burden
-            if 'afib_burden_percent' in trends_by_var:
-                trend = trends_by_var['afib_burden_percent']
+            if "afib_burden_percent" in trends_by_var:
+                trend = trends_by_var["afib_burden_percent"]
                 time_points = [datetime.fromisoformat(tp) for tp in trend.time_points]
                 self.burden_widget.set_data("AFib", time_points, trend.values)
 
@@ -740,18 +822,24 @@ class TimelineView(QWidget):
             hr_min_values = None
 
             # Try heart_rate_mean first, fall back to heart_rate
-            hr_var = 'heart_rate_mean' if 'heart_rate_mean' in trends_by_var else 'heart_rate'
+            hr_var = (
+                "heart_rate_mean"
+                if "heart_rate_mean" in trends_by_var
+                else "heart_rate"
+            )
             if hr_var in trends_by_var:
                 trend = trends_by_var[hr_var]
-                hr_time_points = [datetime.fromisoformat(tp) for tp in trend.time_points]
+                hr_time_points = [
+                    datetime.fromisoformat(tp) for tp in trend.time_points
+                ]
                 hr_values = trend.values
 
-            if 'heart_rate_max' in trends_by_var:
-                trend = trends_by_var['heart_rate_max']
+            if "heart_rate_max" in trends_by_var:
+                trend = trends_by_var["heart_rate_max"]
                 hr_max_values = trend.values
 
-            if 'heart_rate_min' in trends_by_var:
-                trend = trends_by_var['heart_rate_min']
+            if "heart_rate_min" in trends_by_var:
+                trend = trends_by_var["heart_rate_min"]
                 hr_min_values = trend.values
 
             # Set heart rate data if available
@@ -765,7 +853,7 @@ class TimelineView(QWidget):
             upper_rate = self.heart_rate_widget.DEFAULT_UPPER_RATE
 
             # Check for lower rate limit
-            for var in ['lower_rate_limit', 'set_brady_lowrate']:
+            for var in ["lower_rate_limit", "set_brady_lowrate"]:
                 if var in trends_by_var:
                     trend = trends_by_var[var]
                     if trend.values:
@@ -773,7 +861,11 @@ class TimelineView(QWidget):
                         break
 
             # Check for upper rate limit (use max tracking rate or max sensor rate)
-            for var in ['upper_rate_limit', 'set_brady_max_tracking_rate', 'set_brady_max_sensor_rate']:
+            for var in [
+                "upper_rate_limit",
+                "set_brady_max_tracking_rate",
+                "set_brady_max_sensor_rate",
+            ]:
                 if var in trends_by_var:
                     trend = trends_by_var[var]
                     if trend.values:
@@ -787,14 +879,18 @@ class TimelineView(QWidget):
 
             # Load device settings from most recent transmission
             # Use joinedload to eagerly load observations
-            most_recent_transmission = self.session.query(Transmission).options(
-                joinedload(Transmission.observations)
-            ).filter_by(
-                patient_id=patient_id
-            ).order_by(Transmission.transmission_date.desc()).first()
+            most_recent_transmission = (
+                self.session.query(Transmission)
+                .options(joinedload(Transmission.observations))
+                .filter_by(patient_id=patient_id)
+                .order_by(Transmission.transmission_date.desc())
+                .first()
+            )
 
             if most_recent_transmission:
-                print(f"[DEBUG] Loading settings from transmission {most_recent_transmission.transmission_id} with {len(most_recent_transmission.observations)} observations")
+                print(
+                    f"[DEBUG] Loading settings from transmission {most_recent_transmission.transmission_id} with {len(most_recent_transmission.observations)} observations"
+                )
                 self.settings_panel.load_transmission(most_recent_transmission)
                 self.device_settings_widget.load_transmission(most_recent_transmission)
             else:
@@ -804,6 +900,7 @@ class TimelineView(QWidget):
         except Exception as e:
             print(f"Error loading patient data: {e}")
             import traceback
+
             traceback.print_exc()
 
     def _load_raw_observations(self, patient_id: str):
@@ -818,12 +915,15 @@ class TimelineView(QWidget):
         from openpace.database.models import Observation
 
         # Query all numeric observations for this patient
-        observations = self.session.query(Observation).join(
-            Observation.transmission
-        ).filter(
-            Observation.transmission.has(patient_id=patient_id),
-            Observation.value_numeric.isnot(None)
-        ).all()
+        observations = (
+            self.session.query(Observation)
+            .join(Observation.transmission)
+            .filter(
+                Observation.transmission.has(patient_id=patient_id),
+                Observation.value_numeric.isnot(None),
+            )
+            .all()
+        )
 
         # Group observations by variable name
         obs_by_var = {}
@@ -835,69 +935,79 @@ class TimelineView(QWidget):
         print(f"[DEBUG] Raw observation variables: {list(obs_by_var.keys())}")
 
         # Load battery data - try multiple variable names (prefer longevity/percentage over voltage)
-        for var in ['battery_longevity', 'battery_percentage', 'battery_voltage']:
+        for var in ["battery_longevity", "battery_percentage", "battery_voltage"]:
             if var in obs_by_var:
                 obs_list = obs_by_var[var]
                 time_points = [obs.observation_time for obs in obs_list]
                 values = [obs.value_numeric for obs in obs_list]
                 # Determine measurement type from variable name
-                if var == 'battery_longevity':
-                    measurement_type = 'longevity'
-                elif var == 'battery_percentage':
-                    measurement_type = 'percentage'
+                if var == "battery_longevity":
+                    measurement_type = "longevity"
+                elif var == "battery_percentage":
+                    measurement_type = "percentage"
                 else:
-                    measurement_type = 'voltage'
+                    measurement_type = "voltage"
                 self.battery_widget.set_data(time_points, values, measurement_type)
                 print(f"[DEBUG] Loaded battery data ({var}): {len(values)} points")
                 break
 
         # Load atrial impedance
-        if 'lead_impedance_atrial' in obs_by_var:
-            obs_list = obs_by_var['lead_impedance_atrial']
+        if "lead_impedance_atrial" in obs_by_var:
+            obs_list = obs_by_var["lead_impedance_atrial"]
             time_points = [obs.observation_time for obs in obs_list]
             values = [obs.value_numeric for obs in obs_list]
             self.atrial_impedance_widget.set_data("Atrial", time_points, values)
             print(f"[DEBUG] Loaded atrial impedance: {len(values)} points")
 
         # Load ventricular impedance
-        if 'lead_impedance_ventricular' in obs_by_var:
-            obs_list = obs_by_var['lead_impedance_ventricular']
+        if "lead_impedance_ventricular" in obs_by_var:
+            obs_list = obs_by_var["lead_impedance_ventricular"]
             time_points = [obs.observation_time for obs in obs_list]
             values = [obs.value_numeric for obs in obs_list]
             self.vent_impedance_widget.set_data("Ventricular", time_points, values)
             print(f"[DEBUG] Loaded ventricular impedance: {len(values)} points")
 
         # Load AFib burden
-        if 'afib_burden_percent' in obs_by_var:
-            obs_list = obs_by_var['afib_burden_percent']
+        if "afib_burden_percent" in obs_by_var:
+            obs_list = obs_by_var["afib_burden_percent"]
             time_points = [obs.observation_time for obs in obs_list]
             values = [obs.value_numeric for obs in obs_list]
             self.burden_widget.set_data("AFib", time_points, values)
             print(f"[DEBUG] Loaded AFib burden: {len(values)} points")
 
         # Load heart rate data
-        hr_var = 'heart_rate_mean' if 'heart_rate_mean' in obs_by_var else 'heart_rate'
+        hr_var = "heart_rate_mean" if "heart_rate_mean" in obs_by_var else "heart_rate"
         if hr_var in obs_by_var:
             obs_list = obs_by_var[hr_var]
             time_points = [obs.observation_time for obs in obs_list]
             values = [obs.value_numeric for obs in obs_list]
-            hr_max = [obs.value_numeric for obs in obs_by_var.get('heart_rate_max', [])] or None
-            hr_min = [obs.value_numeric for obs in obs_by_var.get('heart_rate_min', [])] or None
-            self.heart_rate_widget.set_heart_rate_data(time_points, values, hr_max, hr_min)
+            hr_max = [
+                obs.value_numeric for obs in obs_by_var.get("heart_rate_max", [])
+            ] or None
+            hr_min = [
+                obs.value_numeric for obs in obs_by_var.get("heart_rate_min", [])
+            ] or None
+            self.heart_rate_widget.set_heart_rate_data(
+                time_points, values, hr_max, hr_min
+            )
             print(f"[DEBUG] Loaded heart rate: {len(values)} points")
 
         # Load rate limits from observations (check multiple variable names)
         lower_rate = self.heart_rate_widget.DEFAULT_LOWER_RATE
         upper_rate = self.heart_rate_widget.DEFAULT_UPPER_RATE
 
-        for var in ['lower_rate_limit', 'set_brady_lowrate']:
+        for var in ["lower_rate_limit", "set_brady_lowrate"]:
             if var in obs_by_var:
                 obs_list = obs_by_var[var]
                 if obs_list and obs_list[-1].value_numeric:
                     lower_rate = obs_list[-1].value_numeric
                     break
 
-        for var in ['upper_rate_limit', 'set_brady_max_tracking_rate', 'set_brady_max_sensor_rate']:
+        for var in [
+            "upper_rate_limit",
+            "set_brady_max_tracking_rate",
+            "set_brady_max_sensor_rate",
+        ]:
             if var in obs_by_var:
                 obs_list = obs_by_var[var]
                 if obs_list and obs_list[-1].value_numeric:
@@ -909,14 +1019,18 @@ class TimelineView(QWidget):
 
         # Load device settings from most recent transmission
         # Use joinedload to eagerly load observations
-        most_recent_transmission = self.session.query(Transmission).options(
-            joinedload(Transmission.observations)
-        ).filter_by(
-            patient_id=patient_id
-        ).order_by(Transmission.transmission_date.desc()).first()
+        most_recent_transmission = (
+            self.session.query(Transmission)
+            .options(joinedload(Transmission.observations))
+            .filter_by(patient_id=patient_id)
+            .order_by(Transmission.transmission_date.desc())
+            .first()
+        )
 
         if most_recent_transmission:
-            print(f"[DEBUG] Loading settings from transmission {most_recent_transmission.transmission_id} with {len(most_recent_transmission.observations)} observations")
+            print(
+                f"[DEBUG] Loading settings from transmission {most_recent_transmission.transmission_id} with {len(most_recent_transmission.observations)} observations"
+            )
             self.settings_panel.load_transmission(most_recent_transmission)
             self.device_settings_widget.load_transmission(most_recent_transmission)
 
@@ -933,12 +1047,15 @@ class TimelineView(QWidget):
         from openpace.database.models import Observation
 
         # Query episode-related observations
-        episode_obs = self.session.query(Observation).join(
-            Observation.transmission
-        ).filter(
-            Observation.transmission.has(patient_id=patient_id),
-            Observation.variable_name.like('episode_%')
-        ).all()
+        episode_obs = (
+            self.session.query(Observation)
+            .join(Observation.transmission)
+            .filter(
+                Observation.transmission.has(patient_id=patient_id),
+                Observation.variable_name.like("episode_%"),
+            )
+            .all()
+        )
 
         if not episode_obs:
             print(f"[DEBUG] No episode observations found")
@@ -947,7 +1064,7 @@ class TimelineView(QWidget):
         # Group observations by sub_id (which identifies each episode)
         episodes_by_sub_id = {}
         for obs in episode_obs:
-            sub_id = obs.sub_id or '1'
+            sub_id = obs.sub_id or "1"
             if sub_id not in episodes_by_sub_id:
                 episodes_by_sub_id[sub_id] = {}
             episodes_by_sub_id[sub_id][obs.variable_name] = obs
@@ -958,35 +1075,41 @@ class TimelineView(QWidget):
             episode = {}
 
             # Get episode datetime
-            if 'episode_datetime' in obs_dict:
-                episode['start_time'] = obs_dict['episode_datetime'].observation_time
-            elif 'episode_id' in obs_dict:
-                episode['start_time'] = obs_dict['episode_id'].observation_time
+            if "episode_datetime" in obs_dict:
+                episode["start_time"] = obs_dict["episode_datetime"].observation_time
+            elif "episode_id" in obs_dict:
+                episode["start_time"] = obs_dict["episode_id"].observation_time
             else:
                 continue  # Skip if no time available
 
             # Get episode type
-            if 'episode_type' in obs_dict:
-                episode['type'] = obs_dict['episode_type'].value_text or 'Unknown'
+            if "episode_type" in obs_dict:
+                episode["type"] = obs_dict["episode_type"].value_text or "Unknown"
                 # Extract short type from MDC codes like "MDC_IDC_ENUM_EPISODE_TYPE_Epis_PeriodicEGM"
-                if 'Epis_' in episode['type']:
-                    episode['type'] = episode['type'].split('Epis_')[-1]
-                elif '_' in episode['type']:
-                    episode['type'] = episode['type'].split('_')[-1]
+                if "Epis_" in episode["type"]:
+                    episode["type"] = episode["type"].split("Epis_")[-1]
+                elif "_" in episode["type"]:
+                    episode["type"] = episode["type"].split("_")[-1]
             else:
-                episode['type'] = 'Unknown'
+                episode["type"] = "Unknown"
 
             # Get duration if available
-            if 'episode_duration' in obs_dict and obs_dict['episode_duration'].value_numeric:
-                duration = obs_dict['episode_duration'].value_numeric
-                episode['duration_seconds'] = duration
+            if (
+                "episode_duration" in obs_dict
+                and obs_dict["episode_duration"].value_numeric
+            ):
+                duration = obs_dict["episode_duration"].value_numeric
+                episode["duration_seconds"] = duration
                 # Calculate end time
                 from datetime import timedelta
-                episode['end_time'] = episode['start_time'] + timedelta(seconds=duration)
+
+                episode["end_time"] = episode["start_time"] + timedelta(
+                    seconds=duration
+                )
 
             # Get episode ID for reference
-            if 'episode_id' in obs_dict:
-                episode['episode_id'] = obs_dict['episode_id'].value_text
+            if "episode_id" in obs_dict:
+                episode["episode_id"] = obs_dict["episode_id"].value_text
 
             episodes.append(episode)
 
@@ -1013,12 +1136,16 @@ class TimelineView(QWidget):
         from openpace.database.models import Observation
 
         # Query alert-related observations
-        alert_obs = self.session.query(Observation).join(
-            Observation.transmission
-        ).filter(
-            Observation.transmission.has(patient_id=patient_id),
-            Observation.variable_name.like('alert_%')
-        ).order_by(Observation.observation_time).all()
+        alert_obs = (
+            self.session.query(Observation)
+            .join(Observation.transmission)
+            .filter(
+                Observation.transmission.has(patient_id=patient_id),
+                Observation.variable_name.like("alert_%"),
+            )
+            .order_by(Observation.observation_time)
+            .all()
+        )
 
         if not alert_obs:
             print(f"[DEBUG] No alert observations found")
@@ -1038,104 +1165,110 @@ class TimelineView(QWidget):
             alert = {}
 
             # Get alert datetime
-            if 'alert_datetime' in obs_dict:
-                alert['time'] = obs_dict['alert_datetime'].observation_time
+            if "alert_datetime" in obs_dict:
+                alert["time"] = obs_dict["alert_datetime"].observation_time
             else:
                 # Use any available observation time
                 for var_name, obs in obs_dict.items():
                     if obs.observation_time:
-                        alert['time'] = obs.observation_time
+                        alert["time"] = obs.observation_time
                         break
 
-            if 'time' not in alert:
+            if "time" not in alert:
                 continue  # Skip if no time available
 
             # Get alert type and determine severity
-            alert_type = 'Unknown Alert'
-            severity = 'low'
+            alert_type = "Unknown Alert"
+            severity = "low"
 
-            if 'alert_type' in obs_dict:
-                raw_type = obs_dict['alert_type'].value_text or ''
+            if "alert_type" in obs_dict:
+                raw_type = obs_dict["alert_type"].value_text or ""
                 # Parse MDC alert type codes
-                if 'VF' in raw_type.upper() or 'FIBRILLATION' in raw_type.upper():
-                    alert_type = 'VF Alert'
-                    severity = 'high'
-                elif 'VT' in raw_type.upper() or 'TACHYCARDIA' in raw_type.upper():
-                    alert_type = 'VT Alert'
-                    severity = 'high'
-                elif 'SHOCK' in raw_type.upper():
-                    alert_type = 'Shock Delivered'
-                    severity = 'high'
-                elif 'ATP' in raw_type.upper():
-                    alert_type = 'ATP Delivered'
-                    severity = 'medium'
-                elif 'AF' in raw_type.upper() or 'AFIB' in raw_type.upper():
-                    alert_type = 'AFib Alert'
-                    severity = 'medium'
-                elif 'LOW' in raw_type.upper() or 'BRADY' in raw_type.upper():
-                    alert_type = 'Low Rate Alert'
-                    severity = 'medium'
-                elif 'HIGH' in raw_type.upper():
-                    alert_type = 'High Rate Alert'
-                    severity = 'medium'
-                elif 'IMPEDANCE' in raw_type.upper():
-                    alert_type = 'Impedance Alert'
-                    severity = 'medium'
-                elif 'BATTERY' in raw_type.upper() or 'ERI' in raw_type.upper():
-                    alert_type = 'Battery Alert'
-                    severity = 'high'
+                if "VF" in raw_type.upper() or "FIBRILLATION" in raw_type.upper():
+                    alert_type = "VF Alert"
+                    severity = "high"
+                elif "VT" in raw_type.upper() or "TACHYCARDIA" in raw_type.upper():
+                    alert_type = "VT Alert"
+                    severity = "high"
+                elif "SHOCK" in raw_type.upper():
+                    alert_type = "Shock Delivered"
+                    severity = "high"
+                elif "ATP" in raw_type.upper():
+                    alert_type = "ATP Delivered"
+                    severity = "medium"
+                elif "AF" in raw_type.upper() or "AFIB" in raw_type.upper():
+                    alert_type = "AFib Alert"
+                    severity = "medium"
+                elif "LOW" in raw_type.upper() or "BRADY" in raw_type.upper():
+                    alert_type = "Low Rate Alert"
+                    severity = "medium"
+                elif "HIGH" in raw_type.upper():
+                    alert_type = "High Rate Alert"
+                    severity = "medium"
+                elif "IMPEDANCE" in raw_type.upper():
+                    alert_type = "Impedance Alert"
+                    severity = "medium"
+                elif "BATTERY" in raw_type.upper() or "ERI" in raw_type.upper():
+                    alert_type = "Battery Alert"
+                    severity = "high"
                 else:
-                    alert_type = raw_type.split('_')[-1] if '_' in raw_type else raw_type
+                    alert_type = (
+                        raw_type.split("_")[-1] if "_" in raw_type else raw_type
+                    )
 
             # Check for specific alert variable names
             for var_name in obs_dict.keys():
-                if 'vf_episode' in var_name or 'alert_vf' in var_name:
-                    alert_type = 'VF Alert'
-                    severity = 'high'
-                elif 'vt_episode' in var_name or 'alert_vt' in var_name:
-                    alert_type = 'VT Alert'
-                    severity = 'high'
-                elif 'shock_delivered' in var_name:
-                    alert_type = 'Shock Delivered'
-                    severity = 'high'
-                elif 'atp_delivered' in var_name:
-                    alert_type = 'ATP Delivered'
-                    severity = 'medium'
-                elif 'afib' in var_name or 'af_detected' in var_name:
-                    alert_type = 'AFib Alert'
-                    severity = 'medium'
-                elif 'high_ventricular_rate' in var_name:
-                    alert_type = 'High Rate'
-                    severity = 'medium'
-                elif 'low_heart_rate' in var_name:
-                    alert_type = 'Low Rate'
-                    severity = 'medium'
-                elif 'impedance' in var_name:
-                    alert_type = 'Impedance Alert'
-                    severity = 'medium'
-                elif 'battery' in var_name or 'eri' in var_name:
-                    alert_type = 'Battery Alert'
-                    severity = 'high'
+                if "vf_episode" in var_name or "alert_vf" in var_name:
+                    alert_type = "VF Alert"
+                    severity = "high"
+                elif "vt_episode" in var_name or "alert_vt" in var_name:
+                    alert_type = "VT Alert"
+                    severity = "high"
+                elif "shock_delivered" in var_name:
+                    alert_type = "Shock Delivered"
+                    severity = "high"
+                elif "atp_delivered" in var_name:
+                    alert_type = "ATP Delivered"
+                    severity = "medium"
+                elif "afib" in var_name or "af_detected" in var_name:
+                    alert_type = "AFib Alert"
+                    severity = "medium"
+                elif "high_ventricular_rate" in var_name:
+                    alert_type = "High Rate"
+                    severity = "medium"
+                elif "low_heart_rate" in var_name:
+                    alert_type = "Low Rate"
+                    severity = "medium"
+                elif "impedance" in var_name:
+                    alert_type = "Impedance Alert"
+                    severity = "medium"
+                elif "battery" in var_name or "eri" in var_name:
+                    alert_type = "Battery Alert"
+                    severity = "high"
 
-            alert['type'] = alert_type
-            alert['severity'] = severity
+            alert["type"] = alert_type
+            alert["severity"] = severity
 
             # Get alert value if available
-            if 'alert_severity' in obs_dict:
-                sev_text = (obs_dict['alert_severity'].value_text or '').lower()
-                if 'high' in sev_text or 'red' in sev_text or 'critical' in sev_text:
-                    alert['severity'] = 'high'
-                elif 'medium' in sev_text or 'yellow' in sev_text or 'warning' in sev_text:
-                    alert['severity'] = 'medium'
+            if "alert_severity" in obs_dict:
+                sev_text = (obs_dict["alert_severity"].value_text or "").lower()
+                if "high" in sev_text or "red" in sev_text or "critical" in sev_text:
+                    alert["severity"] = "high"
+                elif (
+                    "medium" in sev_text
+                    or "yellow" in sev_text
+                    or "warning" in sev_text
+                ):
+                    alert["severity"] = "medium"
 
             # Try to get a numeric value (heart rate, etc.)
             for var_name, obs in obs_dict.items():
                 if obs.value_numeric is not None:
-                    alert['value'] = obs.value_numeric
+                    alert["value"] = obs.value_numeric
                     break
 
-            if 'value' not in alert:
-                alert['value'] = 0  # Default value for display
+            if "value" not in alert:
+                alert["value"] = 0  # Default value for display
 
             alerts.append(alert)
 

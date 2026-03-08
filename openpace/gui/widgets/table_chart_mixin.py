@@ -8,9 +8,17 @@ in trend visualization widgets.
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTableWidget,
-    QTableWidgetItem, QHeaderView, QStackedWidget, QMenu,
-    QFileDialog, QApplication
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView,
+    QStackedWidget,
+    QMenu,
+    QFileDialog,
+    QApplication,
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QAction, QColor
@@ -61,24 +69,28 @@ class ToggleSwitch(QWidget):
         """Update toggle indicator appearance based on current state."""
         if self._is_table_mode:
             # Table mode - indicator on right
-            self.toggle_indicator.setStyleSheet("""
+            self.toggle_indicator.setStyleSheet(
+                """
                 QLabel {
                     background-color: #4CAF50;
                     border-radius: 10px;
                     border: 2px solid #388E3C;
                 }
-            """)
+            """
+            )
             self.chart_label.setStyleSheet("font-size: 11px; color: gray;")
             self.table_label.setStyleSheet("font-size: 11px; font-weight: bold;")
         else:
             # Chart mode - indicator on left
-            self.toggle_indicator.setStyleSheet("""
+            self.toggle_indicator.setStyleSheet(
+                """
                 QLabel {
                     background-color: #2196F3;
                     border-radius: 10px;
                     border: 2px solid #1976D2;
                 }
-            """)
+            """
+            )
             self.chart_label.setStyleSheet("font-size: 11px; font-weight: bold;")
             self.table_label.setStyleSheet("font-size: 11px; color: gray;")
 
@@ -125,8 +137,9 @@ class TableChartMixin:
     VIEW_CHART = 0
     VIEW_TABLE = 1
 
-    def init_table_chart_toggle(self, title: str, columns: List[str],
-                                 chart_widget: QWidget = None):
+    def init_table_chart_toggle(
+        self, title: str, columns: List[str], chart_widget: QWidget = None
+    ):
         """
         Initialize the table/chart toggle functionality.
 
@@ -202,7 +215,8 @@ class TableChartMixin:
 
         # Configure table appearance
         table.setAlternatingRowColors(True)
-        table.setStyleSheet("""
+        table.setStyleSheet(
+            """
             QTableWidget {
                 alternate-background-color: #f5f5f5;
                 gridline-color: #ddd;
@@ -216,7 +230,8 @@ class TableChartMixin:
                 border: 1px solid #ccc;
                 font-weight: bold;
             }
-        """)
+        """
+        )
 
         # Enable sorting
         table.setSortingEnabled(True)
@@ -257,7 +272,7 @@ class TableChartMixin:
         """
         self.table_widget.setRowCount(0)
 
-        if not hasattr(self, 'time_points') or not self.time_points:
+        if not hasattr(self, "time_points") or not self.time_points:
             return
 
         rows = self.get_table_row_data()
@@ -291,11 +306,18 @@ class TableChartMixin:
     def _get_status_color(self, status: str) -> Optional[QColor]:
         """Get color for status value."""
         status_lower = status.lower()
-        if status_lower in ('good', 'normal', 'low'):
+        if status_lower in ("good", "normal", "low"):
             return QColor(0, 150, 0)  # Green
-        elif status_lower in ('monitor', 'moderate', 'warning'):
+        elif status_lower in ("monitor", "moderate", "warning"):
             return QColor(200, 150, 0)  # Yellow/Orange
-        elif status_lower in ('replace soon', 'high', 'critical', 'anomaly', 'above limit', 'below limit'):
+        elif status_lower in (
+            "replace soon",
+            "high",
+            "critical",
+            "anomaly",
+            "above limit",
+            "below limit",
+        ):
             return QColor(200, 0, 0)  # Red
         return None
 
@@ -335,58 +357,61 @@ class TableChartMixin:
 
         lines = []
         # Add header
-        headers = [self.table_widget.horizontalHeaderItem(i).text()
-                   for i in range(self.table_widget.columnCount())]
-        lines.append('\t'.join(headers))
+        headers = [
+            self.table_widget.horizontalHeaderItem(i).text()
+            for i in range(self.table_widget.columnCount())
+        ]
+        lines.append("\t".join(headers))
 
         # Add selected rows
         for row in sorted(selected_rows):
             row_data = []
             for col in range(self.table_widget.columnCount()):
                 item = self.table_widget.item(row, col)
-                row_data.append(item.text() if item else '')
-            lines.append('\t'.join(row_data))
+                row_data.append(item.text() if item else "")
+            lines.append("\t".join(row_data))
 
         clipboard = QApplication.clipboard()
-        clipboard.setText('\n'.join(lines))
+        clipboard.setText("\n".join(lines))
 
     def _copy_all_rows(self):
         """Copy all rows to clipboard."""
         lines = []
         # Add header
-        headers = [self.table_widget.horizontalHeaderItem(i).text()
-                   for i in range(self.table_widget.columnCount())]
-        lines.append('\t'.join(headers))
+        headers = [
+            self.table_widget.horizontalHeaderItem(i).text()
+            for i in range(self.table_widget.columnCount())
+        ]
+        lines.append("\t".join(headers))
 
         # Add all rows
         for row in range(self.table_widget.rowCount()):
             row_data = []
             for col in range(self.table_widget.columnCount()):
                 item = self.table_widget.item(row, col)
-                row_data.append(item.text() if item else '')
-            lines.append('\t'.join(row_data))
+                row_data.append(item.text() if item else "")
+            lines.append("\t".join(row_data))
 
         clipboard = QApplication.clipboard()
-        clipboard.setText('\n'.join(lines))
+        clipboard.setText("\n".join(lines))
 
     def _export_to_csv(self):
         """Export table data to CSV file."""
         file_path, _ = QFileDialog.getSaveFileName(
-            self.table_widget,
-            "Export to CSV",
-            "",
-            "CSV Files (*.csv);;All Files (*)"
+            self.table_widget, "Export to CSV", "", "CSV Files (*.csv);;All Files (*)"
         )
 
         if not file_path:
             return
 
-        with open(file_path, 'w', newline='', encoding='utf-8') as f:
+        with open(file_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
 
             # Write header
-            headers = [self.table_widget.horizontalHeaderItem(i).text()
-                       for i in range(self.table_widget.columnCount())]
+            headers = [
+                self.table_widget.horizontalHeaderItem(i).text()
+                for i in range(self.table_widget.columnCount())
+            ]
             writer.writerow(headers)
 
             # Write rows
@@ -394,7 +419,7 @@ class TableChartMixin:
                 row_data = []
                 for col in range(self.table_widget.columnCount()):
                     item = self.table_widget.item(row, col)
-                    row_data.append(item.text() if item else '')
+                    row_data.append(item.text() if item else "")
                 writer.writerow(row_data)
 
     def _export_to_json(self):
@@ -403,24 +428,26 @@ class TableChartMixin:
             self.table_widget,
             "Export to JSON",
             "",
-            "JSON Files (*.json);;All Files (*)"
+            "JSON Files (*.json);;All Files (*)",
         )
 
         if not file_path:
             return
 
-        headers = [self.table_widget.horizontalHeaderItem(i).text()
-                   for i in range(self.table_widget.columnCount())]
+        headers = [
+            self.table_widget.horizontalHeaderItem(i).text()
+            for i in range(self.table_widget.columnCount())
+        ]
 
         data = []
         for row in range(self.table_widget.rowCount()):
             row_dict = {}
             for col, header in enumerate(headers):
                 item = self.table_widget.item(row, col)
-                row_dict[header] = item.text() if item else ''
+                row_dict[header] = item.text() if item else ""
             data.append(row_dict)
 
-        with open(file_path, 'w', encoding='utf-8') as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
     def set_view_mode(self, mode: int):

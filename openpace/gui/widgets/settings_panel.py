@@ -7,8 +7,16 @@ Shows bradycardia pacing, tachycardia therapy, sensing, and lead configuration s
 
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                              QGroupBox, QScrollArea, QGridLayout, QFrame)
+from PyQt6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QGroupBox,
+    QScrollArea,
+    QGridLayout,
+    QFrame,
+)
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
 
@@ -106,7 +114,8 @@ class SettingsPanel(QWidget):
             Configured QGroupBox
         """
         group = QGroupBox(title)
-        group.setStyleSheet("""
+        group.setStyleSheet(
+            """
             QGroupBox {
                 font-weight: bold;
                 border: 2px solid #cccccc;
@@ -119,7 +128,8 @@ class SettingsPanel(QWidget):
                 left: 10px;
                 padding: 0 5px 0 5px;
             }
-        """)
+        """
+        )
 
         layout = QGridLayout()
         layout.setColumnStretch(1, 1)  # Value column stretches
@@ -186,10 +196,12 @@ class SettingsPanel(QWidget):
 
             # Categorize setting
             self.settings_data[var_name] = {
-                'value': obs.value_numeric if obs.value_numeric is not None else obs.value_text,
-                'value_str': value_str,
-                'unit': obs.unit,
-                'vendor_code': obs.vendor_code
+                "value": obs.value_numeric
+                if obs.value_numeric is not None
+                else obs.value_text,
+                "value_str": value_str,
+                "unit": obs.unit,
+                "vendor_code": obs.vendor_code,
             }
 
     def _populate_device_info(self):
@@ -200,23 +212,21 @@ class SettingsPanel(QWidget):
             self._add_setting_row(
                 self.device_group,
                 "Manufacturer",
-                self.transmission.device_manufacturer or "Unknown"
+                self.transmission.device_manufacturer or "Unknown",
             )
             self._add_setting_row(
                 self.device_group,
                 "Model",
-                self.transmission.device_model or "Not specified"
+                self.transmission.device_model or "Not specified",
             )
             self._add_setting_row(
                 self.device_group,
                 "Serial Number",
-                self.transmission.device_serial or "Not specified"
+                self.transmission.device_serial or "Not specified",
             )
             if self.transmission.device_firmware:
                 self._add_setting_row(
-                    self.device_group,
-                    "Firmware",
-                    self.transmission.device_firmware
+                    self.device_group, "Firmware", self.transmission.device_firmware
                 )
 
     def _populate_brady_settings(self):
@@ -224,8 +234,21 @@ class SettingsPanel(QWidget):
         self._clear_group(self.brady_group)
 
         # Find all settings with brady-related keywords
-        brady_keywords = ['brady', 'pacing', 'mode', 'rate', 'delay', 'av', 'sav', 'pav',
-                          'pvarp', 'sensor', 'switch', 'lowrate', 'tracking']
+        brady_keywords = [
+            "brady",
+            "pacing",
+            "mode",
+            "rate",
+            "delay",
+            "av",
+            "sav",
+            "pav",
+            "pvarp",
+            "sensor",
+            "switch",
+            "lowrate",
+            "tracking",
+        ]
 
         found_any = False
         for var_name, setting_info in sorted(self.settings_data.items()):
@@ -234,16 +257,14 @@ class SettingsPanel(QWidget):
             is_brady = any(keyword in var_lower for keyword in brady_keywords)
 
             # Also check if it's a SET_BRADY code
-            if 'set_brady' in var_lower or 'mdc_idc_set_brady' in var_lower:
+            if "set_brady" in var_lower or "mdc_idc_set_brady" in var_lower:
                 is_brady = True
 
             if is_brady:
                 # Create readable display name from variable name
                 display_name = self._format_variable_name(var_name)
                 self._add_setting_row(
-                    self.brady_group,
-                    display_name,
-                    setting_info['value_str']
+                    self.brady_group, display_name, setting_info["value_str"]
                 )
                 found_any = True
 
@@ -255,8 +276,18 @@ class SettingsPanel(QWidget):
         self._clear_group(self.tachy_group)
 
         # Find all settings with tachy-related keywords
-        tachy_keywords = ['tachy', 'zone', 'vt', 'vf', 'atp', 'shock', 'therapy',
-                          'detection', 'energy', 'vstat']
+        tachy_keywords = [
+            "tachy",
+            "zone",
+            "vt",
+            "vf",
+            "atp",
+            "shock",
+            "therapy",
+            "detection",
+            "energy",
+            "vstat",
+        ]
 
         found_any = False
         for var_name, setting_info in sorted(self.settings_data.items()):
@@ -265,16 +296,14 @@ class SettingsPanel(QWidget):
             is_tachy = any(keyword in var_lower for keyword in tachy_keywords)
 
             # Also check for SET_TACHYTHERAPY or SET_ZONE codes
-            if 'set_tachytherapy' in var_lower or 'set_zone' in var_lower:
+            if "set_tachytherapy" in var_lower or "set_zone" in var_lower:
                 is_tachy = True
 
             if is_tachy:
                 # Create readable display name from variable name
                 display_name = self._format_variable_name(var_name)
                 self._add_setting_row(
-                    self.tachy_group,
-                    display_name,
-                    setting_info['value_str']
+                    self.tachy_group, display_name, setting_info["value_str"]
                 )
                 found_any = True
 
@@ -286,8 +315,15 @@ class SettingsPanel(QWidget):
         self._clear_group(self.sensing_group)
 
         # Find all settings with sensing-related keywords
-        sensing_keywords = ['sensing', 'sensitivity', 'blanking', 'adaptation',
-                            'leadchnl', 'intr', 'ampl']
+        sensing_keywords = [
+            "sensing",
+            "sensitivity",
+            "blanking",
+            "adaptation",
+            "leadchnl",
+            "intr",
+            "ampl",
+        ]
 
         found_any = False
         for var_name, setting_info in sorted(self.settings_data.items()):
@@ -296,20 +332,22 @@ class SettingsPanel(QWidget):
             is_sensing = any(keyword in var_lower for keyword in sensing_keywords)
 
             # Also check for SET_LEADCHNL_SENSING codes
-            if 'set_leadchnl' in var_lower and 'sensing' in var_lower:
+            if "set_leadchnl" in var_lower and "sensing" in var_lower:
                 is_sensing = True
 
             # Exclude pacing settings (they go in lead channels)
-            if 'pacing' in var_lower or 'amplitude' in var_lower or 'pulsewidth' in var_lower:
+            if (
+                "pacing" in var_lower
+                or "amplitude" in var_lower
+                or "pulsewidth" in var_lower
+            ):
                 is_sensing = False
 
             if is_sensing:
                 # Create readable display name from variable name
                 display_name = self._format_variable_name(var_name)
                 self._add_setting_row(
-                    self.sensing_group,
-                    display_name,
-                    setting_info['value_str']
+                    self.sensing_group, display_name, setting_info["value_str"]
                 )
                 found_any = True
 
@@ -320,8 +358,16 @@ class SettingsPanel(QWidget):
         self._clear_group(self.lead_group)
 
         # Find all settings with lead/pacing-related keywords
-        lead_keywords = ['pacing', 'amplitude', 'pulsewidth', 'pulse_width', 'polarity',
-                         'leadchnl', 'capture', 'threshold']
+        lead_keywords = [
+            "pacing",
+            "amplitude",
+            "pulsewidth",
+            "pulse_width",
+            "polarity",
+            "leadchnl",
+            "capture",
+            "threshold",
+        ]
 
         found_any = False
         for var_name, setting_info in sorted(self.settings_data.items()):
@@ -330,20 +376,20 @@ class SettingsPanel(QWidget):
             is_lead = any(keyword in var_lower for keyword in lead_keywords)
 
             # Also check for SET_LEADCHNL_PACING codes
-            if 'set_leadchnl' in var_lower and 'pacing' in var_lower:
+            if "set_leadchnl" in var_lower and "pacing" in var_lower:
                 is_lead = True
 
             # Exclude brady mode/rate settings (they go in brady section)
-            if any(kw in var_lower for kw in ['mode', 'lowrate', 'tracking', 'sensor_rate']):
+            if any(
+                kw in var_lower for kw in ["mode", "lowrate", "tracking", "sensor_rate"]
+            ):
                 is_lead = False
 
             if is_lead:
                 # Create readable display name from variable name
                 display_name = self._format_variable_name(var_name)
                 self._add_setting_row(
-                    self.lead_group,
-                    display_name,
-                    setting_info['value_str']
+                    self.lead_group, display_name, setting_info["value_str"]
                 )
                 found_any = True
 
@@ -355,27 +401,54 @@ class SettingsPanel(QWidget):
 
         # Keywords that indicate this setting has already been categorized
         categorized_keywords = [
-            'brady', 'pacing', 'mode', 'rate', 'delay', 'av', 'sav', 'pav',
-            'tachy', 'zone', 'vt', 'vf', 'atp', 'shock', 'therapy', 'detection',
-            'sensing', 'sensitivity', 'blanking', 'adaptation',
-            'amplitude', 'pulsewidth', 'pulse_width', 'polarity', 'capture', 'threshold',
-            'battery', 'impedance', 'longevity', 'voltage', 'burden', 'afib'
+            "brady",
+            "pacing",
+            "mode",
+            "rate",
+            "delay",
+            "av",
+            "sav",
+            "pav",
+            "tachy",
+            "zone",
+            "vt",
+            "vf",
+            "atp",
+            "shock",
+            "therapy",
+            "detection",
+            "sensing",
+            "sensitivity",
+            "blanking",
+            "adaptation",
+            "amplitude",
+            "pulsewidth",
+            "pulse_width",
+            "polarity",
+            "capture",
+            "threshold",
+            "battery",
+            "impedance",
+            "longevity",
+            "voltage",
+            "burden",
+            "afib",
         ]
 
         found_any = False
         for var_name, setting_info in sorted(self.settings_data.items()):
             # Check if this setting hasn't been categorized yet
             var_lower = var_name.lower()
-            is_categorized = any(keyword in var_lower for keyword in categorized_keywords)
+            is_categorized = any(
+                keyword in var_lower for keyword in categorized_keywords
+            )
 
             # Show uncategorized settings here
             if not is_categorized:
                 # Create readable display name from variable name
                 display_name = self._format_variable_name(var_name)
                 self._add_setting_row(
-                    self.advanced_group,
-                    display_name,
-                    setting_info['value_str']
+                    self.advanced_group, display_name, setting_info["value_str"]
                 )
                 found_any = True
 
@@ -393,15 +466,15 @@ class SettingsPanel(QWidget):
         """
         # Remove common prefixes
         name = var_name
-        for prefix in ['mdc_idc_', 'set_', 'msmt_']:
+        for prefix in ["mdc_idc_", "set_", "msmt_"]:
             if name.lower().startswith(prefix):
-                name = name[len(prefix):]
+                name = name[len(prefix) :]
 
         # Replace underscores with spaces
-        name = name.replace('_', ' ')
+        name = name.replace("_", " ")
 
         # Title case each word
-        name = ' '.join(word.capitalize() for word in name.split())
+        name = " ".join(word.capitalize() for word in name.split())
 
         return name
 
@@ -420,13 +493,20 @@ class SettingsPanel(QWidget):
         # Label
         label_widget = QLabel(f"{label}:")
         label_widget.setStyleSheet("font-weight: normal; color: #333333;")
-        layout.addWidget(label_widget, row, 0, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+        layout.addWidget(
+            label_widget,
+            row,
+            0,
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop,
+        )
 
         # Value
         value_widget = QLabel(str(value))
         value_widget.setStyleSheet("font-weight: bold; color: #000000;")
         value_widget.setWordWrap(True)
-        layout.addWidget(value_widget, row, 1, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        layout.addWidget(
+            value_widget, row, 1, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+        )
 
         group.row_count += 1
 
@@ -502,34 +582,45 @@ class SettingsPanel(QWidget):
 
         trans_date = self.transmission.transmission_date
         lines.append(f"Transmission Date: {trans_date.strftime('%Y-%m-%d %H:%M')}")
-        lines.append(f"Manufacturer: {self.transmission.device_manufacturer or 'Unknown'}")
+        lines.append(
+            f"Manufacturer: {self.transmission.device_manufacturer or 'Unknown'}"
+        )
         lines.append(f"Model: {self.transmission.device_model or 'Not specified'}")
         lines.append(f"Serial: {self.transmission.device_serial or 'Not specified'}")
         lines.append("")
 
         # Add each category
         for group_title, var_mapping in [
-            ("BRADYCARDIA PACING", {
-                'pacing_mode': 'Pacing Mode',
-                'base_rate': 'Base Rate',
-                'lower_rate': 'Lower Rate',
-                'max_tracking_rate': 'Max Tracking Rate'
-            }),
-            ("SENSING", {
-                'atrial_sensitivity': 'Atrial Sensitivity',
-                'ventricular_sensitivity': 'Ventricular Sensitivity'
-            }),
-            ("LEAD CHANNELS", {
-                'atrial_amplitude': 'Atrial Amplitude',
-                'ventricular_amplitude': 'Ventricular Amplitude'
-            })
+            (
+                "BRADYCARDIA PACING",
+                {
+                    "pacing_mode": "Pacing Mode",
+                    "base_rate": "Base Rate",
+                    "lower_rate": "Lower Rate",
+                    "max_tracking_rate": "Max Tracking Rate",
+                },
+            ),
+            (
+                "SENSING",
+                {
+                    "atrial_sensitivity": "Atrial Sensitivity",
+                    "ventricular_sensitivity": "Ventricular Sensitivity",
+                },
+            ),
+            (
+                "LEAD CHANNELS",
+                {
+                    "atrial_amplitude": "Atrial Amplitude",
+                    "ventricular_amplitude": "Ventricular Amplitude",
+                },
+            ),
         ]:
             found_any = False
             group_lines = [f"{group_title}:", "-" * len(group_title)]
 
             for var_name, display_name in var_mapping.items():
                 if var_name in self.settings_data:
-                    value = self.settings_data[var_name]['value_str']
+                    value = self.settings_data[var_name]["value_str"]
                     group_lines.append(f"  {display_name}: {value}")
                     found_any = True
 

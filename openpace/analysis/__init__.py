@@ -12,7 +12,7 @@ from openpace.analysis.impedance_analyzer import ImpedanceAnalyzer
 from openpace.analysis.arrhythmia_analyzer import ArrhythmiaAnalyzer
 
 __all__ = [
-    'BatteryAnalyzer',
-    'ImpedanceAnalyzer',
-    'ArrhythmiaAnalyzer',
+    "BatteryAnalyzer",
+    "ImpedanceAnalyzer",
+    "ArrhythmiaAnalyzer",
 ]

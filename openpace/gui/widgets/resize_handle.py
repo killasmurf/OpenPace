@@ -13,6 +13,7 @@ from PyQt6.QtGui import QMouseEvent, QPainter, QColor, QCursor
 
 class HandlePosition(Enum):
     """Position of resize handle."""
+
     TOP_LEFT = "top_left"
     TOP_RIGHT = "top_right"
     BOTTOM_LEFT = "bottom_left"
@@ -38,7 +39,7 @@ class ResizeHandle(QWidget):
 
     resize_started = pyqtSignal(QPoint)  # start_position
     resize_moved = pyqtSignal(int, int)  # delta_x, delta_y
-    resize_ended = pyqtSignal(QSize)     # final_size
+    resize_ended = pyqtSignal(QSize)  # final_size
 
     def __init__(self, position: HandlePosition, parent: QWidget = None):
         """
@@ -66,7 +67,8 @@ class ResizeHandle(QWidget):
         self.setMouseTracking(True)
 
         # Style
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             ResizeHandle {
                 background-color: rgba(0, 120, 215, 128);
                 border-radius: 2px;
@@ -74,7 +76,8 @@ class ResizeHandle(QWidget):
             ResizeHandle:hover {
                 background-color: rgba(0, 120, 215, 192);
             }
-        """)
+        """
+        )
 
     def _set_cursor(self):
         """Set appropriate cursor based on handle position."""
@@ -114,14 +117,30 @@ class ResizeHandle(QWidget):
             delta_x = 0
             delta_y = 0
 
-            if self.position in [HandlePosition.TOP_LEFT, HandlePosition.LEFT, HandlePosition.BOTTOM_LEFT]:
+            if self.position in [
+                HandlePosition.TOP_LEFT,
+                HandlePosition.LEFT,
+                HandlePosition.BOTTOM_LEFT,
+            ]:
                 delta_x = -delta.x()  # Left side moves inversely
-            elif self.position in [HandlePosition.TOP_RIGHT, HandlePosition.RIGHT, HandlePosition.BOTTOM_RIGHT]:
+            elif self.position in [
+                HandlePosition.TOP_RIGHT,
+                HandlePosition.RIGHT,
+                HandlePosition.BOTTOM_RIGHT,
+            ]:
                 delta_x = delta.x()
 
-            if self.position in [HandlePosition.TOP_LEFT, HandlePosition.TOP, HandlePosition.TOP_RIGHT]:
+            if self.position in [
+                HandlePosition.TOP_LEFT,
+                HandlePosition.TOP,
+                HandlePosition.TOP_RIGHT,
+            ]:
                 delta_y = -delta.y()  # Top side moves inversely
-            elif self.position in [HandlePosition.BOTTOM_LEFT, HandlePosition.BOTTOM, HandlePosition.BOTTOM_RIGHT]:
+            elif self.position in [
+                HandlePosition.BOTTOM_LEFT,
+                HandlePosition.BOTTOM,
+                HandlePosition.BOTTOM_RIGHT,
+            ]:
                 delta_y = delta.y()
 
             # Emit resize moved
@@ -158,21 +177,21 @@ class ResizeHandle(QWidget):
         elif self.position == HandlePosition.BOTTOM_RIGHT:
             self.move(
                 parent_rect.width() - self.handle_size - margin,
-                parent_rect.height() - self.handle_size - margin
+                parent_rect.height() - self.handle_size - margin,
             )
         elif self.position == HandlePosition.TOP:
             self.move(parent_rect.width() // 2 - self.handle_size // 2, margin)
         elif self.position == HandlePosition.BOTTOM:
             self.move(
                 parent_rect.width() // 2 - self.handle_size // 2,
-                parent_rect.height() - self.handle_size - margin
+                parent_rect.height() - self.handle_size - margin,
             )
         elif self.position == HandlePosition.LEFT:
             self.move(margin, parent_rect.height() // 2 - self.handle_size // 2)
         elif self.position == HandlePosition.RIGHT:
             self.move(
                 parent_rect.width() - self.handle_size - margin,
-                parent_rect.height() // 2 - self.handle_size // 2
+                parent_rect.height() // 2 - self.handle_size // 2,
             )
 
         # Bring to front
@@ -190,10 +209,18 @@ class ResizeHandleManager(QObject):
         resize_requested: Emitted when resize is requested (delta_rows, delta_cols, handle_position)
     """
 
-    resize_requested = pyqtSignal(int, int, str)  # delta_rows, delta_cols, handle_position
+    resize_requested = pyqtSignal(
+        int, int, str
+    )  # delta_rows, delta_cols, handle_position
 
-    def __init__(self, widget: QWidget, corners: bool = True, edges: bool = True,
-                 cell_height: int = 50, cell_width: int = 50):
+    def __init__(
+        self,
+        widget: QWidget,
+        corners: bool = True,
+        edges: bool = True,
+        cell_height: int = 50,
+        cell_width: int = 50,
+    ):
         """
         Initialize resize handle manager.
 
@@ -258,8 +285,16 @@ class ResizeHandleManager(QObject):
     def _on_resize_ended(self, final_size: QSize):
         """Handle resize end - emit signal with grid-based delta."""
         # Calculate row/column changes based on accumulated pixel delta
-        delta_rows = round(self.accumulated_delta_y / self.cell_height) if self.cell_height > 0 else 0
-        delta_cols = round(self.accumulated_delta_x / self.cell_width) if self.cell_width > 0 else 0
+        delta_rows = (
+            round(self.accumulated_delta_y / self.cell_height)
+            if self.cell_height > 0
+            else 0
+        )
+        delta_cols = (
+            round(self.accumulated_delta_x / self.cell_width)
+            if self.cell_width > 0
+            else 0
+        )
 
         # Only emit if there's an actual change
         if delta_rows != 0 or delta_cols != 0:

@@ -3,7 +3,7 @@ PyQt6==6.6.1
 PyQt6-Qt6==6.6.1
 
 # HL7 Processing
-python-hl7==0.4.5
+hl7==0.4.5
 hl7apy==1.3.4
 
 # Data Processing & Analysis

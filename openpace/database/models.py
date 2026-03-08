@@ -68,10 +68,14 @@ class Patient(Base):
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
     # Relationships
-    transmissions = relationship("Transmission", back_populates="patient", cascade="all, delete-orphan")
+    transmissions = relationship(
+        "Transmission", back_populates="patient", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         display_name = self.anonymized_id if self.anonymized else self.patient_name
@@ -139,8 +143,12 @@ class Transmission(Base):
 
     # Relationships
     patient = relationship("Patient", back_populates="transmissions")
-    observations = relationship("Observation", back_populates="transmission", cascade="all, delete-orphan")
-    episodes = relationship("ArrhythmiaEpisode", back_populates="transmission", cascade="all, delete-orphan")
+    observations = relationship(
+        "Observation", back_populates="transmission", cascade="all, delete-orphan"
+    )
+    episodes = relationship(
+        "ArrhythmiaEpisode", back_populates="transmission", cascade="all, delete-orphan"
+    )
 
     # Indexes for performance
     __table_args__ = (
@@ -198,14 +206,18 @@ class Observation(Base):
     __tablename__ = "observations"
 
     observation_id = Column(Integer, primary_key=True, autoincrement=True)
-    transmission_id = Column(Integer, ForeignKey("transmissions.transmission_id"), nullable=False)
+    transmission_id = Column(
+        Integer, ForeignKey("transmissions.transmission_id"), nullable=False
+    )
 
     # Observation metadata
     observation_time = Column(DateTime, nullable=False)
     sequence_number = Column(Integer, nullable=True)  # OBX sequence in message
 
     # Variable identification
-    variable_name = Column(String(100), nullable=False)  # Universal variable (e.g., "battery_voltage")
+    variable_name = Column(
+        String(100), nullable=False
+    )  # Universal variable (e.g., "battery_voltage")
     loinc_code = Column(String(20), nullable=True)
     vendor_code = Column(String(100), nullable=True)  # Original vendor-specific code
 
@@ -217,8 +229,12 @@ class Observation(Base):
     # Metadata
     unit = Column(String(50), nullable=True)
     reference_range = Column(String(100), nullable=True)
-    abnormal_flag = Column(String(10), nullable=True)  # N (normal), H (high), L (low), etc.
-    observation_status = Column(String(1), nullable=True)  # F (final), P (preliminary), etc.
+    abnormal_flag = Column(
+        String(10), nullable=True
+    )  # N (normal), H (high), L (low), etc.
+    observation_status = Column(
+        String(1), nullable=True
+    )  # F (final), P (preliminary), etc.
 
     # Relationships
     transmission = relationship("Transmission", back_populates="observations")
@@ -231,7 +247,9 @@ class Observation(Base):
     )
 
     def __repr__(self):
-        value = self.value_numeric if self.value_numeric is not None else self.value_text
+        value = (
+            self.value_numeric if self.value_numeric is not None else self.value_text
+        )
         return f"<Observation(id={self.observation_id}, var={self.variable_name}, value={value})>"
 
 
@@ -315,10 +333,14 @@ class ArrhythmiaEpisode(Base):
     __tablename__ = "arrhythmia_episodes"
 
     episode_id = Column(Integer, primary_key=True, autoincrement=True)
-    transmission_id = Column(Integer, ForeignKey("transmissions.transmission_id"), nullable=False)
+    transmission_id = Column(
+        Integer, ForeignKey("transmissions.transmission_id"), nullable=False
+    )
 
     # Episode metadata
-    episode_type = Column(String(50), nullable=False)  # "AFib", "VT", "SVT", "AFL", etc.
+    episode_type = Column(
+        String(50), nullable=False
+    )  # "AFib", "VT", "SVT", "AFL", etc.
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=True)
     duration_seconds = Column(Integer, nullable=True)
@@ -337,7 +359,9 @@ class ArrhythmiaEpisode(Base):
     egm_available = Column(Boolean, default=False, nullable=False)
 
     # Additional metadata
-    episode_metadata = Column(JSON, nullable=True)  # Flexible storage for vendor-specific data
+    episode_metadata = Column(
+        JSON, nullable=True
+    )  # Flexible storage for vendor-specific data
 
     # Relationships
     transmission = relationship("Transmission", back_populates="episodes")
@@ -363,7 +387,9 @@ class DeviceParameter(Base):
     __tablename__ = "device_parameters"
 
     parameter_id = Column(Integer, primary_key=True, autoincrement=True)
-    transmission_id = Column(Integer, ForeignKey("transmissions.transmission_id"), nullable=False)
+    transmission_id = Column(
+        Integer, ForeignKey("transmissions.transmission_id"), nullable=False
+    )
 
     # Parameter identification
     parameter_name = Column(String(100), nullable=False)
@@ -399,7 +425,9 @@ class Analysis(Base):
     patient_id = Column(String(100), ForeignKey("patients.patient_id"), nullable=False)
 
     # Analysis metadata
-    analysis_type = Column(String(100), nullable=False)  # "battery_trend", "lead_fracture", etc.
+    analysis_type = Column(
+        String(100), nullable=False
+    )  # "battery_trend", "lead_fracture", etc.
     analysis_name = Column(String(200), nullable=True)
     description = Column(Text, nullable=True)
 

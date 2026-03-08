@@ -30,7 +30,7 @@ class EGMDecoder:
     """
 
     @staticmethod
-    def decode_blob(blob: bytes, vendor: str = 'Generic') -> Optional[Dict[str, Any]]:
+    def decode_blob(blob: bytes, vendor: str = "Generic") -> Optional[Dict[str, Any]]:
         """
         Decode EGM blob based on format detection.
 
@@ -45,9 +45,9 @@ class EGMDecoder:
             return None
 
         # Detect format
-        if blob.startswith(b'%PDF'):
+        if blob.startswith(b"%PDF"):
             return EGMDecoder._decode_pdf_egm(blob)
-        elif blob.startswith(b'<?xml') or blob.startswith(b'<'):
+        elif blob.startswith(b"<?xml") or blob.startswith(b"<"):
             return EGMDecoder._decode_xml_egm(blob)
         else:
             # Assume raw binary
@@ -70,18 +70,20 @@ class EGMDecoder:
             Decoded EGM dictionary
         """
         if len(blob) < EGMConstants.TYPICAL_HEADER_SIZE:
-            return {'error': 'Blob too small for valid EGM', 'size': len(blob)}
+            return {"error": "Blob too small for valid EGM", "size": len(blob)}
 
         try:
             # Simple heuristic: try both endianness
             # Most medical devices use big-endian
-            samples_be = EGMDecoder._parse_samples(blob, byteorder='big')
-            samples_le = EGMDecoder._parse_samples(blob, byteorder='little')
+            samples_be = EGMDecoder._parse_samples(blob, byteorder="big")
+            samples_le = EGMDecoder._parse_samples(blob, byteorder="little")
 
             # Choose based on which gives more reasonable values
             # EGM typically ranges from -5mV to +5mV (or -5000 to +5000 in μV)
             samples = samples_be
-            if max(abs(min(samples_le)), abs(max(samples_le))) < max(abs(min(samples_be)), abs(max(samples_be))):
+            if max(abs(min(samples_le)), abs(max(samples_le))) < max(
+                abs(min(samples_be)), abs(max(samples_be))
+            ):
                 samples = samples_le
 
             # Typical sample rates: 256Hz, 512Hz, 1000Hz
@@ -89,23 +91,24 @@ class EGMDecoder:
             sample_rate = EGMDecoder._estimate_sample_rate(len(samples))
 
             return {
-                'type': 'binary',
-                'vendor': vendor,
-                'samples': samples.tolist(),
-                'sample_count': len(samples),
-                'sample_rate': sample_rate,
-                'duration_seconds': len(samples) / sample_rate,
-                'channels': ['Combined'],  # Single channel assumed
-                'unit': 'μV',  # Microvolts
+                "type": "binary",
+                "vendor": vendor,
+                "samples": samples.tolist(),
+                "sample_count": len(samples),
+                "sample_rate": sample_rate,
+                "duration_seconds": len(samples) / sample_rate,
+                "channels": ["Combined"],  # Single channel assumed
+                "unit": "μV",  # Microvolts
             }
 
         except Exception as e:
             logger.error(f"Failed to decode binary EGM: {e}")
-            return {'error': str(e), 'size': len(blob)}
+            return {"error": str(e), "size": len(blob)}
 
     @staticmethod
-    def _parse_samples(blob: bytes, byteorder: str,
-                      header_size: int = EGMConstants.TYPICAL_HEADER_SIZE) -> np.ndarray:
+    def _parse_samples(
+        blob: bytes, byteorder: str, header_size: int = EGMConstants.TYPICAL_HEADER_SIZE
+    ) -> np.ndarray:
         """
         Parse samples from binary blob.
 
@@ -120,16 +123,16 @@ class EGMDecoder:
         samples_data = blob[header_size:]
         sample_count = len(samples_data) // 2
 
-        if byteorder == 'big':
-            format_char = '>h'  # Big-endian signed short
+        if byteorder == "big":
+            format_char = ">h"  # Big-endian signed short
         else:
-            format_char = '<h'  # Little-endian signed short
+            format_char = "<h"  # Little-endian signed short
 
         samples = []
         for i in range(sample_count):
             offset = i * 2
             if offset + 2 <= len(samples_data):
-                value = struct.unpack(format_char, samples_data[offset:offset+2])[0]
+                value = struct.unpack(format_char, samples_data[offset : offset + 2])[0]
                 samples.append(value)
 
         return np.array(samples)
@@ -153,8 +156,7 @@ class EGMDecoder:
 
         # Find closest common rate
         closest_rate = min(
-            EGMConstants.COMMON_SAMPLE_RATES,
-            key=lambda r: abs(r - estimated_rate)
+            EGMConstants.COMMON_SAMPLE_RATES, key=lambda r: abs(r - estimated_rate)
         )
         return closest_rate
 
@@ -172,9 +174,9 @@ class EGMDecoder:
             Metadata about PDF
         """
         return {
-            'type': 'pdf',
-            'size': len(blob),
-            'note': 'PDF format - requires specialized PDF parser for waveform extraction'
+            "type": "pdf",
+            "size": len(blob),
+            "note": "PDF format - requires specialized PDF parser for waveform extraction",
         }
 
     @staticmethod
@@ -191,9 +193,9 @@ class EGMDecoder:
             Metadata about XML
         """
         return {
-            'type': 'xml',
-            'size': len(blob),
-            'note': 'HL7 CDA XML format - requires XML parser'
+            "type": "xml",
+            "size": len(blob),
+            "note": "HL7 CDA XML format - requires XML parser",
         }
 
 
@@ -205,9 +207,12 @@ class EGMProcessor:
     """
 
     @staticmethod
-    def filter_signal(samples: List[float], sample_rate: int,
-                     lowcut: float = EGMConstants.BANDPASS_LOW_CUTOFF,
-                     highcut: float = EGMConstants.BANDPASS_HIGH_CUTOFF) -> np.ndarray:
+    def filter_signal(
+        samples: List[float],
+        sample_rate: int,
+        lowcut: float = EGMConstants.BANDPASS_LOW_CUTOFF,
+        highcut: float = EGMConstants.BANDPASS_HIGH_CUTOFF,
+    ) -> np.ndarray:
         """
         Apply bandpass filter to remove noise.
 
@@ -230,7 +235,7 @@ class EGMProcessor:
             high = highcut / nyquist
 
             # Butterworth filter
-            b, a = signal.butter(EGMConstants.FILTER_ORDER, [low, high], btype='band')
+            b, a = signal.butter(EGMConstants.FILTER_ORDER, [low, high], btype="band")
 
             # Apply filter
             filtered = signal.filtfilt(b, a, signal_array)
@@ -242,8 +247,11 @@ class EGMProcessor:
             return np.array(samples)
 
     @staticmethod
-    def detect_peaks(samples: List[float], sample_rate: int,
-                    min_distance_ms: int = EGMConstants.DEFAULT_MIN_PEAK_DISTANCE_MS) -> List[int]:
+    def detect_peaks(
+        samples: List[float],
+        sample_rate: int,
+        min_distance_ms: int = EGMConstants.DEFAULT_MIN_PEAK_DISTANCE_MS,
+    ) -> List[int]:
         """
         Detect R-peaks (QRS complexes) in EGM.
 
@@ -265,7 +273,7 @@ class EGMProcessor:
             peaks, _ = signal.find_peaks(
                 signal_array,
                 distance=min_distance_samples,
-                prominence=np.std(signal_array) * 0.5  # Adaptive threshold
+                prominence=np.std(signal_array) * 0.5,  # Adaptive threshold
             )
 
             return peaks.tolist()
@@ -291,7 +299,7 @@ class EGMProcessor:
 
         rr_intervals = []
         for i in range(1, len(peaks)):
-            interval_samples = peaks[i] - peaks[i-1]
+            interval_samples = peaks[i] - peaks[i - 1]
             interval_ms = (interval_samples / sample_rate) * 1000
             rr_intervals.append(interval_ms)
 
@@ -314,17 +322,20 @@ class EGMProcessor:
         # Convert RR intervals to heart rates
         # HR (bpm) = 60000 ms/min / RR_interval_ms
         from openpace.constants import StatisticalThresholds
-        heart_rates = [StatisticalThresholds.MS_PER_MINUTE / rr for rr in rr_intervals if rr > 0]
+
+        heart_rates = [
+            StatisticalThresholds.MS_PER_MINUTE / rr for rr in rr_intervals if rr > 0
+        ]
 
         if not heart_rates:
             return {}
 
         return {
-            'mean_hr': np.mean(heart_rates),
-            'min_hr': np.min(heart_rates),
-            'max_hr': np.max(heart_rates),
-            'std_hr': np.std(heart_rates),
-            'median_hr': np.median(heart_rates),
+            "mean_hr": np.mean(heart_rates),
+            "min_hr": np.min(heart_rates),
+            "max_hr": np.max(heart_rates),
+            "std_hr": np.std(heart_rates),
+            "median_hr": np.median(heart_rates),
         }
 
     @staticmethod
@@ -338,11 +349,11 @@ class EGMProcessor:
         Returns:
             Enhanced EGM dictionary with analysis results
         """
-        if 'samples' not in egm_data or 'sample_rate' not in egm_data:
+        if "samples" not in egm_data or "sample_rate" not in egm_data:
             return egm_data
 
-        samples = egm_data['samples']
-        sample_rate = egm_data['sample_rate']
+        samples = egm_data["samples"]
+        sample_rate = egm_data["sample_rate"]
 
         # Filter signal
         filtered_samples = EGMProcessor.filter_signal(samples, sample_rate)
@@ -359,12 +370,12 @@ class EGMProcessor:
         # Add analysis results
         return {
             **egm_data,
-            'filtered_samples': filtered_samples.tolist(),
-            'peaks': peaks,
-            'peak_count': len(peaks),
-            'rr_intervals': rr_intervals,
-            'rr_mean': np.mean(rr_intervals) if rr_intervals else None,
-            'rr_std': np.std(rr_intervals) if rr_intervals else None,
-            'hr_statistics': hr_stats,
-            'analyzed': True,
+            "filtered_samples": filtered_samples.tolist(),
+            "peaks": peaks,
+            "peak_count": len(peaks),
+            "rr_intervals": rr_intervals,
+            "rr_mean": np.mean(rr_intervals) if rr_intervals else None,
+            "rr_std": np.std(rr_intervals) if rr_intervals else None,
+            "hr_statistics": hr_stats,
+            "analyzed": True,
         }

@@ -14,6 +14,7 @@ class OpenPaceError(Exception):
     All custom exceptions in OpenPace should inherit from this base class.
     This allows catching all OpenPace-specific errors with a single except clause.
     """
+
     pass
 
 
@@ -21,8 +22,10 @@ class OpenPaceError(Exception):
 # DATA PARSING ERRORS
 # =============================================================================
 
+
 class ParseError(OpenPaceError):
     """Base exception for parsing errors."""
+
     pass
 
 
@@ -35,6 +38,7 @@ class HL7ParseError(ParseError):
     - Missing required segments (MSH, PID)
     - Invalid field formats
     """
+
     pass
 
 
@@ -47,6 +51,7 @@ class HL7ValidationError(ParseError):
     - Invalid message type
     - Required fields missing
     """
+
     pass
 
 
@@ -59,12 +64,14 @@ class EGMDecodeError(ParseError):
     - Corrupted waveform data
     - Invalid sample count
     """
+
     pass
 
 
 # =============================================================================
 # DATABASE ERRORS
 # =============================================================================
+
 
 class DatabaseError(OpenPaceError):
     """
@@ -75,6 +82,7 @@ class DatabaseError(OpenPaceError):
     - Transaction errors
     - Constraint violations
     """
+
     pass
 
 
@@ -87,6 +95,7 @@ class DatabaseConnectionError(DatabaseError):
     - Database file is locked
     - Insufficient permissions
     """
+
     pass
 
 
@@ -99,6 +108,7 @@ class DatabaseIntegrityError(DatabaseError):
     - Foreign key violation
     - Unique constraint violation
     """
+
     pass
 
 
@@ -111,12 +121,14 @@ class TransactionError(DatabaseError):
     - Commit failure
     - Deadlock detected
     """
+
     pass
 
 
 # =============================================================================
 # VALIDATION ERRORS
 # =============================================================================
+
 
 class ValidationError(OpenPaceError):
     """
@@ -128,6 +140,7 @@ class ValidationError(OpenPaceError):
     - File path traversal attempt
     - Data exceeds allowed limits
     """
+
     pass
 
 
@@ -140,6 +153,7 @@ class PatientIDValidationError(ValidationError):
     - Invalid characters in patient ID
     - Patient ID exceeds maximum length
     """
+
     pass
 
 
@@ -153,12 +167,14 @@ class FileValidationError(ValidationError):
     - File not found
     - Invalid file type
     """
+
     pass
 
 
 # =============================================================================
 # ANALYSIS ERRORS
 # =============================================================================
+
 
 class AnalysisError(OpenPaceError):
     """
@@ -169,6 +185,7 @@ class AnalysisError(OpenPaceError):
     - Statistical computation failed
     - Invalid analysis parameters
     """
+
     pass
 
 
@@ -182,7 +199,9 @@ class InsufficientDataError(AnalysisError):
     - Empty trend data
     """
 
-    def __init__(self, message: str, required_points: int = None, actual_points: int = None):
+    def __init__(
+        self, message: str, required_points: int = None, actual_points: int = None
+    ):
         """
         Initialize with data point information.
 
@@ -205,12 +224,14 @@ class StatisticalError(AnalysisError):
     - Singular matrix in calculation
     - Division by zero in statistics
     """
+
     pass
 
 
 # =============================================================================
 # CONFIGURATION ERRORS
 # =============================================================================
+
 
 class ConfigurationError(OpenPaceError):
     """
@@ -221,6 +242,7 @@ class ConfigurationError(OpenPaceError):
     - Invalid configuration value
     - Configuration file not found or corrupted
     """
+
     pass
 
 
@@ -228,12 +250,14 @@ class ConfigurationError(OpenPaceError):
 # IMPORT/EXPORT ERRORS
 # =============================================================================
 
+
 class ImportError(OpenPaceError):
     """
     Raised when data import fails.
 
     Note: Renamed from builtin ImportError context.
     """
+
     pass
 
 
@@ -246,12 +270,14 @@ class ExportError(OpenPaceError):
     - Invalid export format requested
     - Data serialization failed
     """
+
     pass
 
 
 # =============================================================================
 # SECURITY ERRORS
 # =============================================================================
+
 
 class SecurityError(OpenPaceError):
     """
@@ -262,6 +288,7 @@ class SecurityError(OpenPaceError):
     - Permission denied
     - Authentication failures
     """
+
     pass
 
 
@@ -274,6 +301,7 @@ class EncryptionError(SecurityError):
     - Encryption algorithm failed
     - Corrupted encrypted data
     """
+
     pass
 
 
@@ -285,12 +313,14 @@ class PermissionError(SecurityError):
     - User lacks permission to access resource
     - File permissions insufficient
     """
+
     pass
 
 
 # =============================================================================
 # VENDOR-SPECIFIC ERRORS
 # =============================================================================
+
 
 class VendorError(OpenPaceError):
     """
@@ -300,6 +330,7 @@ class VendorError(OpenPaceError):
     - Unknown vendor format
     - Vendor-specific decoding failed
     """
+
     pass
 
 
@@ -311,6 +342,7 @@ class UnknownVendorError(VendorError):
     - Vendor string not recognized
     - No vendor information in transmission
     """
+
     pass
 
 
@@ -322,12 +354,14 @@ class VendorFormatError(VendorError):
     - Medtronic binary format unrecognized
     - Boston Scientific proprietary format corrupted
     """
+
     pass
 
 
 # =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
+
 
 def format_validation_error(field_name: str, value: any, reason: str) -> str:
     """

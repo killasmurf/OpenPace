@@ -28,9 +28,13 @@ class TrendCalculator:
     def __init__(self, db_session: Session):
         self.session = db_session
 
-    def calculate_trend(self, patient_id: str, variable_name: str,
-                       start_date: datetime = None,
-                       end_date: datetime = None) -> Optional[LongitudinalTrend]:
+    def calculate_trend(
+        self,
+        patient_id: str,
+        variable_name: str,
+        start_date: datetime = None,
+        end_date: datetime = None,
+    ) -> Optional[LongitudinalTrend]:
         """
         Calculate trend for a specific variable over time.
 
@@ -44,12 +48,14 @@ class TrendCalculator:
             LongitudinalTrend object or None if insufficient data
         """
         # Query observations
-        query = self.session.query(Observation).join(
-            Observation.transmission
-        ).filter(
-            Observation.transmission.has(patient_id=patient_id),
-            Observation.variable_name == variable_name,
-            Observation.value_numeric.isnot(None)
+        query = (
+            self.session.query(Observation)
+            .join(Observation.transmission)
+            .filter(
+                Observation.transmission.has(patient_id=patient_id),
+                Observation.variable_name == variable_name,
+                Observation.value_numeric.isnot(None),
+            )
         )
 
         if start_date:
@@ -77,10 +83,11 @@ class TrendCalculator:
         std_dev = float(np.std(values))
 
         # Create or update trend
-        trend = self.session.query(LongitudinalTrend).filter_by(
-            patient_id=patient_id,
-            variable_name=variable_name
-        ).first()
+        trend = (
+            self.session.query(LongitudinalTrend)
+            .filter_by(patient_id=patient_id, variable_name=variable_name)
+            .first()
+        )
 
         if trend:
             # Update existing
@@ -105,7 +112,7 @@ class TrendCalculator:
                 mean_value=mean_value,
                 std_dev=std_dev,
                 start_date=observations[0].observation_time,
-                end_date=observations[-1].observation_time
+                end_date=observations[-1].observation_time,
             )
             self.session.add(trend)
 
@@ -123,12 +130,16 @@ class TrendCalculator:
             List of computed trends
         """
         # Get unique variables for this patient
-        variables = self.session.query(Observation.variable_name).join(
-            Observation.transmission
-        ).filter(
-            Observation.transmission.has(patient_id=patient_id),
-            Observation.value_numeric.isnot(None)
-        ).distinct().all()
+        variables = (
+            self.session.query(Observation.variable_name)
+            .join(Observation.transmission)
+            .filter(
+                Observation.transmission.has(patient_id=patient_id),
+                Observation.value_numeric.isnot(None),
+            )
+            .distinct()
+            .all()
+        )
 
         trends = []
         for (var_name,) in variables:
@@ -160,11 +171,11 @@ class BatteryTrendAnalyzer:
         Returns:
             Dictionary with analysis results
         """
-        if trend.variable_name != 'battery_voltage':
+        if trend.variable_name != "battery_voltage":
             raise ValueError("Trend must be for battery_voltage")
 
         if len(trend.values) < 3:
-            return {'error': 'Insufficient data points for analysis'}
+            return {"error": "Insufficient data points for analysis"}
 
         # Convert time points to days since first observation
         time_points = [datetime.fromisoformat(tp) for tp in trend.time_points]
@@ -172,7 +183,9 @@ class BatteryTrendAnalyzer:
         days = [(tp - start_time).total_days for tp in time_points]
 
         # Linear regression
-        slope, intercept, r_value, p_value, std_err = stats.linregress(days, trend.values)
+        slope, intercept, r_value, p_value, std_err = stats.linregress(
+            days, trend.values
+        )
 
         # Predict ERI date
         eri_date = None
@@ -189,16 +202,16 @@ class BatteryTrendAnalyzer:
         depletion_rate_per_year = slope * 365.25
 
         return {
-            'current_voltage': trend.values[-1],
-            'depletion_rate_v_per_year': depletion_rate_per_year,
-            'slope': slope,
-            'intercept': intercept,
-            'r_squared': r_value ** 2,
-            'p_value': p_value,
-            'eri_threshold': BatteryTrendAnalyzer.ERI_THRESHOLD,
-            'predicted_eri_date': eri_date.isoformat() if eri_date else None,
-            'days_to_eri': days_to_eri,
-            'years_to_eri': days_to_eri / 365.25 if days_to_eri else None,
+            "current_voltage": trend.values[-1],
+            "depletion_rate_v_per_year": depletion_rate_per_year,
+            "slope": slope,
+            "intercept": intercept,
+            "r_squared": r_value**2,
+            "p_value": p_value,
+            "eri_threshold": BatteryTrendAnalyzer.ERI_THRESHOLD,
+            "predicted_eri_date": eri_date.isoformat() if eri_date else None,
+            "days_to_eri": days_to_eri,
+            "years_to_eri": days_to_eri / 365.25 if days_to_eri else None,
         }
 
 
@@ -223,7 +236,7 @@ class LeadImpedanceTrendAnalyzer:
         Returns:
             List of detected anomalies with timestamps
         """
-        if not trend.variable_name.startswith('lead_impedance'):
+        if not trend.variable_name.startswith("lead_impedance"):
             raise ValueError("Trend must be for lead impedance")
 
         if len(trend.values) < 2:
@@ -235,29 +248,33 @@ class LeadImpedanceTrendAnalyzer:
 
         # Calculate differences between consecutive measurements
         for i in range(1, len(values)):
-            delta = values[i] - values[i-1]
+            delta = values[i] - values[i - 1]
 
             if delta > LeadImpedanceTrendAnalyzer.FRACTURE_THRESHOLD:
-                anomalies.append({
-                    'type': 'possible_fracture',
-                    'timestamp': time_points[i].isoformat(),
-                    'previous_value': values[i-1],
-                    'current_value': values[i],
-                    'delta': delta,
-                    'severity': 'critical',
-                    'description': f"Sudden increase of {delta:.0f} Ohms suggests possible lead fracture"
-                })
+                anomalies.append(
+                    {
+                        "type": "possible_fracture",
+                        "timestamp": time_points[i].isoformat(),
+                        "previous_value": values[i - 1],
+                        "current_value": values[i],
+                        "delta": delta,
+                        "severity": "critical",
+                        "description": f"Sudden increase of {delta:.0f} Ohms suggests possible lead fracture",
+                    }
+                )
 
             elif delta < LeadImpedanceTrendAnalyzer.FAILURE_THRESHOLD:
-                anomalies.append({
-                    'type': 'possible_insulation_failure',
-                    'timestamp': time_points[i].isoformat(),
-                    'previous_value': values[i-1],
-                    'current_value': values[i],
-                    'delta': delta,
-                    'severity': 'critical',
-                    'description': f"Sudden decrease of {abs(delta):.0f} Ohms suggests possible insulation failure"
-                })
+                anomalies.append(
+                    {
+                        "type": "possible_insulation_failure",
+                        "timestamp": time_points[i].isoformat(),
+                        "previous_value": values[i - 1],
+                        "current_value": values[i],
+                        "delta": delta,
+                        "severity": "critical",
+                        "description": f"Sudden decrease of {abs(delta):.0f} Ohms suggests possible insulation failure",
+                    }
+                )
 
         return anomalies
 
@@ -301,8 +318,9 @@ class ArrhythmiaBurdenAnalyzer:
     """
 
     @staticmethod
-    def calculate_burden_statistics(trend: LongitudinalTrend,
-                                   window_days: int = 7) -> Dict[str, Any]:
+    def calculate_burden_statistics(
+        trend: LongitudinalTrend, window_days: int = 7
+    ) -> Dict[str, Any]:
         """
         Calculate rolling statistics for arrhythmia burden.
 
@@ -313,11 +331,11 @@ class ArrhythmiaBurdenAnalyzer:
         Returns:
             Dictionary with burden statistics
         """
-        if 'burden' not in trend.variable_name.lower():
+        if "burden" not in trend.variable_name.lower():
             raise ValueError("Trend must be for arrhythmia burden")
 
         if len(trend.values) < 2:
-            return {'error': 'Insufficient data'}
+            return {"error": "Insufficient data"}
 
         time_points = [datetime.fromisoformat(tp) for tp in trend.time_points]
         values = np.array(trend.values)
@@ -325,38 +343,38 @@ class ArrhythmiaBurdenAnalyzer:
         # Calculate rolling average (if enough points)
         rolling_avg = None
         if len(values) >= 7:
-            rolling_avg = np.convolve(values, np.ones(min(7, len(values))) / min(7, len(values)), mode='valid')
+            rolling_avg = np.convolve(
+                values, np.ones(min(7, len(values))) / min(7, len(values)), mode="valid"
+            )
 
         # Identify high burden episodes (>20%)
         high_burden_episodes = []
         for i, (tp, val) in enumerate(zip(time_points, values)):
             if val > 20:
-                high_burden_episodes.append({
-                    'timestamp': tp.isoformat(),
-                    'burden_percent': val
-                })
+                high_burden_episodes.append(
+                    {"timestamp": tp.isoformat(), "burden_percent": val}
+                )
 
         # Calculate trend (increasing/decreasing)
         if len(values) >= 3:
-            slope, _, r_value, _, _ = stats.linregress(
-                range(len(values)),
-                values
-            )
-            trend_direction = 'increasing' if slope > 0 else 'decreasing'
+            slope, _, r_value, _, _ = stats.linregress(range(len(values)), values)
+            trend_direction = "increasing" if slope > 0 else "decreasing"
         else:
             slope = 0
             r_value = 0
-            trend_direction = 'stable'
+            trend_direction = "stable"
 
         return {
-            'mean_burden': float(np.mean(values)),
-            'max_burden': float(np.max(values)),
-            'min_burden': float(np.min(values)),
-            'current_burden': float(values[-1]),
-            'rolling_average': rolling_avg.tolist() if rolling_avg is not None else None,
-            'high_burden_episode_count': len(high_burden_episodes),
-            'high_burden_episodes': high_burden_episodes,
-            'trend_direction': trend_direction,
-            'trend_slope': slope,
-            'trend_r_squared': r_value ** 2 if len(values) >= 3 else 0,
+            "mean_burden": float(np.mean(values)),
+            "max_burden": float(np.max(values)),
+            "min_burden": float(np.min(values)),
+            "current_burden": float(values[-1]),
+            "rolling_average": rolling_avg.tolist()
+            if rolling_avg is not None
+            else None,
+            "high_burden_episode_count": len(high_burden_episodes),
+            "high_burden_episodes": high_burden_episodes,
+            "trend_direction": trend_direction,
+            "trend_slope": slope,
+            "trend_r_squared": r_value**2 if len(values) >= 3 else 0,
         }

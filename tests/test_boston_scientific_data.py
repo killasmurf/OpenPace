@@ -31,7 +31,7 @@ def test_boston_scientific_file():
 
     # Initialize database
     print("\n[1/6] Initializing database...")
-    init_database(':memory:', echo=False)
+    init_database(":memory:", echo=False)
     session = get_db_session()
     print("  Database initialized")
 
@@ -46,7 +46,7 @@ def test_boston_scientific_file():
     print(f"  File size: {data_file.stat().st_size / 1024:.1f} KB")
 
     try:
-        with open(data_file, 'r', encoding='utf-8', errors='ignore') as f:
+        with open(data_file, "r", encoding="utf-8", errors="ignore") as f:
             hl7_content = f.read()
     except Exception as e:
         print(f"ERROR reading file: {e}")
@@ -61,6 +61,7 @@ def test_boston_scientific_file():
     except Exception as e:
         print(f"ERROR parsing HL7: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -98,7 +99,9 @@ def test_boston_scientific_file():
     for var_name, obs_list in sorted(observation_types.items()):
         sample_obs = obs_list[0]
         if sample_obs.value_numeric is not None:
-            print(f"    - {var_name}: {sample_obs.value_numeric} {sample_obs.unit or ''}")
+            print(
+                f"    - {var_name}: {sample_obs.value_numeric} {sample_obs.unit or ''}"
+            )
         elif sample_obs.value_text:
             print(f"    - {var_name}: {sample_obs.value_text}")
         elif sample_obs.value_blob:
@@ -124,46 +127,69 @@ def test_boston_scientific_file():
     analysis_results = {}
 
     # Battery analysis
-    battery_trend = next((t for t in trends if t.variable_name == 'battery_voltage'), None)
+    battery_trend = next(
+        (t for t in trends if t.variable_name == "battery_voltage"), None
+    )
     if battery_trend and len(battery_trend.values) >= 2:
         try:
             battery_analysis = BatteryAnalyzer.analyze_depletion(battery_trend)
-            analysis_results['battery'] = battery_analysis
+            analysis_results["battery"] = battery_analysis
             print("\n  Battery Analysis:")
             print(f"    Current Voltage: {battery_analysis['current_voltage']:.2f}V")
-            if battery_analysis.get('years_to_eri'):
+            if battery_analysis.get("years_to_eri"):
                 print(f"    Years to ERI: {battery_analysis['years_to_eri']:.1f}")
-            print(f"    Recommendation: {BatteryAnalyzer.get_recommendation(battery_analysis)}")
+            print(
+                f"    Recommendation: {BatteryAnalyzer.get_recommendation(battery_analysis)}"
+            )
         except Exception as e:
             print(f"  Battery analysis error: {e}")
 
     # Impedance analysis
-    impedance_trends = [t for t in trends if 'impedance' in t.variable_name.lower()]
+    impedance_trends = [t for t in trends if "impedance" in t.variable_name.lower()]
     if impedance_trends:
         print("\n  Lead Impedance Analysis:")
         for imp_trend in impedance_trends:
             if len(imp_trend.values) >= 2:
                 try:
                     imp_analysis = ImpedanceAnalyzer.analyze_trend(imp_trend)
-                    lead_name = imp_trend.variable_name.replace('lead_impedance_', '').title()
+                    lead_name = imp_trend.variable_name.replace(
+                        "lead_impedance_", ""
+                    ).title()
                     print(f"    {lead_name} Lead:")
-                    print(f"      Current: {imp_analysis['current_impedance']:.0f} Ohms")
-                    print(f"      Stability: {imp_analysis['stability']['score']:.0f}/100 ({imp_analysis['stability']['rating']})")
+                    print(
+                        f"      Current: {imp_analysis['current_impedance']:.0f} Ohms"
+                    )
+                    print(
+                        f"      Stability: {imp_analysis['stability']['score']:.0f}/100 ({imp_analysis['stability']['rating']})"
+                    )
                     print(f"      Status: {imp_analysis['overall_status'].upper()}")
                 except Exception as e:
                     print(f"    {imp_trend.variable_name} error: {e}")
 
     # Arrhythmia analysis
-    burden_trend = next((t for t in trends if 'burden' in t.variable_name.lower() or 'afib' in t.variable_name.lower()), None)
+    burden_trend = next(
+        (
+            t
+            for t in trends
+            if "burden" in t.variable_name.lower() or "afib" in t.variable_name.lower()
+        ),
+        None,
+    )
     if burden_trend and len(burden_trend.values) >= 2:
         try:
-            burden_analysis = ArrhythmiaAnalyzer.calculate_burden_statistics(burden_trend)
-            analysis_results['arrhythmia'] = burden_analysis
+            burden_analysis = ArrhythmiaAnalyzer.calculate_burden_statistics(
+                burden_trend
+            )
+            analysis_results["arrhythmia"] = burden_analysis
             print("\n  Arrhythmia Burden Analysis:")
             print(f"    Current Burden: {burden_analysis['current_burden']:.1f}%")
             print(f"    Mean Burden: {burden_analysis['mean_burden']:.1f}%")
-            print(f"    Classification: {burden_analysis['classification']['type'].title()}")
-            print(f"    Recommendation: {ArrhythmiaAnalyzer.get_recommendation(burden_analysis)}")
+            print(
+                f"    Classification: {burden_analysis['classification']['type'].title()}"
+            )
+            print(
+                f"    Recommendation: {ArrhythmiaAnalyzer.get_recommendation(burden_analysis)}"
+            )
         except Exception as e:
             print(f"  Arrhythmia analysis error: {e}")
 
@@ -210,5 +236,5 @@ def main():
     return 0 if success else 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

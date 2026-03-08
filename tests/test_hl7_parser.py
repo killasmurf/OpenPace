@@ -16,7 +16,7 @@ from openpace.hl7.parser import HL7Parser
 @pytest.fixture
 def db_session():
     """Create an in-memory SQLite database for testing."""
-    engine = create_engine('sqlite:///:memory:')
+    engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -27,80 +27,92 @@ def db_session():
 @pytest.fixture
 def sample_hl7_medtronic():
     """Load Medtronic sample HL7 message."""
-    sample_path = Path(__file__).parent / 'sample_data' / 'medtronic_sample.hl7'
-    with open(sample_path, 'r') as f:
+    sample_path = Path(__file__).parent / "sample_data" / "medtronic_sample.hl7"
+    with open(sample_path, "r") as f:
         return f.read()
 
 
 @pytest.fixture
 def sample_hl7_generic():
     """Load generic LOINC sample HL7 message."""
-    sample_path = Path(__file__).parent / 'sample_data' / 'generic_loinc_sample.hl7'
-    with open(sample_path, 'r') as f:
+    sample_path = Path(__file__).parent / "sample_data" / "generic_loinc_sample.hl7"
+    with open(sample_path, "r") as f:
         return f.read()
 
 
 def test_parse_medtronic_message(db_session, sample_hl7_medtronic):
     """Test parsing of Medtronic CareLink message."""
     parser = HL7Parser(db_session, anonymize=False)
-    transmission = parser.parse_message(sample_hl7_medtronic, filename="medtronic_sample.hl7")
+    transmission = parser.parse_message(
+        sample_hl7_medtronic, filename="medtronic_sample.hl7"
+    )
 
     assert transmission is not None
     assert transmission.transmission_id is not None
-    assert transmission.device_manufacturer == 'Medtronic'
-    assert transmission.transmission_type == 'remote'
+    assert transmission.device_manufacturer == "Medtronic"
+    assert transmission.transmission_type == "remote"
 
     # Check patient was created
-    patient = db_session.query(Patient).filter_by(patient_id='P123456').first()
+    patient = db_session.query(Patient).filter_by(patient_id="P123456").first()
     assert patient is not None
-    assert patient.patient_name == 'John Doe'
-    assert patient.gender == 'M'
+    assert patient.patient_name == "John Doe"
+    assert patient.gender == "M"
 
     # Check observations were created
-    observations = db_session.query(Observation).filter_by(
-        transmission_id=transmission.transmission_id
-    ).all()
+    observations = (
+        db_session.query(Observation)
+        .filter_by(transmission_id=transmission.transmission_id)
+        .all()
+    )
 
     assert len(observations) > 0
 
     # Check specific observations
-    battery_obs = [o for o in observations if o.variable_name == 'battery_voltage']
+    battery_obs = [o for o in observations if o.variable_name == "battery_voltage"]
     assert len(battery_obs) == 1
     assert battery_obs[0].value_numeric == 2.65
-    assert battery_obs[0].unit == 'V'
+    assert battery_obs[0].unit == "V"
 
-    impedance_obs = [o for o in observations if o.variable_name == 'lead_impedance_atrial']
+    impedance_obs = [
+        o for o in observations if o.variable_name == "lead_impedance_atrial"
+    ]
     assert len(impedance_obs) == 1
     assert impedance_obs[0].value_numeric == 625
-    assert impedance_obs[0].unit == 'Ohm'
+    assert impedance_obs[0].unit == "Ohm"
 
-    afib_obs = [o for o in observations if o.variable_name == 'afib_burden_percent']
+    afib_obs = [o for o in observations if o.variable_name == "afib_burden_percent"]
     assert len(afib_obs) == 1
     assert afib_obs[0].value_numeric == 12.5
-    assert afib_obs[0].abnormal_flag == 'H'  # High
+    assert afib_obs[0].abnormal_flag == "H"  # High
 
 
 def test_parse_generic_message(db_session, sample_hl7_generic):
     """Test parsing of generic LOINC message."""
     parser = HL7Parser(db_session, anonymize=False)
-    transmission = parser.parse_message(sample_hl7_generic, filename="generic_sample.hl7")
+    transmission = parser.parse_message(
+        sample_hl7_generic, filename="generic_sample.hl7"
+    )
 
     assert transmission is not None
-    assert transmission.device_manufacturer == 'Generic'
-    assert transmission.transmission_type == 'in_clinic'
+    assert transmission.device_manufacturer == "Generic"
+    assert transmission.transmission_type == "in_clinic"
 
     # Check observations
-    observations = db_session.query(Observation).filter_by(
-        transmission_id=transmission.transmission_id
-    ).all()
+    observations = (
+        db_session.query(Observation)
+        .filter_by(transmission_id=transmission.transmission_id)
+        .all()
+    )
 
     assert len(observations) > 0
 
     # Verify LOINC codes mapped correctly
-    pacing_obs = [o for o in observations if o.variable_name == 'pacing_percent_ventricular']
+    pacing_obs = [
+        o for o in observations if o.variable_name == "pacing_percent_ventricular"
+    ]
     assert len(pacing_obs) == 1
     assert pacing_obs[0].value_numeric == 92.3
-    assert pacing_obs[0].loinc_code == '8897-1'
+    assert pacing_obs[0].loinc_code == "8897-1"
 
 
 def test_anonymization_mode(db_session, sample_hl7_medtronic):
@@ -114,7 +126,7 @@ def test_anonymization_mode(db_session, sample_hl7_medtronic):
     assert patient.patient_name is None
     assert patient.date_of_birth is None
     assert patient.anonymized_id is not None
-    assert patient.anonymized_id.startswith('Patient_')
+    assert patient.anonymized_id.startswith("Patient_")
 
 
 def test_multiple_transmissions_same_patient(db_session, sample_hl7_medtronic):

@@ -50,12 +50,12 @@ class ImpedanceTrendWidget(QWidget, TableChartMixin):
         """Initialize the user interface."""
         # Create plot widget first
         self.plot_widget = pg.PlotWidget()
-        self.plot_widget.setBackground('w')
+        self.plot_widget.setBackground("w")
         self.plot_widget.showGrid(x=True, y=True, alpha=0.3)
 
         # Axis labels
-        self.plot_widget.setLabel('left', 'Impedance', units='Ohms')
-        self.plot_widget.setLabel('bottom', 'Date')
+        self.plot_widget.setLabel("left", "Impedance", units="Ohms")
+        self.plot_widget.setLabel("bottom", "Date")
 
         # Enable mouse interaction
         self.plot_widget.setMouseEnabled(x=True, y=False)
@@ -67,13 +67,15 @@ class ImpedanceTrendWidget(QWidget, TableChartMixin):
         self.init_table_chart_toggle(
             title="Lead Impedance Trend",
             columns=["Date/Time", "Impedance (Ω)", "Status", "Anomaly"],
-            chart_widget=self.plot_widget
+            chart_widget=self.plot_widget,
         )
 
         # Set default time range (2020 to current date)
         self._set_default_time_range()
 
-    def set_data(self, lead_name: str, time_points: List[datetime], impedances: List[float]):
+    def set_data(
+        self, lead_name: str, time_points: List[datetime], impedances: List[float]
+    ):
         """
         Set lead impedance data.
 
@@ -128,9 +130,13 @@ class ImpedanceTrendWidget(QWidget, TableChartMixin):
 
         # Create fill between min and max
         fill = pg.FillBetweenItem(
-            curve1=pg.PlotCurveItem([timestamps[0], timestamps[-1]], [self.NORMAL_MIN, self.NORMAL_MIN]),
-            curve2=pg.PlotCurveItem([timestamps[0], timestamps[-1]], [self.NORMAL_MAX, self.NORMAL_MAX]),
-            brush=(0, 255, 0, 30)  # Light green
+            curve1=pg.PlotCurveItem(
+                [timestamps[0], timestamps[-1]], [self.NORMAL_MIN, self.NORMAL_MIN]
+            ),
+            curve2=pg.PlotCurveItem(
+                [timestamps[0], timestamps[-1]], [self.NORMAL_MAX, self.NORMAL_MAX]
+            ),
+            brush=(0, 255, 0, 30),  # Light green
         )
         self.plot_widget.addItem(fill)
 
@@ -140,12 +146,10 @@ class ImpedanceTrendWidget(QWidget, TableChartMixin):
             [timestamps[0], timestamps[-1]],
             [self.NORMAL_MIN, self.NORMAL_MIN],
             pen=pen,
-            name='Normal Range'
+            name="Normal Range",
         )
         self.plot_widget.plot(
-            [timestamps[0], timestamps[-1]],
-            [self.NORMAL_MAX, self.NORMAL_MAX],
-            pen=pen
+            [timestamps[0], timestamps[-1]], [self.NORMAL_MAX, self.NORMAL_MAX], pen=pen
         )
 
     def _plot_impedance_line(self, timestamps: List[float], impedances: List[float]):
@@ -172,10 +176,10 @@ class ImpedanceTrendWidget(QWidget, TableChartMixin):
             timestamps,
             impedances,
             pen=pen,
-            symbol='o',
+            symbol="o",
             symbolSize=6,
             symbolBrush=color,
-            name=f'{self.lead_name} Impedance'
+            name=f"{self.lead_name} Impedance",
         )
 
     def _analyze_anomalies(self, time_points: List[datetime], impedances: List[float]):
@@ -190,7 +194,7 @@ class ImpedanceTrendWidget(QWidget, TableChartMixin):
         from openpace.database.models import LongitudinalTrend
 
         trend = LongitudinalTrend()
-        trend.variable_name = f'lead_impedance_{self.lead_name.lower()}'
+        trend.variable_name = f"lead_impedance_{self.lead_name.lower()}"
         trend.time_points = [dt.isoformat() for dt in time_points]
         trend.values = impedances
 
@@ -199,7 +203,9 @@ class ImpedanceTrendWidget(QWidget, TableChartMixin):
             self.anomalies = LeadImpedanceTrendAnalyzer.detect_anomalies(trend)
 
             # Calculate stability score
-            self.stability_score = LeadImpedanceTrendAnalyzer.calculate_stability_score(trend)
+            self.stability_score = LeadImpedanceTrendAnalyzer.calculate_stability_score(
+                trend
+            )
 
             # Update info label
             current_imp = impedances[-1]
@@ -231,21 +237,23 @@ class ImpedanceTrendWidget(QWidget, TableChartMixin):
         for anomaly in self.anomalies:
             try:
                 # Parse anomaly timestamp
-                anomaly_dt = datetime.fromisoformat(anomaly['timestamp'])
+                anomaly_dt = datetime.fromisoformat(anomaly["timestamp"])
                 anomaly_ts = anomaly_dt.timestamp()
 
                 # Find closest data point
-                closest_idx = min(range(len(timestamps)),
-                                key=lambda i: abs(timestamps[i] - anomaly_ts))
+                closest_idx = min(
+                    range(len(timestamps)),
+                    key=lambda i: abs(timestamps[i] - anomaly_ts),
+                )
 
                 if closest_idx < len(self.impedances):
                     # Determine marker style based on type
-                    if anomaly['type'] == 'possible_fracture':
-                        symbol = 't'  # Triangle up
+                    if anomaly["type"] == "possible_fracture":
+                        symbol = "t"  # Triangle up
                         color = (200, 0, 0)  # Red
                         size = 12
                     else:  # insulation failure
-                        symbol = 't1'  # Triangle down
+                        symbol = "t1"  # Triangle down
                         color = (200, 100, 0)  # Orange
                         size = 12
 
@@ -256,7 +264,7 @@ class ImpedanceTrendWidget(QWidget, TableChartMixin):
                         symbol=symbol,
                         size=size,
                         brush=color,
-                        pen=pg.mkPen(color=(255, 255, 255), width=2)
+                        pen=pg.mkPen(color=(255, 255, 255), width=2),
                     )
                     self.plot_widget.addItem(scatter)
 
@@ -270,8 +278,8 @@ class ImpedanceTrendWidget(QWidget, TableChartMixin):
         Args:
             timestamps: Unix timestamps
         """
-        axis = pg.DateAxisItem(orientation='bottom')
-        self.plot_widget.setAxisItems({'bottom': axis})
+        axis = pg.DateAxisItem(orientation="bottom")
+        self.plot_widget.setAxisItems({"bottom": axis})
 
     def _set_time_range_with_padding(self, timestamps: List[float]):
         """
@@ -288,12 +296,14 @@ class ImpedanceTrendWidget(QWidget, TableChartMixin):
         time_range = max_time - min_time
 
         # Add 10% padding on each side
-        padding = time_range * 0.10 if time_range > 0 else 86400  # 1 day if single point
+        padding = (
+            time_range * 0.10 if time_range > 0 else 86400
+        )  # 1 day if single point
 
         self.plot_widget.setXRange(min_time - padding, max_time + padding, padding=0)
 
         # Auto-range Y-axis only
-        self.plot_widget.enableAutoRange(axis='y')
+        self.plot_widget.enableAutoRange(axis="y")
 
     def _set_default_time_range(self):
         """Set default time range from 2020 to current date."""
@@ -324,8 +334,8 @@ class ImpedanceTrendWidget(QWidget, TableChartMixin):
         # Build anomaly lookup by timestamp
         anomaly_lookup = {}
         for anomaly in self.anomalies:
-            ts = anomaly.get('timestamp', '')
-            anomaly_lookup[ts] = anomaly.get('type', '').replace('_', ' ').title()
+            ts = anomaly.get("timestamp", "")
+            anomaly_lookup[ts] = anomaly.get("type", "").replace("_", " ").title()
 
         rows = []
         for dt, impedance in zip(self.time_points, self.impedances):

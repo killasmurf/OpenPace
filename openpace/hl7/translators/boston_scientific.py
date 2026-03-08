@@ -234,7 +234,9 @@ class BostonScientificTranslator(VendorTranslator):
         self._code_map.update(self.EPISODE_CODES)
         self._code_map.update(self.ALERT_CODES)
 
-    def map_observation_id(self, vendor_code: str, observation_text: str = "") -> Optional[str]:
+    def map_observation_id(
+        self, vendor_code: str, observation_text: str = ""
+    ) -> Optional[str]:
         """
         Map Boston Scientific MDC_IDC code to universal variable name.
 
@@ -281,11 +283,23 @@ class BostonScientificTranslator(VendorTranslator):
 
         # Alert-related observations
         if "alert" in text_lower or "notification" in text_lower:
-            if "afib" in text_lower or "af " in text_lower or "atrial fibrillation" in text_lower:
+            if (
+                "afib" in text_lower
+                or "af " in text_lower
+                or "atrial fibrillation" in text_lower
+            ):
                 return "alert_afib_detected"
-            elif "high rate" in text_lower or "high ventricular" in text_lower or "tachycardia" in text_lower:
+            elif (
+                "high rate" in text_lower
+                or "high ventricular" in text_lower
+                or "tachycardia" in text_lower
+            ):
                 return "alert_high_ventricular_rate"
-            elif "low rate" in text_lower or "bradycardia" in text_lower or "low heart" in text_lower:
+            elif (
+                "low rate" in text_lower
+                or "bradycardia" in text_lower
+                or "low heart" in text_lower
+            ):
                 return "alert_low_heart_rate"
             elif "vt" in text_lower or "ventricular tachycardia" in text_lower:
                 return "alert_vt_episode"
@@ -320,29 +334,29 @@ class BostonScientificTranslator(VendorTranslator):
             Dictionary with decoded EGM data or metadata
         """
         # Check for PDF format
-        if blob.startswith(b'%PDF'):
+        if blob.startswith(b"%PDF"):
             return {
-                'type': 'pdf',
-                'size': len(blob),
-                'vendor': 'Boston Scientific',
-                'note': 'EGM embedded in PDF document'
+                "type": "pdf",
+                "size": len(blob),
+                "vendor": "Boston Scientific",
+                "note": "EGM embedded in PDF document",
             }
 
         # Check for XML format (some BSC exports)
-        if blob.startswith(b'<?xml'):
+        if blob.startswith(b"<?xml"):
             return {
-                'type': 'xml',
-                'size': len(blob),
-                'vendor': 'Boston Scientific',
-                'note': 'EGM in XML format'
+                "type": "xml",
+                "size": len(blob),
+                "vendor": "Boston Scientific",
+                "note": "EGM in XML format",
             }
 
         # Unknown binary format
         return {
-            'type': 'binary',
-            'size': len(blob),
-            'vendor': 'Boston Scientific',
-            'note': 'Proprietary BSC EGM format - requires vendor SDK'
+            "type": "binary",
+            "size": len(blob),
+            "vendor": "Boston Scientific",
+            "note": "Proprietary BSC EGM format - requires vendor SDK",
         }
 
     @classmethod
@@ -359,8 +373,15 @@ class BostonScientificTranslator(VendorTranslator):
         Returns:
             True if this is a fixed setting
         """
-        fixed_prefixes = ['device_', 'lead_model', 'lead_serial', 'lead_manufacturer',
-                          'lead_implant', 'lead_polarity_type', 'lead_location']
+        fixed_prefixes = [
+            "device_",
+            "lead_model",
+            "lead_serial",
+            "lead_manufacturer",
+            "lead_implant",
+            "lead_polarity_type",
+            "lead_location",
+        ]
         return any(variable_name.startswith(prefix) for prefix in fixed_prefixes)
 
     @classmethod
@@ -377,7 +398,7 @@ class BostonScientificTranslator(VendorTranslator):
         Returns:
             True if this is an operator-defined setting
         """
-        operator_prefixes = ['set_brady_', 'set_tachy_', 'set_zone_', 'set_leadchnl_']
+        operator_prefixes = ["set_brady_", "set_tachy_", "set_zone_", "set_leadchnl_"]
         return any(variable_name.startswith(prefix) for prefix in operator_prefixes)
 
     @classmethod
@@ -394,7 +415,7 @@ class BostonScientificTranslator(VendorTranslator):
         Returns:
             True if this is a measurement
         """
-        measurement_prefixes = ['msmt_', 'stat_', 'episode_']
+        measurement_prefixes = ["msmt_", "stat_", "episode_"]
         return any(variable_name.startswith(prefix) for prefix in measurement_prefixes)
 
     @classmethod
@@ -409,27 +430,31 @@ class BostonScientificTranslator(VendorTranslator):
             Category string: 'device', 'brady', 'tachy', 'zone', 'sensing', 'pacing',
                            'battery', 'lead_msmt', 'stats', 'episode', or 'other'
         """
-        if variable_name.startswith('device_'):
-            return 'device'
-        elif variable_name.startswith('lead_') and not variable_name.startswith('lead_impedance'):
-            return 'lead_info'
-        elif variable_name.startswith('set_brady_'):
-            return 'brady'
-        elif variable_name.startswith('set_tachy_'):
-            return 'tachy'
-        elif variable_name.startswith('set_zone_'):
-            return 'zone'
-        elif 'sensing' in variable_name:
-            return 'sensing'
-        elif 'pacing' in variable_name and 'set_' in variable_name:
-            return 'pacing'
-        elif 'battery' in variable_name or 'cap_charge' in variable_name:
-            return 'battery'
-        elif variable_name.startswith('msmt_leadchnl_') or variable_name.startswith('msmt_leadhvchnl_'):
-            return 'lead_msmt'
-        elif variable_name.startswith('stat_'):
-            return 'stats'
-        elif variable_name.startswith('episode_'):
-            return 'episode'
+        if variable_name.startswith("device_"):
+            return "device"
+        elif variable_name.startswith("lead_") and not variable_name.startswith(
+            "lead_impedance"
+        ):
+            return "lead_info"
+        elif variable_name.startswith("set_brady_"):
+            return "brady"
+        elif variable_name.startswith("set_tachy_"):
+            return "tachy"
+        elif variable_name.startswith("set_zone_"):
+            return "zone"
+        elif "sensing" in variable_name:
+            return "sensing"
+        elif "pacing" in variable_name and "set_" in variable_name:
+            return "pacing"
+        elif "battery" in variable_name or "cap_charge" in variable_name:
+            return "battery"
+        elif variable_name.startswith("msmt_leadchnl_") or variable_name.startswith(
+            "msmt_leadhvchnl_"
+        ):
+            return "lead_msmt"
+        elif variable_name.startswith("stat_"):
+            return "stats"
+        elif variable_name.startswith("episode_"):
+            return "episode"
         else:
-            return 'other'
+            return "other"

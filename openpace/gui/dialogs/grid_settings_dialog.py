@@ -5,9 +5,16 @@ Provides a dialog for configuring grid layout settings.
 """
 
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
-    QLabel, QSpinBox, QCheckBox, QPushButton,
-    QGroupBox, QDialogButtonBox
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QFormLayout,
+    QLabel,
+    QSpinBox,
+    QCheckBox,
+    QPushButton,
+    QGroupBox,
+    QDialogButtonBox,
 )
 from PyQt6.QtCore import Qt
 
@@ -116,9 +123,12 @@ class GridSettingsDialog(QDialog):
         default_layout_group.setLayout(default_layout_layout)
 
         from PyQt6.QtWidgets import QComboBox
+
         self.default_layout_combo = QComboBox()
         self.default_layout_combo.addItems(["Vertical", "Horizontal", "Free Grid"])
-        self.default_layout_combo.setToolTip("Default layout mode when application starts")
+        self.default_layout_combo.setToolTip(
+            "Default layout mode when application starts"
+        )
         default_layout_layout.addRow("Default Mode:", self.default_layout_combo)
 
         layout.addWidget(default_layout_group)
@@ -128,15 +138,15 @@ class GridSettingsDialog(QDialog):
 
         # Button box
         button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok |
-            QDialogButtonBox.StandardButton.Cancel |
-            QDialogButtonBox.StandardButton.RestoreDefaults
+            QDialogButtonBox.StandardButton.Ok
+            | QDialogButtonBox.StandardButton.Cancel
+            | QDialogButtonBox.StandardButton.RestoreDefaults
         )
         button_box.accepted.connect(self._save_and_accept)
         button_box.rejected.connect(self.reject)
-        button_box.button(QDialogButtonBox.StandardButton.RestoreDefaults).clicked.connect(
-            self._restore_defaults
-        )
+        button_box.button(
+            QDialogButtonBox.StandardButton.RestoreDefaults
+        ).clicked.connect(self._restore_defaults)
 
         layout.addWidget(button_box)
 
@@ -158,11 +168,7 @@ class GridSettingsDialog(QDialog):
         self.use_grid_check.setChecked(ui_config.use_grid_layout)
 
         # Load default layout mode
-        mode_map = {
-            "vertical": 0,
-            "horizontal": 1,
-            "free_grid": 2
-        }
+        mode_map = {"vertical": 0, "horizontal": 1, "free_grid": 2}
         index = mode_map.get(ui_config.default_layout_mode, 0)
         self.default_layout_combo.setCurrentIndex(index)
 
@@ -185,18 +191,17 @@ class GridSettingsDialog(QDialog):
 
         # Save default layout mode
         mode_map = ["vertical", "horizontal", "free_grid"]
-        ui_config.default_layout_mode = mode_map[self.default_layout_combo.currentIndex()]
+        ui_config.default_layout_mode = mode_map[
+            self.default_layout_combo.currentIndex()
+        ]
 
         # Save config to file
         try:
             self.config.save_to_file()
         except Exception as e:
             from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.warning(
-                self,
-                "Save Failed",
-                f"Failed to save settings: {e}"
-            )
+
+            QMessageBox.warning(self, "Save Failed", f"Failed to save settings: {e}")
             return
 
         self.accept()
@@ -217,10 +222,6 @@ class GridSettingsDialog(QDialog):
         self.auto_save_check.setChecked(defaults.save_panel_layouts)
         self.use_grid_check.setChecked(defaults.use_grid_layout)
 
-        mode_map = {
-            "vertical": 0,
-            "horizontal": 1,
-            "free_grid": 2
-        }
+        mode_map = {"vertical": 0, "horizontal": 1, "free_grid": 2}
         index = mode_map.get(defaults.default_layout_mode, 0)
         self.default_layout_combo.setCurrentIndex(index)

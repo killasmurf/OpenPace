@@ -37,7 +37,7 @@ from openpace.exceptions import (
     FileValidationError,
     HL7ValidationError,
     ValidationError,
-    format_validation_error
+    format_validation_error,
 )
 from openpace.constants import FileLimits
 
@@ -54,7 +54,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("OpenPace - Pacemaker Data Analyzer")
+        self.setWindowTitle("OpenPace - Pacemaker Data Analysis")
         self.setGeometry(100, 100, 1400, 900)
 
         # Initialize database
@@ -95,43 +95,59 @@ class MainWindow(QMainWindow):
         self.battery_panel_action = QAction("Battery Voltage", self)
         self.battery_panel_action.setCheckable(True)
         self.battery_panel_action.setChecked(True)
-        self.battery_panel_action.triggered.connect(lambda checked: self.timeline_view.toggle_panel('battery', checked))
+        self.battery_panel_action.triggered.connect(
+            lambda checked: self.timeline_view.toggle_panel("battery", checked)
+        )
         panels_menu.addAction(self.battery_panel_action)
 
         self.atrial_panel_action = QAction("Atrial Lead Impedance", self)
         self.atrial_panel_action.setCheckable(True)
         self.atrial_panel_action.setChecked(True)
-        self.atrial_panel_action.triggered.connect(lambda checked: self.timeline_view.toggle_panel('atrial_impedance', checked))
+        self.atrial_panel_action.triggered.connect(
+            lambda checked: self.timeline_view.toggle_panel("atrial_impedance", checked)
+        )
         panels_menu.addAction(self.atrial_panel_action)
 
         self.vent_panel_action = QAction("Ventricular Lead Impedance", self)
         self.vent_panel_action.setCheckable(True)
         self.vent_panel_action.setChecked(True)
-        self.vent_panel_action.triggered.connect(lambda checked: self.timeline_view.toggle_panel('vent_impedance', checked))
+        self.vent_panel_action.triggered.connect(
+            lambda checked: self.timeline_view.toggle_panel("vent_impedance", checked)
+        )
         panels_menu.addAction(self.vent_panel_action)
 
         self.burden_panel_action = QAction("Arrhythmia Burden", self)
         self.burden_panel_action.setCheckable(True)
         self.burden_panel_action.setChecked(True)
-        self.burden_panel_action.triggered.connect(lambda checked: self.timeline_view.toggle_panel('burden', checked))
+        self.burden_panel_action.triggered.connect(
+            lambda checked: self.timeline_view.toggle_panel("burden", checked)
+        )
         panels_menu.addAction(self.burden_panel_action)
 
         self.settings_panel_action = QAction("Device Settings", self)
         self.settings_panel_action.setCheckable(True)
         self.settings_panel_action.setChecked(True)
-        self.settings_panel_action.triggered.connect(lambda checked: self.timeline_view.toggle_panel('settings', checked))
+        self.settings_panel_action.triggered.connect(
+            lambda checked: self.timeline_view.toggle_panel("settings", checked)
+        )
         panels_menu.addAction(self.settings_panel_action)
 
-        self.device_settings_panel_action = QAction("Device Settings (Fixed/Operator)", self)
+        self.device_settings_panel_action = QAction(
+            "Device Settings (Fixed/Operator)", self
+        )
         self.device_settings_panel_action.setCheckable(True)
         self.device_settings_panel_action.setChecked(True)
-        self.device_settings_panel_action.triggered.connect(lambda checked: self.timeline_view.toggle_panel('device_settings', checked))
+        self.device_settings_panel_action.triggered.connect(
+            lambda checked: self.timeline_view.toggle_panel("device_settings", checked)
+        )
         panels_menu.addAction(self.device_settings_panel_action)
 
         self.heart_rate_panel_action = QAction("Heart Rate Timeline", self)
         self.heart_rate_panel_action.setCheckable(True)
         self.heart_rate_panel_action.setChecked(True)
-        self.heart_rate_panel_action.triggered.connect(lambda checked: self.timeline_view.toggle_panel('heart_rate', checked))
+        self.heart_rate_panel_action.triggered.connect(
+            lambda checked: self.timeline_view.toggle_panel("heart_rate", checked)
+        )
         panels_menu.addAction(self.heart_rate_panel_action)
 
         view_menu.addSeparator()
@@ -243,9 +259,9 @@ class MainWindow(QMainWindow):
         toolbar = self.addToolBar("Main Toolbar")
 
         # Add toolbar actions
-        import_btn = QPushButton("Import Data")
-        import_btn.clicked.connect(self._import_data)
-        toolbar.addWidget(import_btn)
+        import_action = QAction("Import HL7", self)
+        import_action.triggered.connect(self._import_data)
+        toolbar.addAction(import_action)
 
     def _create_central_widget(self):
         """Create the central widget with timeline and episode views."""
@@ -254,13 +270,27 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.timeline_view)
 
         # Connect panel visibility signals to menu actions (for synchronization)
-        self.timeline_view.battery_visibility_changed.connect(self.battery_panel_action.setChecked)
-        self.timeline_view.atrial_impedance_visibility_changed.connect(self.atrial_panel_action.setChecked)
-        self.timeline_view.vent_impedance_visibility_changed.connect(self.vent_panel_action.setChecked)
-        self.timeline_view.burden_visibility_changed.connect(self.burden_panel_action.setChecked)
-        self.timeline_view.settings_visibility_changed.connect(self.settings_panel_action.setChecked)
-        self.timeline_view.device_settings_visibility_changed.connect(self.device_settings_panel_action.setChecked)
-        self.timeline_view.heart_rate_visibility_changed.connect(self.heart_rate_panel_action.setChecked)
+        self.timeline_view.battery_visibility_changed.connect(
+            self.battery_panel_action.setChecked
+        )
+        self.timeline_view.atrial_impedance_visibility_changed.connect(
+            self.atrial_panel_action.setChecked
+        )
+        self.timeline_view.vent_impedance_visibility_changed.connect(
+            self.vent_panel_action.setChecked
+        )
+        self.timeline_view.burden_visibility_changed.connect(
+            self.burden_panel_action.setChecked
+        )
+        self.timeline_view.settings_visibility_changed.connect(
+            self.settings_panel_action.setChecked
+        )
+        self.timeline_view.device_settings_visibility_changed.connect(
+            self.device_settings_panel_action.setChecked
+        )
+        self.timeline_view.heart_rate_visibility_changed.connect(
+            self.heart_rate_panel_action.setChecked
+        )
 
     def _create_status_bar(self):
         """Create the status bar."""
@@ -312,9 +342,11 @@ class MainWindow(QMainWindow):
             )
 
         # Validate file extension (optional but recommended)
-        allowed_extensions = ['.hl7', '.txt']
+        allowed_extensions = [".hl7", ".txt"]
         if resolved_path.suffix.lower() not in allowed_extensions:
-            logger.warning(f"Importing file with unusual extension: {resolved_path.suffix}")
+            logger.warning(
+                f"Importing file with unusual extension: {resolved_path.suffix}"
+            )
 
         logger.info(f"File validation passed: {file_path} ({file_size} bytes)")
 
@@ -326,7 +358,7 @@ class MainWindow(QMainWindow):
             self,
             "Import HL7 Data",
             "",
-            "HL7 Files (*.hl7 *.dat);;Text Files (*.txt);;All Files (*)"
+            "HL7 Files (*.hl7 *.dat);;Text Files (*.txt);;All Files (*)",
         )
 
         if not file_paths:
@@ -349,39 +381,58 @@ class MainWindow(QMainWindow):
                 self._validate_import_file(file_path)
 
                 # Read HL7 file with size limit enforced
-                with open(file_path, 'r', encoding='utf-8') as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     hl7_message = f.read(FileLimits.MAX_IMPORT_FILE_SIZE + 1)
 
                 # Double-check size after reading
-                if len(hl7_message.encode('utf-8')) > FileLimits.MAX_IMPORT_FILE_SIZE:
+                if len(hl7_message.encode("utf-8")) > FileLimits.MAX_IMPORT_FILE_SIZE:
                     raise FileValidationError("File exceeds maximum allowed size")
 
                 # Parse HL7 message (parser has additional validation)
                 transmission = parser.parse_message(hl7_message, filename=file_path)
 
-                successful_imports.append({
-                    'file': os.path.basename(file_path),
-                    'transmission_id': transmission.transmission_id,
-                    'patient': transmission.patient.patient_name,
-                    'observations': len(transmission.observations)
-                })
+                successful_imports.append(
+                    {
+                        "file": os.path.basename(file_path),
+                        "transmission_id": transmission.transmission_id,
+                        "patient": transmission.patient.patient_name,
+                        "observations": len(transmission.observations),
+                    }
+                )
                 logger.info(f"Successfully imported HL7 file: {file_path}")
 
             except FileValidationError as e:
                 logger.error(f"File validation failed for {file_path}: {e}")
-                failed_imports.append({'file': os.path.basename(file_path), 'error': f"File validation: {str(e)}"})
+                failed_imports.append(
+                    {
+                        "file": os.path.basename(file_path),
+                        "error": f"File validation: {str(e)}",
+                    }
+                )
 
             except HL7ValidationError as e:
                 logger.error(f"HL7 validation failed for {file_path}: {e}")
-                failed_imports.append({'file': os.path.basename(file_path), 'error': f"HL7 validation: {str(e)}"})
+                failed_imports.append(
+                    {
+                        "file": os.path.basename(file_path),
+                        "error": f"HL7 validation: {str(e)}",
+                    }
+                )
 
             except ValidationError as e:
                 logger.error(f"Data validation failed for {file_path}: {e}")
-                failed_imports.append({'file': os.path.basename(file_path), 'error': f"Data validation: {str(e)}"})
+                failed_imports.append(
+                    {
+                        "file": os.path.basename(file_path),
+                        "error": f"Data validation: {str(e)}",
+                    }
+                )
 
             except Exception as e:
                 logger.exception(f"Import failed for {file_path}: {e}")
-                failed_imports.append({'file': os.path.basename(file_path), 'error': str(e)})
+                failed_imports.append(
+                    {"file": os.path.basename(file_path), "error": str(e)}
+                )
 
         # Show summary message
         if successful_imports or failed_imports:
@@ -391,7 +442,8 @@ class MainWindow(QMainWindow):
         if successful_imports:
             self.timeline_view.patient_selector.load_patients()
             self.statusBar().showMessage(
-                f"Imported {len(successful_imports)} file(s), {len(failed_imports)} failed", 5000
+                f"Imported {len(successful_imports)} file(s), {len(failed_imports)} failed",
+                5000,
             )
 
     def _show_import_summary(self, successful: list, failed: list):
@@ -468,9 +520,7 @@ class MainWindow(QMainWindow):
 
         # Get preset name from user
         preset_name, ok = QInputDialog.getText(
-            self,
-            "Save Layout",
-            "Enter a name for this layout preset:"
+            self, "Save Layout", "Enter a name for this layout preset:"
         )
 
         if ok and preset_name:
@@ -480,16 +530,12 @@ class MainWindow(QMainWindow):
             # Save as preset
             if LayoutSerializer.save_preset(layout_data, preset_name):
                 QMessageBox.information(
-                    self,
-                    "Layout Saved",
-                    f"Layout '{preset_name}' saved successfully."
+                    self, "Layout Saved", f"Layout '{preset_name}' saved successfully."
                 )
                 self.statusBar().showMessage(f"Layout '{preset_name}' saved", 3000)
             else:
                 QMessageBox.warning(
-                    self,
-                    "Save Failed",
-                    f"Failed to save layout '{preset_name}'."
+                    self, "Save Failed", f"Failed to save layout '{preset_name}'."
                 )
 
     def _load_layout(self):
@@ -503,18 +549,13 @@ class MainWindow(QMainWindow):
             QMessageBox.information(
                 self,
                 "No Presets",
-                "No saved layout presets found. Use 'Save Layout As...' to create one."
+                "No saved layout presets found. Use 'Save Layout As...' to create one.",
             )
             return
 
         # Let user select a preset
         preset_name, ok = QInputDialog.getItem(
-            self,
-            "Load Layout",
-            "Select a layout preset to load:",
-            presets,
-            0,
-            False
+            self, "Load Layout", "Select a layout preset to load:", presets, 0, False
         )
 
         if ok and preset_name:
@@ -526,14 +567,12 @@ class MainWindow(QMainWindow):
                 QMessageBox.information(
                     self,
                     "Layout Loaded",
-                    f"Layout '{preset_name}' loaded successfully."
+                    f"Layout '{preset_name}' loaded successfully.",
                 )
                 self.statusBar().showMessage(f"Layout '{preset_name}' loaded", 3000)
             else:
                 QMessageBox.warning(
-                    self,
-                    "Load Failed",
-                    f"Failed to load layout '{preset_name}'."
+                    self, "Load Failed", f"Failed to load layout '{preset_name}'."
                 )
 
     def _reset_layout(self):
@@ -543,7 +582,7 @@ class MainWindow(QMainWindow):
             "Reset Layout",
             "Reset panel layout to default? This will discard your current layout.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.No,
         )
 
         if reply == QMessageBox.StandardButton.Yes:
@@ -571,26 +610,29 @@ class MainWindow(QMainWindow):
     def _show_settings_window(self):
         """Show device settings in a separate window."""
         # Get current patient's most recent transmission
-        current_patient_id = self.timeline_view.patient_selector.get_current_patient_id()
+        current_patient_id = (
+            self.timeline_view.patient_selector.get_current_patient_id()
+        )
 
         if not current_patient_id:
             QMessageBox.information(
                 self,
                 "No Patient Selected",
-                "Please select a patient first to view device settings."
+                "Please select a patient first to view device settings.",
             )
             return
 
         # Query most recent transmission
-        most_recent_transmission = self.db_session.query(Transmission).filter_by(
-            patient_id=current_patient_id
-        ).order_by(Transmission.transmission_date.desc()).first()
+        most_recent_transmission = (
+            self.db_session.query(Transmission)
+            .filter_by(patient_id=current_patient_id)
+            .order_by(Transmission.transmission_date.desc())
+            .first()
+        )
 
         if not most_recent_transmission:
             QMessageBox.information(
-                self,
-                "No Data",
-                "No transmission data available for this patient."
+                self, "No Data", "No transmission data available for this patient."
             )
             return
 
@@ -618,7 +660,7 @@ class MainWindow(QMainWindow):
         settings_window.show()
 
         # Keep reference to prevent garbage collection
-        if not hasattr(self, '_settings_windows'):
+        if not hasattr(self, "_settings_windows"):
             self._settings_windows = []
         self._settings_windows.append(settings_window)
 
