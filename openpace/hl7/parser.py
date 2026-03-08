@@ -23,7 +23,7 @@ from openpace.exceptions import (
     HL7ValidationError,
     ValidationError,
     PatientIDValidationError,
-    format_validation_error
+    format_validation_error,
 )
 from openpace.constants import FileLimits
 
@@ -43,11 +43,11 @@ class DataSanitizer:
     """
 
     # Regex patterns for validation
-    PATIENT_ID_PATTERN = re.compile(r'^[A-Za-z0-9\-_\.]{1,100}$')
-    PATIENT_NAME_PATTERN = re.compile(r'^[A-Za-z0-9\s\'\-\.\,]{1,200}$')
+    PATIENT_ID_PATTERN = re.compile(r"^[A-Za-z0-9\-_\.]{1,100}$")
+    PATIENT_NAME_PATTERN = re.compile(r"^[A-Za-z0-9\s\'\-\.\,]{1,200}$")
 
     # Control characters to remove (C0 and C1 control codes except tab, newline, carriage return)
-    CONTROL_CHARS_PATTERN = re.compile(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]')
+    CONTROL_CHARS_PATTERN = re.compile(r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]")
 
     @classmethod
     def sanitize_patient_id(cls, patient_id: str) -> str:
@@ -67,7 +67,7 @@ class DataSanitizer:
             raise PatientIDValidationError("Patient ID cannot be empty")
 
         # Remove control characters
-        sanitized = cls.CONTROL_CHARS_PATTERN.sub('', patient_id)
+        sanitized = cls.CONTROL_CHARS_PATTERN.sub("", patient_id)
 
         # Enforce length limit
         if len(sanitized) > FileLimits.MAX_PATIENT_ID_LENGTH:
@@ -75,7 +75,7 @@ class DataSanitizer:
                 format_validation_error(
                     "patient_id",
                     sanitized,
-                    f"exceeds maximum length of {FileLimits.MAX_PATIENT_ID_LENGTH}"
+                    f"exceeds maximum length of {FileLimits.MAX_PATIENT_ID_LENGTH}",
                 )
             )
 
@@ -85,7 +85,7 @@ class DataSanitizer:
                 format_validation_error(
                     "patient_id",
                     sanitized,
-                    "contains invalid characters (allowed: A-Z, a-z, 0-9, -, _, .)"
+                    "contains invalid characters (allowed: A-Z, a-z, 0-9, -, _, .)",
                 )
             )
 
@@ -110,7 +110,7 @@ class DataSanitizer:
             return ""
 
         # Remove control characters
-        sanitized = cls.CONTROL_CHARS_PATTERN.sub('', patient_name)
+        sanitized = cls.CONTROL_CHARS_PATTERN.sub("", patient_name)
 
         # Enforce length limit
         if len(sanitized) > FileLimits.MAX_PATIENT_NAME_LENGTH:
@@ -118,7 +118,7 @@ class DataSanitizer:
                 format_validation_error(
                     "patient_name",
                     sanitized,
-                    f"exceeds maximum length of {FileLimits.MAX_PATIENT_NAME_LENGTH}"
+                    f"exceeds maximum length of {FileLimits.MAX_PATIENT_NAME_LENGTH}",
                 )
             )
 
@@ -126,9 +126,7 @@ class DataSanitizer:
         if sanitized and not cls.PATIENT_NAME_PATTERN.match(sanitized):
             raise ValidationError(
                 format_validation_error(
-                    "patient_name",
-                    sanitized,
-                    "contains invalid characters"
+                    "patient_name", sanitized, "contains invalid characters"
                 )
             )
 
@@ -154,15 +152,13 @@ class DataSanitizer:
             return ""
 
         # Remove control characters
-        sanitized = cls.CONTROL_CHARS_PATTERN.sub('', text)
+        sanitized = cls.CONTROL_CHARS_PATTERN.sub("", text)
 
         # Enforce length limit
         if len(sanitized) > max_length:
             raise ValidationError(
                 format_validation_error(
-                    "text_field",
-                    sanitized,
-                    f"exceeds maximum length of {max_length}"
+                    "text_field", sanitized, f"exceeds maximum length of {max_length}"
                 )
             )
 
@@ -206,7 +202,7 @@ class HL7Parser:
             raise HL7ValidationError("HL7 message cannot be empty")
 
         # Check message size to prevent DoS through memory exhaustion
-        message_size = len(hl7_message_text.encode('utf-8'))
+        message_size = len(hl7_message_text.encode("utf-8"))
         if message_size < FileLimits.MIN_HL7_MESSAGE_SIZE:
             raise HL7ValidationError(
                 f"HL7 message too small ({message_size} bytes). "
@@ -220,21 +216,23 @@ class HL7Parser:
             )
 
         # Validate message format - must start with MSH segment
-        normalized = hl7_message_text.replace('\r\n', '\r').replace('\n', '\r')
-        if not normalized.startswith('MSH'):
+        normalized = hl7_message_text.replace("\r\n", "\r").replace("\n", "\r")
+        if not normalized.startswith("MSH"):
             raise HL7ValidationError(
                 "Invalid HL7 message format: must start with 'MSH' segment"
             )
 
         # Check for minimum required segments (MSH and PID)
-        if 'PID' not in normalized:
+        if "PID" not in normalized:
             raise HL7ValidationError(
                 "Invalid HL7 message: missing required PID (Patient Identification) segment"
             )
 
         logger.info(f"HL7 message validation passed: {message_size} bytes")
 
-    def parse_message(self, hl7_message_text: str, filename: str = None) -> Transmission:
+    def parse_message(
+        self, hl7_message_text: str, filename: str = None
+    ) -> Transmission:
         """
         Parse a complete HL7 ORU^R01 message.
 
@@ -254,7 +252,9 @@ class HL7Parser:
 
         # Parse HL7 message
         # python-hl7 expects segments separated by \r, normalize line endings
-        hl7_message_normalized = hl7_message_text.replace('\r\n', '\r').replace('\n', '\r')
+        hl7_message_normalized = hl7_message_text.replace("\r\n", "\r").replace(
+            "\n", "\r"
+        )
 
         try:
             msg = hl7.parse(hl7_message_normalized)
@@ -263,7 +263,7 @@ class HL7Parser:
             raise ValueError(f"Failed to parse HL7 message: {e}")
 
         # Verify message type
-        msh = msg.segment('MSH')
+        msh = msg.segment("MSH")
         # MSH-9 in HL7 spec (Message Type), but python-hl7 uses 1-based indexing
         # and includes separator field, so it's at index 9 (actually shows as index 10 due to encoding)
         # Try both indexes to be safe
@@ -282,21 +282,22 @@ class HL7Parser:
                     else:
                         result.append(str(item))
                 return result
-            parts = flatten(message_type_field)
-            message_type = '^'.join(parts)
-        else:
-            message_type = str(message_type_field) if message_type_field else ''
 
-        if 'ORU' not in message_type or 'R01' not in message_type:
+            parts = flatten(message_type_field)
+            message_type = "^".join(parts)
+        else:
+            message_type = str(message_type_field) if message_type_field else ""
+
+        if "ORU" not in message_type or "R01" not in message_type:
             raise ValueError(f"Expected ORU^R01 message, got: {message_type}")
 
         # Extract segments
         msh_data = self.parse_msh(msh)
-        pid_data = self.parse_pid(msg.segment('PID'))
+        pid_data = self.parse_pid(msg.segment("PID"))
 
         # OBR may not always be present, handle gracefully
         try:
-            obr_data = self.parse_obr(msg.segment('OBR'))
+            obr_data = self.parse_obr(msg.segment("OBR"))
         except KeyError:
             obr_data = {}
 
@@ -306,21 +307,21 @@ class HL7Parser:
         # Create transmission record
         transmission = Transmission(
             patient_id=patient.patient_id,
-            transmission_date=msh_data['message_datetime'],
-            transmission_type=obr_data.get('observation_type', 'unknown'),
-            message_control_id=msh_data.get('message_control_id'),
-            sending_application=msh_data.get('sending_application'),
-            sending_facility=msh_data.get('sending_facility'),
+            transmission_date=msh_data["message_datetime"],
+            transmission_type=obr_data.get("observation_type", "unknown"),
+            message_control_id=msh_data.get("message_control_id"),
+            sending_application=msh_data.get("sending_application"),
+            sending_facility=msh_data.get("sending_facility"),
             device_manufacturer=self._extract_manufacturer(msh_data),
-            device_model=pid_data.get('device_model'),
-            device_serial=pid_data.get('device_serial'),
+            device_model=pid_data.get("device_model"),
+            device_serial=pid_data.get("device_serial"),
             hl7_filename=filename,
         )
         self.session.add(transmission)
         self.session.flush()  # Get transmission_id
 
         # Get appropriate translator based on manufacturer
-        translator = get_translator(transmission.device_manufacturer or 'Generic')
+        translator = get_translator(transmission.device_manufacturer or "Generic")
 
         # Parse OBX segments grouped by their OBR context so that each group
         # inherits the correct OBR-7 datetime as its tier-3 fallback timestamp.
@@ -332,20 +333,22 @@ class HL7Parser:
         # subsequent OBX rows in the same sub-group (tier-2 in the resolution hierarchy).
         obx_count = 0
         try:
-            obr_segments = list(msg.segments('OBR'))
+            obr_segments = list(msg.segments("OBR"))
         except Exception:
             obr_segments = []
 
         if obr_segments:
             # Walk through all OBX segments, tracking which OBR group they belong to
-            current_obr_datetime = obr_data.get('observation_datetime')  # first OBR
-            obr_iter = iter(obr_segments[1:])  # remaining OBRs (skip the first, already parsed)
+            current_obr_datetime = obr_data.get("observation_datetime")  # first OBR
+            obr_iter = iter(
+                obr_segments[1:]
+            )  # remaining OBRs (skip the first, already parsed)
             next_obr = next(obr_iter, None)
 
             # dict[sub_id -> datetime] — populated from vendor datetime OBX segments
             datetime_by_sub_id: dict = {}
 
-            for obx_segment in msg.segments('OBX'):
+            for obx_segment in msg.segments("OBX"):
                 # Advance OBR group when sequence resets (new OBR block starts at seq 1)
                 try:
                     obx_seq = int(str(obx_segment[1]))
@@ -353,7 +356,7 @@ class HL7Parser:
                     obx_seq = None
 
                 if next_obr is not None and obx_seq == 1:
-                    obr_dt_str = str(next_obr[7]) if len(next_obr) > 7 else ''
+                    obr_dt_str = str(next_obr[7]) if len(next_obr) > 7 else ""
                     current_obr_datetime = self._parse_hl7_datetime(obr_dt_str)
                     next_obr = next(obr_iter, None)
                     # Reset vendor datetime tracking for the new OBR group
@@ -371,10 +374,14 @@ class HL7Parser:
                     # If this OBX is a vendor datetime observation (e.g. BSC
                     # msmt_battery_datetime), save its parsed value so subsequent OBX rows
                     # in the same sub-group can use it as their observation timestamp.
-                    if (observation.variable_name and
-                            observation.variable_name.endswith('_datetime') and
-                            observation.value_text):
-                        sub_id = str(obx_segment[4]).strip() if len(obx_segment) > 4 else ''
+                    if (
+                        observation.variable_name
+                        and observation.variable_name.endswith("_datetime")
+                        and observation.value_text
+                    ):
+                        sub_id = (
+                            str(obx_segment[4]).strip() if len(obx_segment) > 4 else ""
+                        )
                         parsed_dt = self._parse_hl7_datetime(observation.value_text)
                         if parsed_dt and sub_id:
                             datetime_by_sub_id[sub_id] = parsed_dt
@@ -385,7 +392,7 @@ class HL7Parser:
             # No OBR segments — fall back to simple loop with MSH date only
             datetime_by_sub_id: dict = {}
 
-            for obx_segment in msg.segments('OBX'):
+            for obx_segment in msg.segments("OBX"):
                 observation = self.parse_obx(
                     obx_segment,
                     transmission.transmission_id,
@@ -394,10 +401,14 @@ class HL7Parser:
                     msmt_datetimes=datetime_by_sub_id,
                 )
                 if observation:
-                    if (observation.variable_name and
-                            observation.variable_name.endswith('_datetime') and
-                            observation.value_text):
-                        sub_id = str(obx_segment[4]).strip() if len(obx_segment) > 4 else ''
+                    if (
+                        observation.variable_name
+                        and observation.variable_name.endswith("_datetime")
+                        and observation.value_text
+                    ):
+                        sub_id = (
+                            str(obx_segment[4]).strip() if len(obx_segment) > 4 else ""
+                        )
                         parsed_dt = self._parse_hl7_datetime(observation.value_text)
                         if parsed_dt and sub_id:
                             datetime_by_sub_id[sub_id] = parsed_dt
@@ -407,7 +418,9 @@ class HL7Parser:
 
         self.session.commit()
 
-        print(f"[OK] Parsed transmission {transmission.transmission_id}: {obx_count} observations")
+        print(
+            f"[OK] Parsed transmission {transmission.transmission_id}: {obx_count} observations"
+        )
         return transmission
 
     def parse_msh(self, msh_segment) -> Dict:
@@ -426,20 +439,38 @@ class HL7Parser:
         # Note: Field 0=MSH, 1=separator field, 2=^~\&, then actual data starts at 3
 
         # Parse datetime - try field 8 first (Medtronic), then field 7 (Boston Scientific)
-        datetime_str = str(msh_segment[8][0]) if isinstance(msh_segment[8], list) else str(msh_segment[8])
-        if not datetime_str or datetime_str in ('', 'None'):
+        datetime_str = (
+            str(msh_segment[8][0])
+            if isinstance(msh_segment[8], list)
+            else str(msh_segment[8])
+        )
+        if not datetime_str or datetime_str in ("", "None"):
             # Try field 7 as fallback (Boston Scientific uses this)
-            datetime_str = str(msh_segment[7][0]) if isinstance(msh_segment[7], list) else str(msh_segment[7])
+            datetime_str = (
+                str(msh_segment[7][0])
+                if isinstance(msh_segment[7], list)
+                else str(msh_segment[7])
+            )
 
         return {
-            'sending_application': str(msh_segment[3][0]) if isinstance(msh_segment[3], list) else str(msh_segment[3]),
-            'sending_facility': str(msh_segment[4][0]) if isinstance(msh_segment[4], list) else str(msh_segment[4]),
-            'receiving_application': str(msh_segment[5][0]) if isinstance(msh_segment[5], list) else str(msh_segment[5]),
-            'receiving_facility': str(msh_segment[6][0]) if isinstance(msh_segment[6], list) else str(msh_segment[6]),
-            'message_datetime': self._parse_hl7_datetime(datetime_str),
-            'message_type': 'ORU^R01',  # Already validated
-            'message_control_id': str(msh_segment[11][0]) if isinstance(msh_segment[11], list) else str(msh_segment[11]),
-            'version': str(msh_segment[13][0]) if len(msh_segment) > 13 else '2.5',
+            "sending_application": str(msh_segment[3][0])
+            if isinstance(msh_segment[3], list)
+            else str(msh_segment[3]),
+            "sending_facility": str(msh_segment[4][0])
+            if isinstance(msh_segment[4], list)
+            else str(msh_segment[4]),
+            "receiving_application": str(msh_segment[5][0])
+            if isinstance(msh_segment[5], list)
+            else str(msh_segment[5]),
+            "receiving_facility": str(msh_segment[6][0])
+            if isinstance(msh_segment[6], list)
+            else str(msh_segment[6]),
+            "message_datetime": self._parse_hl7_datetime(datetime_str),
+            "message_type": "ORU^R01",  # Already validated
+            "message_control_id": str(msh_segment[11][0])
+            if isinstance(msh_segment[11], list)
+            else str(msh_segment[11]),
+            "version": str(msh_segment[13][0]) if len(msh_segment) > 13 else "2.5",
         }
 
     def parse_pid(self, pid_segment) -> Dict:
@@ -470,12 +501,20 @@ class HL7Parser:
 
         # Check for Boston Scientific LATITUDE format with embedded device info
         # Format: model:D433/serial:677770^^BSX^U~7767669^^The Alfred Hospital^U
-        if 'model:' in patient_id_field or 'serial:' in patient_id_field:
+        if "model:" in patient_id_field or "serial:" in patient_id_field:
             # Parse device info from the field
-            device_model, device_serial, raw_patient_id = self._extract_device_info_from_pid(patient_id_field)
+            (
+                device_model,
+                device_serial,
+                raw_patient_id,
+            ) = self._extract_device_info_from_pid(patient_id_field)
         else:
             # Handle complex ID format: ID^^^FACILITY
-            raw_patient_id = patient_id_field.split('^')[0] if '^' in patient_id_field else patient_id_field
+            raw_patient_id = (
+                patient_id_field.split("^")[0]
+                if "^" in patient_id_field
+                else patient_id_field
+            )
 
         # Sanitize patient ID (critical for SQL injection prevention)
         patient_id = DataSanitizer.sanitize_patient_id(raw_patient_id)
@@ -484,17 +523,17 @@ class HL7Parser:
         patient_name = None
         if not self.anonymize:
             name_field = str(pid_segment[5])
-            if '^' in name_field:
+            if "^" in name_field:
                 # Format: LAST^FIRST^MIDDLE
-                parts = name_field.split('^')
-                last = parts[0] if len(parts) > 0 else ''
-                first = parts[1] if len(parts) > 1 else ''
+                parts = name_field.split("^")
+                last = parts[0] if len(parts) > 0 else ""
+                first = parts[1] if len(parts) > 1 else ""
                 raw_name = f"{first} {last}".strip()
             else:
                 raw_name = name_field
 
             # Sanitize patient name
-            if raw_name and raw_name not in ('', 'None'):
+            if raw_name and raw_name not in ("", "None"):
                 patient_name = DataSanitizer.sanitize_patient_name(raw_name)
 
         # Extract date of birth (PID-7)
@@ -506,16 +545,16 @@ class HL7Parser:
         # Extract gender (PID-8) - validate single character
         gender_raw = str(pid_segment[8]) if len(pid_segment) > 8 else None
         gender = None
-        if gender_raw and gender_raw in ('M', 'F', 'O', 'U', 'm', 'f', 'o', 'u'):
+        if gender_raw and gender_raw in ("M", "F", "O", "U", "m", "f", "o", "u"):
             gender = gender_raw.upper()
 
         return {
-            'patient_id': patient_id,
-            'patient_name': patient_name,
-            'date_of_birth': dob,
-            'gender': gender,
-            'device_model': device_model,
-            'device_serial': device_serial,
+            "patient_id": patient_id,
+            "patient_name": patient_name,
+            "date_of_birth": dob,
+            "gender": gender,
+            "device_model": device_model,
+            "device_serial": device_serial,
         }
 
     def parse_obr(self, obr_segment) -> Dict:
@@ -532,21 +571,34 @@ class HL7Parser:
         """
         # OBR-4: Universal Service Identifier
         observation_type_field = str(obr_segment[4])
-        observation_type = observation_type_field.split('^')[0] if '^' in observation_type_field else observation_type_field
+        observation_type = (
+            observation_type_field.split("^")[0]
+            if "^" in observation_type_field
+            else observation_type_field
+        )
 
         # Determine if remote or in-clinic based on observation type
-        transmission_type = 'remote' if 'REMOTE' in observation_type.upper() else 'in_clinic'
+        transmission_type = (
+            "remote" if "REMOTE" in observation_type.upper() else "in_clinic"
+        )
 
         return {
-            'observation_type': transmission_type,
-            'order_id': str(obr_segment[2]) if len(obr_segment) > 2 else None,
-            'observation_datetime': self._parse_hl7_datetime(str(obr_segment[7])) if len(obr_segment) > 7 else None,
+            "observation_type": transmission_type,
+            "order_id": str(obr_segment[2]) if len(obr_segment) > 2 else None,
+            "observation_datetime": self._parse_hl7_datetime(str(obr_segment[7]))
+            if len(obr_segment) > 7
+            else None,
         }
 
-    def parse_obx(self, obx_segment, transmission_id: int, translator,
-                  observation_time: datetime,
-                  obr_datetime: Optional[datetime] = None,
-                  msmt_datetimes: Optional[dict] = None) -> Optional[Observation]:
+    def parse_obx(
+        self,
+        obx_segment,
+        transmission_id: int,
+        translator,
+        observation_time: datetime,
+        obr_datetime: Optional[datetime] = None,
+        msmt_datetimes: Optional[dict] = None,
+    ) -> Optional[Observation]:
         """
         Parse OBX (Observation) segment - the core pacemaker data.
 
@@ -575,22 +627,21 @@ class HL7Parser:
 
         # OBX-3: Observation identifier (LOINC code or vendor-specific)
         observation_id_field = str(obx_segment[3])
-        parts = observation_id_field.split('^')
+        parts = observation_id_field.split("^")
         observation_id = parts[0]
 
         # Sanitize observation text to prevent injection
-        raw_observation_text = parts[1] if len(parts) > 1 else ''
+        raw_observation_text = parts[1] if len(parts) > 1 else ""
         observation_text = DataSanitizer.sanitize_text_field(
-            raw_observation_text,
-            max_length=FileLimits.MAX_OBSERVATION_TEXT_LENGTH
+            raw_observation_text, max_length=FileLimits.MAX_OBSERVATION_TEXT_LENGTH
         )
 
-        coding_system = parts[2] if len(parts) > 2 else ''
+        coding_system = parts[2] if len(parts) > 2 else ""
 
         # OBX-4: Sub ID - identifies measurement group within an OBR.
         # Boston Scientific LATITUDE uses this to group a datetime OBX with its
         # associated measurement OBXs (e.g. sub_id "1" for battery group).
-        sub_id = str(obx_segment[4]).strip() if len(obx_segment) > 4 else ''
+        sub_id = str(obx_segment[4]).strip() if len(obx_segment) > 4 else ""
 
         # OBX-5: Observation value
         value = str(obx_segment[5])
@@ -605,7 +656,7 @@ class HL7Parser:
         abnormal_flag = str(obx_segment[8]) if len(obx_segment) > 8 else None
 
         # OBX-11: Observation result status (F=final, P=preliminary)
-        obs_status = str(obx_segment[11]) if len(obx_segment) > 11 else 'F'
+        obs_status = str(obx_segment[11]) if len(obx_segment) > 11 else "F"
 
         # Resolve observation timestamp using four-tier fallback:
         #   1. OBX-14  per-observation datetime            (most precise)
@@ -622,7 +673,7 @@ class HL7Parser:
             obs_datetime = msmt_datetimes[sub_id]  # upgrade to vendor datetime (tier 2)
         if len(obx_segment) > 14:
             obx14_value = str(obx_segment[14]).strip()
-            if obx14_value and obx14_value not in ('', 'None'):
+            if obx14_value and obx14_value not in ("", "None"):
                 parsed_dt = self._parse_hl7_datetime(obx14_value)
                 if parsed_dt:
                     obs_datetime = parsed_dt  # upgrade to OBX-14 level (tier 1)
@@ -635,11 +686,13 @@ class HL7Parser:
 
         if not universal_var:
             # Unknown observation, skip or log
-            print(f"  [WARN] Unknown observation: {observation_id} ({observation_text})")
+            print(
+                f"  [WARN] Unknown observation: {observation_id} ({observation_text})"
+            )
             return None
 
         # Determine if LOINC code
-        loinc_code = observation_id if coding_system == 'LN' else None
+        loinc_code = observation_id if coding_system == "LN" else None
 
         # Create observation object
         observation = Observation(
@@ -656,7 +709,7 @@ class HL7Parser:
         )
 
         # Parse value based on type
-        if value_type == 'NM':  # Numeric
+        if value_type == "NM":  # Numeric
             if not value or not value.strip():
                 # Empty numeric value - skip this observation
                 return None
@@ -666,7 +719,7 @@ class HL7Parser:
                 print(f"  [WARN] Invalid numeric value: {value}")
                 return None
 
-        elif value_type == 'ST':  # String/Text
+        elif value_type == "ST":  # String/Text
             if not value or not value.strip():
                 # Empty string value - store as empty text
                 observation.value_text = ""
@@ -675,13 +728,13 @@ class HL7Parser:
                 # Many devices send numeric data as ST type
                 try:
                     # Remove common non-numeric characters and try conversion
-                    cleaned_value = value.strip().replace(',', '.')
+                    cleaned_value = value.strip().replace(",", ".")
                     observation.value_numeric = float(cleaned_value)
                 except (ValueError, AttributeError):
                     # Not a number, store as text
                     observation.value_text = value
 
-        elif value_type in ('TS', 'DT', 'DTM'):  # Timestamp / Date
+        elif value_type in ("TS", "DT", "DTM"):  # Timestamp / Date
             # Store as text so the datetime value is preserved.
             # This is critical for vendor-specific datetime OBX segments (e.g. Boston
             # Scientific LATITUDE uses separate OBX rows with TS values to convey the
@@ -689,7 +742,7 @@ class HL7Parser:
             if value and value.strip():
                 observation.value_text = value.strip()
 
-        elif value_type == 'ED':  # Encapsulated Data (base64 blob)
+        elif value_type == "ED":  # Encapsulated Data (base64 blob)
             blob_data = self._extract_base64_from_ed(value)
             observation.value_blob = blob_data
 
@@ -705,7 +758,7 @@ class HL7Parser:
         Returns:
             Patient object
         """
-        patient_id = pid_data['patient_id']
+        patient_id = pid_data["patient_id"]
         patient = self.session.query(Patient).filter_by(patient_id=patient_id).first()
 
         if not patient:
@@ -713,9 +766,9 @@ class HL7Parser:
             patient = Patient(
                 patient_id=patient_id,
                 anonymized=self.anonymize,
-                patient_name=pid_data['patient_name'],
-                date_of_birth=pid_data['date_of_birth'],
-                gender=pid_data['gender'],
+                patient_name=pid_data["patient_name"],
+                date_of_birth=pid_data["date_of_birth"],
+                gender=pid_data["gender"],
             )
 
             # If anonymizing, create anonymized ID
@@ -725,7 +778,9 @@ class HL7Parser:
 
             self.session.add(patient)
             self.session.flush()
-            print(f"[OK] Created new patient: {patient.anonymized_id if self.anonymize else patient.patient_name}")
+            print(
+                f"[OK] Created new patient: {patient.anonymized_id if self.anonymize else patient.patient_name}"
+            )
 
         return patient
 
@@ -739,18 +794,18 @@ class HL7Parser:
         Returns:
             Manufacturer name
         """
-        app = msh_data.get('sending_application', '').upper()
+        app = msh_data.get("sending_application", "").upper()
 
-        if 'MEDTRONIC' in app or 'CARELINK' in app:
-            return 'Medtronic'
-        elif 'BOSTON' in app or 'BSC' in app or 'LATITUDE' in app:
-            return 'Boston Scientific'
-        elif 'ABBOTT' in app or 'MERLIN' in app or 'SJM' in app:
-            return 'Abbott'
-        elif 'BIOTRONIK' in app:
-            return 'Biotronik'
+        if "MEDTRONIC" in app or "CARELINK" in app:
+            return "Medtronic"
+        elif "BOSTON" in app or "BSC" in app or "LATITUDE" in app:
+            return "Boston Scientific"
+        elif "ABBOTT" in app or "MERLIN" in app or "SJM" in app:
+            return "Abbott"
+        elif "BIOTRONIK" in app:
+            return "Biotronik"
         else:
-            return 'Generic'
+            return "Generic"
 
     def _extract_device_info_from_pid(self, patient_id_field: str) -> tuple:
         """
@@ -773,20 +828,20 @@ class HL7Parser:
         patient_id = None
 
         # Split by repetition separator '~'
-        repetitions = patient_id_field.split('~')
+        repetitions = patient_id_field.split("~")
 
         for rep in repetitions:
             # Get first component (before any '^')
-            first_component = rep.split('^')[0] if '^' in rep else rep
+            first_component = rep.split("^")[0] if "^" in rep else rep
 
             # Check if this repetition contains device info
-            if 'model:' in first_component or 'serial:' in first_component:
+            if "model:" in first_component or "serial:" in first_component:
                 # Parse device info: model:D433/serial:677770
-                parts = first_component.split('/')
+                parts = first_component.split("/")
                 for part in parts:
-                    if part.startswith('model:'):
+                    if part.startswith("model:"):
                         device_model = part[6:].strip()  # Remove 'model:' prefix
-                    elif part.startswith('serial:'):
+                    elif part.startswith("serial:"):
                         device_serial = part[7:].strip()  # Remove 'serial:' prefix
             else:
                 # This might be the patient ID
@@ -799,7 +854,9 @@ class HL7Parser:
         if patient_id is None and device_serial:
             patient_id = f"DEV-{device_serial}"
 
-        logger.info(f"Extracted device info - Model: {device_model}, Serial: {device_serial}, Patient ID: {patient_id}")
+        logger.info(
+            f"Extracted device info - Model: {device_model}, Serial: {device_serial}, Patient ID: {patient_id}"
+        )
 
         return device_model, device_serial, patient_id
 
@@ -818,7 +875,7 @@ class HL7Parser:
         Returns:
             Python datetime object or None if invalid
         """
-        if not hl7_datetime or hl7_datetime == '' or hl7_datetime == 'None':
+        if not hl7_datetime or hl7_datetime == "" or hl7_datetime == "None":
             return None
 
         try:
@@ -826,21 +883,21 @@ class HL7Parser:
             hl7_datetime = hl7_datetime.strip()
 
             # Remove timezone if present (+0000, -0500, etc.)
-            if '+' in hl7_datetime or '-' in hl7_datetime:
+            if "+" in hl7_datetime or "-" in hl7_datetime:
                 # Find the timezone separator
-                for sep in ['+', '-']:
+                for sep in ["+", "-"]:
                     if sep in hl7_datetime and hl7_datetime.index(sep) >= 8:
-                        hl7_datetime = hl7_datetime[:hl7_datetime.index(sep)]
+                        hl7_datetime = hl7_datetime[: hl7_datetime.index(sep)]
                         break
 
             if len(hl7_datetime) >= 14:
-                return datetime.strptime(hl7_datetime[:14], '%Y%m%d%H%M%S')
+                return datetime.strptime(hl7_datetime[:14], "%Y%m%d%H%M%S")
             elif len(hl7_datetime) >= 12:
                 # YYYYMMDDHHmm (no seconds)
-                return datetime.strptime(hl7_datetime[:12], '%Y%m%d%H%M')
+                return datetime.strptime(hl7_datetime[:12], "%Y%m%d%H%M")
             elif len(hl7_datetime) >= 8:
                 # Date only
-                return datetime.strptime(hl7_datetime[:8], '%Y%m%d')
+                return datetime.strptime(hl7_datetime[:8], "%Y%m%d")
         except ValueError as e:
             logger.warning(f"Failed to parse HL7 datetime '{hl7_datetime}': {e}")
 
@@ -856,12 +913,12 @@ class HL7Parser:
         Returns:
             Python date object or None if invalid
         """
-        if not hl7_date or hl7_date == '':
+        if not hl7_date or hl7_date == "":
             return None
 
         try:
             if len(hl7_date) >= 8:
-                return datetime.strptime(hl7_date[:8], '%Y%m%d').date()
+                return datetime.strptime(hl7_date[:8], "%Y%m%d").date()
         except ValueError:
             pass
 
@@ -881,7 +938,7 @@ class HL7Parser:
         """
         import base64
 
-        parts = ed_value.split('^')
+        parts = ed_value.split("^")
         if len(parts) >= 3:
             try:
                 return base64.b64decode(parts[2])

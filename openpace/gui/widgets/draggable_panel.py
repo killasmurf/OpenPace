@@ -8,7 +8,15 @@ panels within a grid layout.
 from typing import Optional
 from PyQt6.QtWidgets import QWidget, QToolButton, QLabel, QMenu
 from PyQt6.QtCore import Qt, pyqtSignal, QPoint, QSize, QRect
-from PyQt6.QtGui import QMouseEvent, QPainter, QColor, QPen, QCursor, QResizeEvent, QAction
+from PyQt6.QtGui import (
+    QMouseEvent,
+    QPainter,
+    QColor,
+    QPen,
+    QCursor,
+    QResizeEvent,
+    QAction,
+)
 
 from .collapsible_panel import CollapsiblePanel
 from .resize_handle import ResizeHandleManager
@@ -34,9 +42,11 @@ class DraggablePanel(CollapsiblePanel):
     """
 
     drag_started = pyqtSignal(str, QPoint)  # panel_id, start_position
-    drag_moved = pyqtSignal(str, QPoint)    # panel_id, current_position
-    drag_ended = pyqtSignal(str, QPoint)    # panel_id, end_position
-    resize_grid_requested = pyqtSignal(str, int, int)  # panel_id, delta_rows, delta_cols
+    drag_moved = pyqtSignal(str, QPoint)  # panel_id, current_position
+    drag_ended = pyqtSignal(str, QPoint)  # panel_id, end_position
+    resize_grid_requested = pyqtSignal(
+        str, int, int
+    )  # panel_id, delta_rows, delta_cols
     panel_settings_requested = pyqtSignal(str)  # panel_id
 
     def __init__(self, panel_id: str, title: str, content_widget: QWidget, parent=None):
@@ -90,7 +100,8 @@ class DraggablePanel(CollapsiblePanel):
         self.drag_handle.setText("⋮⋮")  # Vertical dots for drag
         self.drag_handle.setFixedSize(20, 20)
         self.drag_handle.setToolTip("Drag to move panel")
-        self.drag_handle.setStyleSheet("""
+        self.drag_handle.setStyleSheet(
+            """
             QToolButton {
                 border: none;
                 background: transparent;
@@ -103,7 +114,8 @@ class DraggablePanel(CollapsiblePanel):
                 background-color: rgba(0, 0, 0, 0.1);
                 border-radius: 3px;
             }
-        """)
+        """
+        )
         self.drag_handle.setCursor(Qt.CursorShape.OpenHandCursor)
 
         # Insert at the beginning of the header (before collapse button)
@@ -169,7 +181,9 @@ class DraggablePanel(CollapsiblePanel):
         """Request a grid-based resize."""
         self.resize_grid_requested.emit(self.panel_id, delta_rows, delta_cols)
 
-    def _on_resize_requested(self, delta_rows: int, delta_cols: int, handle_position: str):
+    def _on_resize_requested(
+        self, delta_rows: int, delta_cols: int, handle_position: str
+    ):
         """Handle resize request from resize handles."""
         self.resize_grid_requested.emit(self.panel_id, delta_rows, delta_cols)
 
@@ -221,7 +235,11 @@ class DraggablePanel(CollapsiblePanel):
 
     def mousePressEvent(self, event: QMouseEvent):
         """Handle mouse press for drag start."""
-        if event.button() == Qt.MouseButton.LeftButton and not self.is_locked and self.edit_mode:
+        if (
+            event.button() == Qt.MouseButton.LeftButton
+            and not self.is_locked
+            and self.edit_mode
+        ):
             # Check if click is in the drag handle area or header
             header = self.layout().itemAt(0).widget()
             header_rect = header.geometry()
@@ -229,7 +247,10 @@ class DraggablePanel(CollapsiblePanel):
             if header_rect.contains(event.pos()):
                 # Don't start drag if clicking on buttons
                 clicked_widget = self.childAt(event.pos())
-                if isinstance(clicked_widget, QToolButton) and clicked_widget != self.drag_handle:
+                if (
+                    isinstance(clicked_widget, QToolButton)
+                    and clicked_widget != self.drag_handle
+                ):
                     super().mousePressEvent(event)
                     return
 
@@ -280,7 +301,7 @@ class DraggablePanel(CollapsiblePanel):
         """Handle resize event to update resize handle positions."""
         super().resizeEvent(event)
         # Update resize handle positions when panel is resized
-        if hasattr(self, 'resize_manager'):
+        if hasattr(self, "resize_manager"):
             self.resize_manager.update_positions()
 
     def paintEvent(self, event):
@@ -307,7 +328,9 @@ class DraggablePanel(CollapsiblePanel):
             y = self.height() - margin
             for i in range(3):
                 offset = i * 4
-                painter.drawLine(x - corner_size + offset, y, x, y - corner_size + offset)
+                painter.drawLine(
+                    x - corner_size + offset, y, x, y - corner_size + offset
+                )
 
     def get_panel_id(self) -> str:
         """Get the panel's unique identifier."""
@@ -337,9 +360,4 @@ class DraggablePanel(CollapsiblePanel):
         Returns:
             Tuple of (row, col, row_span, col_span)
         """
-        return (
-            self.grid_row,
-            self.grid_col,
-            self.grid_row_span,
-            self.grid_col_span
-        )
+        return (self.grid_row, self.grid_col, self.grid_row_span, self.grid_col_span)

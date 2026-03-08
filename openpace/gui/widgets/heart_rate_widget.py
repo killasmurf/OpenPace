@@ -68,12 +68,12 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
         """Initialize the user interface."""
         # Create main plot widget first
         self.plot_widget = pg.PlotWidget()
-        self.plot_widget.setBackground('w')
+        self.plot_widget.setBackground("w")
         self.plot_widget.showGrid(x=True, y=True, alpha=0.3)
 
         # Axis labels
-        self.plot_widget.setLabel('left', 'Heart Rate', units='bpm')
-        self.plot_widget.setLabel('bottom', 'Date')
+        self.plot_widget.setLabel("left", "Heart Rate", units="bpm")
+        self.plot_widget.setLabel("bottom", "Date")
 
         # Enable mouse interaction
         self.plot_widget.setMouseEnabled(x=True, y=False)
@@ -88,7 +88,7 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
         self.init_table_chart_toggle(
             title="Heart Rate Timeline",
             columns=["Date/Time", "HR Mean (bpm)", "HR Min", "HR Max", "Status"],
-            chart_widget=self.plot_widget
+            chart_widget=self.plot_widget,
         )
 
         # Add display toggles to the header (after title, before toggle switch)
@@ -127,10 +127,13 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
         # Set reasonable Y range for heart rate
         self.plot_widget.setYRange(40, 180, padding=0.05)
 
-    def set_heart_rate_data(self, time_points: List[datetime],
-                            heart_rates: List[float],
-                            heart_rates_max: Optional[List[float]] = None,
-                            heart_rates_min: Optional[List[float]] = None):
+    def set_heart_rate_data(
+        self,
+        time_points: List[datetime],
+        heart_rates: List[float],
+        heart_rates_max: Optional[List[float]] = None,
+        heart_rates_min: Optional[List[float]] = None,
+    ):
         """
         Set heart rate data for plotting.
 
@@ -188,9 +191,12 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
         self.episodes = episodes
         self._update_plot()
 
-    def set_pacing_data(self, time_points: List[datetime],
-                        atrial_percent: List[float],
-                        ventricular_percent: List[float]):
+    def set_pacing_data(
+        self,
+        time_points: List[datetime],
+        atrial_percent: List[float],
+        ventricular_percent: List[float],
+    ):
         """
         Set pacing percentage data.
 
@@ -232,43 +238,47 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
             if hr_max > self.upper_rate_limit:
                 # Determine severity
                 if hr_max > 150:
-                    severity = 'high'
-                    alert_type = 'Severe Tachycardia'
+                    severity = "high"
+                    alert_type = "Severe Tachycardia"
                 elif hr_max > self.upper_rate_limit + 20:
-                    severity = 'medium'
-                    alert_type = 'Tachycardia'
+                    severity = "medium"
+                    alert_type = "Tachycardia"
                 else:
-                    severity = 'low'
-                    alert_type = 'High HR'
+                    severity = "low"
+                    alert_type = "High HR"
 
-                self.auto_alerts.append({
-                    'time': dt,
-                    'type': alert_type,
-                    'value': hr_max,
-                    'severity': severity,
-                    'direction': 'high'
-                })
+                self.auto_alerts.append(
+                    {
+                        "time": dt,
+                        "type": alert_type,
+                        "value": hr_max,
+                        "severity": severity,
+                        "direction": "high",
+                    }
+                )
 
             # Check for bradycardia (using min HR if available)
             if hr_min < self.lower_rate_limit:
                 # Determine severity
                 if hr_min < 40:
-                    severity = 'high'
-                    alert_type = 'Severe Bradycardia'
+                    severity = "high"
+                    alert_type = "Severe Bradycardia"
                 elif hr_min < 50:
-                    severity = 'medium'
-                    alert_type = 'Bradycardia'
+                    severity = "medium"
+                    alert_type = "Bradycardia"
                 else:
-                    severity = 'low'
-                    alert_type = 'Low HR'
+                    severity = "low"
+                    alert_type = "Low HR"
 
-                self.auto_alerts.append({
-                    'time': dt,
-                    'type': alert_type,
-                    'value': hr_min,
-                    'severity': severity,
-                    'direction': 'low'
-                })
+                self.auto_alerts.append(
+                    {
+                        "time": dt,
+                        "type": alert_type,
+                        "value": hr_min,
+                        "severity": severity,
+                        "direction": "low",
+                    }
+                )
 
     def _plot_auto_alerts(self, timestamps: List[float]):
         """
@@ -288,17 +298,17 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
         low_alerts = []
 
         for alert in self.auto_alerts:
-            alert_time = alert['time']
+            alert_time = alert["time"]
             if isinstance(alert_time, str):
                 alert_time = datetime.fromisoformat(alert_time)
 
             alert_ts = alert_time.timestamp()
-            value = alert.get('value', 0)
-            severity = alert.get('severity', 'low')
+            value = alert.get("value", 0)
+            severity = alert.get("severity", "low")
 
-            if severity == 'high':
+            if severity == "high":
                 high_alerts.append((alert_ts, value, alert))
-            elif severity == 'medium':
+            elif severity == "medium":
                 medium_alerts.append((alert_ts, value, alert))
             else:
                 low_alerts.append((alert_ts, value, alert))
@@ -308,13 +318,14 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
             x = [a[0] for a in high_alerts]
             y = [a[1] for a in high_alerts]
             self.plot_widget.plot(
-                x, y,
+                x,
+                y,
                 pen=None,
-                symbol='t',  # Triangle
+                symbol="t",  # Triangle
                 symbolSize=12,
                 symbolBrush=(255, 0, 0),
                 symbolPen=pg.mkPen((150, 0, 0), width=2),
-                name='High Alert'
+                name="High Alert",
             )
 
             # Add vertical lines for high alerts
@@ -322,7 +333,9 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
                 line = pg.InfiniteLine(
                     pos=alert_ts,
                     angle=90,
-                    pen=pg.mkPen(color=(255, 0, 0, 100), width=1, style=Qt.PenStyle.DotLine)
+                    pen=pg.mkPen(
+                        color=(255, 0, 0, 100), width=1, style=Qt.PenStyle.DotLine
+                    ),
                 )
                 self.plot_widget.addItem(line)
 
@@ -331,13 +344,14 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
             x = [a[0] for a in medium_alerts]
             y = [a[1] for a in medium_alerts]
             self.plot_widget.plot(
-                x, y,
+                x,
+                y,
                 pen=None,
-                symbol='d',  # Diamond
+                symbol="d",  # Diamond
                 symbolSize=10,
                 symbolBrush=(255, 165, 0),
                 symbolPen=pg.mkPen((200, 130, 0), width=2),
-                name='Medium Alert'
+                name="Medium Alert",
             )
 
         # Plot low severity alerts (yellow circles)
@@ -345,13 +359,14 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
             x = [a[0] for a in low_alerts]
             y = [a[1] for a in low_alerts]
             self.plot_widget.plot(
-                x, y,
+                x,
+                y,
                 pen=None,
-                symbol='o',  # Circle
+                symbol="o",  # Circle
                 symbolSize=8,
                 symbolBrush=(255, 255, 0),
                 symbolPen=pg.mkPen((200, 200, 0), width=2),
-                name='Low Alert'
+                name="Low Alert",
             )
 
     def _update_plot(self):
@@ -369,7 +384,11 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
         self._detect_alerts()
 
         # Plot min/max range if available and enabled
-        if self.show_range_cb.isChecked() and self.heart_rates_max and self.heart_rates_min:
+        if (
+            self.show_range_cb.isChecked()
+            and self.heart_rates_max
+            and self.heart_rates_min
+        ):
             self._plot_heart_rate_range(timestamps)
 
         # Plot mean heart rate line
@@ -413,17 +432,19 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
                 colors.append((0, 150, 0))  # Green for normal
 
         # Use most common color for line
-        main_color = max(set(map(tuple, colors)), key=colors.count) if colors else (0, 150, 0)
+        main_color = (
+            max(set(map(tuple, colors)), key=colors.count) if colors else (0, 150, 0)
+        )
 
         pen = pg.mkPen(color=main_color, width=2)
         self.plot_widget.plot(
             timestamps,
             self.heart_rates,
             pen=pen,
-            symbol='o',
+            symbol="o",
             symbolSize=5,
             symbolBrush=main_color,
-            name='Heart Rate (Mean)'
+            name="Heart Rate (Mean)",
         )
 
     def _plot_heart_rate_range(self, timestamps: List[float]):
@@ -438,17 +459,25 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
         fill = pg.FillBetweenItem(
             pg.PlotDataItem(timestamps, self.heart_rates_max),
             pg.PlotDataItem(timestamps, self.heart_rates_min),
-            brush=pg.mkBrush(100, 100, 200, 50)
+            brush=pg.mkBrush(100, 100, 200, 50),
         )
         self.plot_widget.addItem(fill)
 
         # Plot max line (dashed)
-        pen_max = pg.mkPen(color=(100, 100, 200, 150), width=1, style=Qt.PenStyle.DashLine)
-        self.plot_widget.plot(timestamps, self.heart_rates_max, pen=pen_max, name='Max HR')
+        pen_max = pg.mkPen(
+            color=(100, 100, 200, 150), width=1, style=Qt.PenStyle.DashLine
+        )
+        self.plot_widget.plot(
+            timestamps, self.heart_rates_max, pen=pen_max, name="Max HR"
+        )
 
         # Plot min line (dashed)
-        pen_min = pg.mkPen(color=(100, 100, 200, 150), width=1, style=Qt.PenStyle.DashLine)
-        self.plot_widget.plot(timestamps, self.heart_rates_min, pen=pen_min, name='Min HR')
+        pen_min = pg.mkPen(
+            color=(100, 100, 200, 150), width=1, style=Qt.PenStyle.DashLine
+        )
+        self.plot_widget.plot(
+            timestamps, self.heart_rates_min, pen=pen_min, name="Min HR"
+        )
 
     def _plot_rate_limits(self, timestamps: List[float]):
         """Plot horizontal rate limit lines."""
@@ -465,7 +494,7 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
             x_range,
             [self.lower_rate_limit, self.lower_rate_limit],
             pen=pen_lower,
-            name=f'Lower Limit ({self.lower_rate_limit:.0f} bpm)'
+            name=f"Lower Limit ({self.lower_rate_limit:.0f} bpm)",
         )
 
         # Upper rate limit (red dashed)
@@ -474,7 +503,7 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
             x_range,
             [self.upper_rate_limit, self.upper_rate_limit],
             pen=pen_upper,
-            name=f'Upper Limit ({self.upper_rate_limit:.0f} bpm)'
+            name=f"Upper Limit ({self.upper_rate_limit:.0f} bpm)",
         )
 
     def _plot_alerts(self, timestamps: List[float]):
@@ -484,19 +513,19 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
 
         for alert in self.alerts:
             try:
-                alert_time = alert.get('time')
+                alert_time = alert.get("time")
                 if isinstance(alert_time, str):
                     alert_time = datetime.fromisoformat(alert_time)
 
                 alert_ts = alert_time.timestamp()
-                alert_type = alert.get('type', 'unknown')
-                severity = alert.get('severity', 'low')
-                value = alert.get('value', 0)
+                alert_type = alert.get("type", "unknown")
+                severity = alert.get("severity", "low")
+                value = alert.get("value", 0)
 
                 # Color based on severity
-                if severity == 'high':
+                if severity == "high":
                     color = (255, 0, 0)
-                elif severity == 'medium':
+                elif severity == "medium":
                     color = (255, 165, 0)
                 else:
                     color = (255, 255, 0)
@@ -506,8 +535,8 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
                     pos=alert_ts,
                     angle=90,
                     pen=pg.mkPen(color=color, width=2, style=Qt.PenStyle.DotLine),
-                    label=f'{alert_type}: {value:.0f}',
-                    labelOpts={'position': 0.9, 'color': color}
+                    label=f"{alert_type}: {value:.0f}",
+                    labelOpts={"position": 0.9, "color": color},
                 )
                 self.plot_widget.addItem(line)
 
@@ -521,32 +550,32 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
 
         # Episode type colors
         episode_colors = {
-            'AF': (255, 100, 100, 80),   # Red
-            'VT': (255, 0, 0, 100),       # Dark red
-            'SVT': (255, 165, 0, 80),     # Orange
-            'AT': (255, 200, 100, 80),    # Light orange
-            'pause': (100, 100, 255, 80), # Blue
+            "AF": (255, 100, 100, 80),  # Red
+            "VT": (255, 0, 0, 100),  # Dark red
+            "SVT": (255, 165, 0, 80),  # Orange
+            "AT": (255, 200, 100, 80),  # Light orange
+            "pause": (100, 100, 255, 80),  # Blue
         }
 
         for episode in self.episodes:
             try:
-                start_time = episode.get('start_time')
+                start_time = episode.get("start_time")
                 if isinstance(start_time, str):
                     start_time = datetime.fromisoformat(start_time)
 
                 start_ts = start_time.timestamp()
 
                 # Get end time or calculate from duration
-                end_time = episode.get('end_time')
+                end_time = episode.get("end_time")
                 if end_time:
                     if isinstance(end_time, str):
                         end_time = datetime.fromisoformat(end_time)
                     end_ts = end_time.timestamp()
                 else:
-                    duration = episode.get('duration_seconds', 60)
+                    duration = episode.get("duration_seconds", 60)
                     end_ts = start_ts + duration
 
-                episode_type = episode.get('type', 'unknown')
+                episode_type = episode.get("type", "unknown")
                 color = episode_colors.get(episode_type, (150, 150, 150, 80))
 
                 # Create shaded region for episode
@@ -554,13 +583,13 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
                     values=[start_ts, end_ts],
                     brush=pg.mkBrush(*color),
                     pen=pg.mkPen(color[:3], width=1),
-                    movable=False
+                    movable=False,
                 )
                 region.setZValue(-10)  # Behind other elements
                 self.plot_widget.addItem(region)
 
                 # Add label
-                max_rate = episode.get('max_rate', '')
+                max_rate = episode.get("max_rate", "")
                 label_text = f"{episode_type}"
                 if max_rate:
                     label_text += f" ({max_rate:.0f}bpm)"
@@ -575,8 +604,8 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
 
     def _configure_time_axis(self):
         """Configure X-axis to display dates."""
-        axis = pg.DateAxisItem(orientation='bottom')
-        self.plot_widget.setAxisItems({'bottom': axis})
+        axis = pg.DateAxisItem(orientation="bottom")
+        self.plot_widget.setAxisItems({"bottom": axis})
 
     def _set_time_range_with_padding(self, timestamps: List[float]):
         """Set X-axis range with padding."""
@@ -610,28 +639,42 @@ class HeartRateTimelineWidget(QWidget, TableChartMixin):
         ]
 
         if below_limit > 0:
-            info_parts.append(f'<span style="color: #0064C8;">Below: {below_limit}</span>')
+            info_parts.append(
+                f'<span style="color: #0064C8;">Below: {below_limit}</span>'
+            )
         if above_limit > 0:
-            info_parts.append(f'<span style="color: #C80000;">Above: {above_limit}</span>')
+            info_parts.append(
+                f'<span style="color: #C80000;">Above: {above_limit}</span>'
+            )
         if self.episodes:
             info_parts.append(f"Episodes: {len(self.episodes)}")
 
         # Count alerts by severity
         total_alerts = len(self.alerts) + len(self.auto_alerts)
         if total_alerts > 0:
-            high_count = sum(1 for a in self.alerts if a.get('severity') == 'high')
-            high_count += sum(1 for a in self.auto_alerts if a.get('severity') == 'high')
-            medium_count = sum(1 for a in self.alerts if a.get('severity') == 'medium')
-            medium_count += sum(1 for a in self.auto_alerts if a.get('severity') == 'medium')
+            high_count = sum(1 for a in self.alerts if a.get("severity") == "high")
+            high_count += sum(
+                1 for a in self.auto_alerts if a.get("severity") == "high"
+            )
+            medium_count = sum(1 for a in self.alerts if a.get("severity") == "medium")
+            medium_count += sum(
+                1 for a in self.auto_alerts if a.get("severity") == "medium"
+            )
             low_count = total_alerts - high_count - medium_count
 
             alert_parts = []
             if high_count > 0:
-                alert_parts.append(f'<span style="color: #FF0000;">{high_count} high</span>')
+                alert_parts.append(
+                    f'<span style="color: #FF0000;">{high_count} high</span>'
+                )
             if medium_count > 0:
-                alert_parts.append(f'<span style="color: #FFA500;">{medium_count} med</span>')
+                alert_parts.append(
+                    f'<span style="color: #FFA500;">{medium_count} med</span>'
+                )
             if low_count > 0:
-                alert_parts.append(f'<span style="color: #FFD700;">{low_count} low</span>')
+                alert_parts.append(
+                    f'<span style="color: #FFD700;">{low_count} low</span>'
+                )
 
             info_parts.append(f"Alerts: {', '.join(alert_parts)}")
 

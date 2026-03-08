@@ -29,7 +29,7 @@ def create_test_data():
     print("=" * 70)
 
     # Initialize in-memory database
-    init_database(':memory:', echo=False)
+    init_database(":memory:", echo=False)
     session = get_db_session()
 
     # Create patient
@@ -37,7 +37,7 @@ def create_test_data():
         patient_id="P123456",
         patient_name="John Doe",
         date_of_birth=datetime(1980, 1, 1),
-        gender="M"
+        gender="M",
     )
     session.add(patient)
     session.flush()
@@ -54,13 +54,13 @@ def create_test_data():
         transmission = Transmission(
             patient_id=patient.patient_id,
             transmission_date=trans_date,
-            transmission_type='remote',
-            message_control_id=f'MSG00{i+1}',
-            sending_application='Medtronic CareLink',
-            sending_facility='Clinic123',
-            device_manufacturer='Medtronic',
-            device_model='Azure XT DR',
-            device_serial=f'SN{1000+i}'
+            transmission_type="remote",
+            message_control_id=f"MSG00{i+1}",
+            sending_application="Medtronic CareLink",
+            sending_facility="Clinic123",
+            device_manufacturer="Medtronic",
+            device_model="Azure XT DR",
+            device_serial=f"SN{1000+i}",
         )
         session.add(transmission)
         session.flush()
@@ -71,13 +71,13 @@ def create_test_data():
             transmission_id=transmission.transmission_id,
             observation_time=trans_date,
             sequence_number=1,
-            variable_name='battery_voltage',
-            loinc_code='73990-7',
-            vendor_code='73990-7',
-            unit='V',
-            reference_range='2.2-2.8',
-            abnormal_flag='N' if battery_voltage >= 2.3 else 'L',
-            value_numeric=battery_voltage
+            variable_name="battery_voltage",
+            loinc_code="73990-7",
+            vendor_code="73990-7",
+            unit="V",
+            reference_range="2.2-2.8",
+            abnormal_flag="N" if battery_voltage >= 2.3 else "L",
+            value_numeric=battery_voltage,
         )
         session.add(obs_battery)
 
@@ -87,13 +87,13 @@ def create_test_data():
             transmission_id=transmission.transmission_id,
             observation_time=trans_date,
             sequence_number=2,
-            variable_name='lead_impedance_atrial',
-            loinc_code='8889-8',
-            vendor_code='8889-8',
-            unit='Ohm',
-            reference_range='200-1500',
-            abnormal_flag='N',
-            value_numeric=atrial_impedance
+            variable_name="lead_impedance_atrial",
+            loinc_code="8889-8",
+            vendor_code="8889-8",
+            unit="Ohm",
+            reference_range="200-1500",
+            abnormal_flag="N",
+            value_numeric=atrial_impedance,
         )
         session.add(obs_atrial)
 
@@ -103,13 +103,13 @@ def create_test_data():
             transmission_id=transmission.transmission_id,
             observation_time=trans_date,
             sequence_number=3,
-            variable_name='lead_impedance_ventricular',
-            loinc_code='8890-6',
-            vendor_code='8890-6',
-            unit='Ohm',
-            reference_range='200-1500',
-            abnormal_flag='N',
-            value_numeric=ventricular_impedance
+            variable_name="lead_impedance_ventricular",
+            loinc_code="8890-6",
+            vendor_code="8890-6",
+            unit="Ohm",
+            reference_range="200-1500",
+            abnormal_flag="N",
+            value_numeric=ventricular_impedance,
         )
         session.add(obs_ventricular)
 
@@ -119,19 +119,21 @@ def create_test_data():
             transmission_id=transmission.transmission_id,
             observation_time=trans_date,
             sequence_number=4,
-            variable_name='afib_burden_percent',
-            loinc_code='89269-2',
-            vendor_code='89269-2',
-            unit='%',
-            reference_range='0-100',
-            abnormal_flag='H' if afib_burden > 20 else 'N',
-            value_numeric=afib_burden
+            variable_name="afib_burden_percent",
+            loinc_code="89269-2",
+            vendor_code="89269-2",
+            unit="%",
+            reference_range="0-100",
+            abnormal_flag="H" if afib_burden > 20 else "N",
+            value_numeric=afib_burden,
         )
         session.add(obs_burden)
 
         transmissions.append(transmission)
-        print(f"  Transmission {i+1}: {trans_date.strftime('%Y-%m-%d')} - "
-              f"Battery: {battery_voltage:.2f}V, AFib: {afib_burden:.1f}%")
+        print(
+            f"  Transmission {i+1}: {trans_date.strftime('%Y-%m-%d')} - "
+            f"Battery: {battery_voltage:.2f}V, AFib: {afib_burden:.1f}%"
+        )
 
     session.commit()
 
@@ -147,7 +149,7 @@ def test_battery_analyzer(session, patient_id):
     print("=" * 70)
 
     calculator = TrendCalculator(session)
-    trend = calculator.calculate_trend(patient_id, 'battery_voltage')
+    trend = calculator.calculate_trend(patient_id, "battery_voltage")
 
     if not trend:
         print("ERROR: No battery trend calculated")
@@ -162,8 +164,16 @@ def test_battery_analyzer(session, patient_id):
     print("\nBattery Analysis Results:")
     print(f"  Current Voltage: {analysis['current_voltage']:.2f}V")
     print(f"  Depletion Rate: {abs(analysis['depletion_rate_v_per_year']):.3f} V/year")
-    print(f"  Years to ERI: {analysis['years_to_eri']:.1f}" if analysis['years_to_eri'] else "  Years to ERI: N/A")
-    print(f"  Predicted ERI Date: {analysis['predicted_eri_date']}" if analysis['predicted_eri_date'] else "  Predicted ERI Date: N/A")
+    print(
+        f"  Years to ERI: {analysis['years_to_eri']:.1f}"
+        if analysis["years_to_eri"]
+        else "  Years to ERI: N/A"
+    )
+    print(
+        f"  Predicted ERI Date: {analysis['predicted_eri_date']}"
+        if analysis["predicted_eri_date"]
+        else "  Predicted ERI Date: N/A"
+    )
     print(f"  Remaining Capacity: {analysis['remaining_capacity_percent']:.1f}%")
     print(f"  Confidence: {analysis['confidence']}")
 
@@ -181,7 +191,7 @@ def test_impedance_analyzer(session, patient_id):
 
     calculator = TrendCalculator(session)
 
-    for lead_name in ['lead_impedance_atrial', 'lead_impedance_ventricular']:
+    for lead_name in ["lead_impedance_atrial", "lead_impedance_ventricular"]:
         trend = calculator.calculate_trend(patient_id, lead_name)
 
         if not trend:
@@ -195,7 +205,9 @@ def test_impedance_analyzer(session, patient_id):
         analysis = ImpedanceAnalyzer.analyze_trend(trend)
 
         print(f"  Current: {analysis['current_impedance']:.0f} Ohms")
-        print(f"  Stability Score: {analysis['stability']['score']:.0f}/100 ({analysis['stability']['rating']})")
+        print(
+            f"  Stability Score: {analysis['stability']['score']:.0f}/100 ({analysis['stability']['rating']})"
+        )
         print(f"  Anomalies: {analysis['anomaly_count']}")
         print(f"  Status: {analysis['overall_status'].upper()}")
         print(f"  Recommendation: {analysis['recommendation']}")
@@ -210,7 +222,7 @@ def test_arrhythmia_analyzer(session, patient_id):
     print("=" * 70)
 
     calculator = TrendCalculator(session)
-    trend = calculator.calculate_trend(patient_id, 'afib_burden_percent')
+    trend = calculator.calculate_trend(patient_id, "afib_burden_percent")
 
     if not trend:
         print("ERROR: No AFib burden trend calculated")
@@ -226,7 +238,9 @@ def test_arrhythmia_analyzer(session, patient_id):
     print(f"  Mean Burden: {analysis['mean_burden']:.1f}%")
     print(f"  Maximum Burden: {analysis['max_burden']:.1f}%")
     print(f"  Trend Direction: {analysis['trend']['direction'].title()}")
-    print(f"  Classification: {analysis['classification']['type'].title()} ({analysis['classification']['severity']})")
+    print(
+        f"  Classification: {analysis['classification']['type'].title()} ({analysis['classification']['severity']})"
+    )
 
     recommendation = ArrhythmiaAnalyzer.get_recommendation(analysis)
     print(f"\nRecommendation: {recommendation}")
@@ -258,7 +272,7 @@ def test_pdf_report(session, patient, transmissions):
             transmissions=transmissions,
             trends=trends_dict,
             output_path=output_path,
-            anonymize=False
+            anonymize=False,
         )
 
         print(f"SUCCESS: PDF report generated at: {result_path}")
@@ -268,6 +282,7 @@ def test_pdf_report(session, patient, transmissions):
     except Exception as e:
         print(f"ERROR generating PDF: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -283,10 +298,18 @@ def main():
     # Run tests
     results = []
 
-    results.append(("Battery Analyzer", test_battery_analyzer(session, patient.patient_id)))
-    results.append(("Impedance Analyzer", test_impedance_analyzer(session, patient.patient_id)))
-    results.append(("Arrhythmia Analyzer", test_arrhythmia_analyzer(session, patient.patient_id)))
-    results.append(("PDF Report Generator", test_pdf_report(session, patient, transmissions)))
+    results.append(
+        ("Battery Analyzer", test_battery_analyzer(session, patient.patient_id))
+    )
+    results.append(
+        ("Impedance Analyzer", test_impedance_analyzer(session, patient.patient_id))
+    )
+    results.append(
+        ("Arrhythmia Analyzer", test_arrhythmia_analyzer(session, patient.patient_id))
+    )
+    results.append(
+        ("PDF Report Generator", test_pdf_report(session, patient, transmissions))
+    )
 
     # Summary
     print("\n" + "=" * 70)
@@ -312,5 +335,5 @@ def main():
     return 0 if all_passed else 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

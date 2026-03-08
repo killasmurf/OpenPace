@@ -3,21 +3,22 @@
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent))
 
 from openpace.database.connection import init_database, get_db_session
 from openpace.hl7.parser import HL7Parser
 
 # Initialize database
-init_database(':memory:', echo=False)
+init_database(":memory:", echo=False)
 session = get_db_session()
 
 # Load and parse Boston Scientific file
-data_file = Path('tests/sample_data/csc.1002050604.1.dat')
+data_file = Path("tests/sample_data/csc.1002050604.1.dat")
 print(f"Loading: {data_file}")
 print()
 
-with open(data_file, 'r', encoding='utf-8', errors='ignore') as f:
+with open(data_file, "r", encoding="utf-8", errors="ignore") as f:
     hl7_content = f.read()
 
 parser = HL7Parser(session, anonymize=False)
@@ -41,10 +42,10 @@ for obs in transmission.observations:
         continue
 
     settings_data[var_name] = {
-        'value': obs.value_numeric if obs.value_numeric is not None else obs.value_text,
-        'value_str': value_str,
-        'unit': obs.unit,
-        'vendor_code': obs.vendor_code
+        "value": obs.value_numeric if obs.value_numeric is not None else obs.value_text,
+        "value_str": value_str,
+        "unit": obs.unit,
+        "vendor_code": obs.vendor_code,
     }
 
 print(f"Total observations extracted: {len(settings_data)}")

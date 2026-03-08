@@ -44,12 +44,12 @@ class BurdenWidget(QWidget, TableChartMixin):
         """Initialize the user interface."""
         # Create plot widget first
         self.plot_widget = pg.PlotWidget()
-        self.plot_widget.setBackground('w')
+        self.plot_widget.setBackground("w")
         self.plot_widget.showGrid(x=False, y=True, alpha=0.3)
 
         # Axis labels
-        self.plot_widget.setLabel('left', 'Burden', units='%')
-        self.plot_widget.setLabel('bottom', 'Date')
+        self.plot_widget.setLabel("left", "Burden", units="%")
+        self.plot_widget.setLabel("bottom", "Date")
 
         # Y-axis range (0-100%)
         self.plot_widget.setYRange(0, 100)
@@ -64,13 +64,18 @@ class BurdenWidget(QWidget, TableChartMixin):
         self.init_table_chart_toggle(
             title="AFib Burden",
             columns=["Date/Time", "Burden (%)", "Status"],
-            chart_widget=self.plot_widget
+            chart_widget=self.plot_widget,
         )
 
         # Set default time range (2020 to current date)
         self._set_default_time_range()
 
-    def set_data(self, arrhythmia_type: str, time_points: List[datetime], burden_values: List[float]):
+    def set_data(
+        self,
+        arrhythmia_type: str,
+        time_points: List[datetime],
+        burden_values: List[float],
+    ):
         """
         Set arrhythmia burden data.
 
@@ -129,7 +134,7 @@ class BurdenWidget(QWidget, TableChartMixin):
             [timestamps[0], timestamps[-1]],
             [self.HIGH_BURDEN_THRESHOLD, self.HIGH_BURDEN_THRESHOLD],
             pen=pen,
-            name='High Burden (20%)'
+            name="High Burden (20%)",
         )
 
     def _plot_burden_bars(self, timestamps: List[float], burden_values: List[float]):
@@ -146,7 +151,9 @@ class BurdenWidget(QWidget, TableChartMixin):
         # Calculate bar width (days between points or fixed)
         if len(timestamps) > 1:
             # Use average spacing
-            spacings = [timestamps[i+1] - timestamps[i] for i in range(len(timestamps)-1)]
+            spacings = [
+                timestamps[i + 1] - timestamps[i] for i in range(len(timestamps) - 1)
+            ]
             avg_spacing = np.mean(spacings)
             bar_width = avg_spacing * 0.8  # 80% of spacing
         else:
@@ -169,7 +176,7 @@ class BurdenWidget(QWidget, TableChartMixin):
             height=burden_values,
             width=bar_width,
             brushes=colors,
-            pen=pg.mkPen(color=(100, 100, 100), width=1)
+            pen=pg.mkPen(color=(100, 100, 100), width=1),
         )
         self.plot_widget.addItem(bargraph)
 
@@ -191,7 +198,11 @@ class BurdenWidget(QWidget, TableChartMixin):
         # Determine trend
         if len(burden_values) >= 3:
             recent_mean = np.mean(burden_values[-3:])
-            earlier_mean = np.mean(burden_values[:3]) if len(burden_values) >= 6 else np.mean(burden_values[:len(burden_values)//2])
+            earlier_mean = (
+                np.mean(burden_values[:3])
+                if len(burden_values) >= 6
+                else np.mean(burden_values[: len(burden_values) // 2])
+            )
 
             if recent_mean > earlier_mean * 1.2:
                 trend = "↑ Increasing"
@@ -210,7 +221,7 @@ class BurdenWidget(QWidget, TableChartMixin):
         info_parts = [
             f"Current: {current_burden:.1f}%",
             f"Mean: {mean_burden:.1f}%",
-            f"Max: {max_burden:.1f}%"
+            f"Max: {max_burden:.1f}%",
         ]
 
         if trend:
@@ -225,8 +236,8 @@ class BurdenWidget(QWidget, TableChartMixin):
         Args:
             timestamps: Unix timestamps
         """
-        axis = pg.DateAxisItem(orientation='bottom')
-        self.plot_widget.setAxisItems({'bottom': axis})
+        axis = pg.DateAxisItem(orientation="bottom")
+        self.plot_widget.setAxisItems({"bottom": axis})
 
     def _set_time_range_with_padding(self, timestamps: List[float]):
         """
@@ -243,7 +254,9 @@ class BurdenWidget(QWidget, TableChartMixin):
         time_range = max_time - min_time
 
         # Add 10% padding on each side
-        padding = time_range * 0.10 if time_range > 0 else 86400  # 1 day if single point
+        padding = (
+            time_range * 0.10 if time_range > 0 else 86400
+        )  # 1 day if single point
 
         self.plot_widget.setXRange(min_time - padding, max_time + padding, padding=0)
 

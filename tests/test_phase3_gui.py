@@ -27,7 +27,7 @@ def setup_test_database():
     print("=" * 60)
 
     # Initialize in-memory database
-    init_database(':memory:', echo=False)
+    init_database(":memory:", echo=False)
     session = get_db_session()
 
     # Load sample HL7 file
@@ -38,7 +38,7 @@ def setup_test_database():
         return None
 
     print(f"\n[1/3] Loading sample HL7 file...")
-    with open(sample_path, 'r') as f:
+    with open(sample_path, "r") as f:
         hl7_message = f.read()
 
     # Parse and import
@@ -98,5 +98,5 @@ def main():
     return app.exec()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

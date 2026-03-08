@@ -47,7 +47,7 @@ class TestDatabaseManager:
             "longitudinal_trends",
             "arrhythmia_episodes",
             "device_parameters",
-            "analyses"
+            "analyses",
         ]
 
         for table in expected_tables:
@@ -101,7 +101,7 @@ class TestDatabaseManager:
             transmission_date=datetime.now(),
             device_model="TEST",
             device_serial="123",
-            raw_hl7="TEST"
+            raw_hl7="TEST",
         )
         session.add(transmission)
 
@@ -145,7 +145,7 @@ class TestDatabaseManager:
                 patient_id="CTX001",
                 last_name_hash="CONTEXT",
                 first_name_hash="TEST",
-                date_of_birth_offset=0
+                date_of_birth_offset=0,
             )
             session.add(patient)
             session.commit()
@@ -167,7 +167,7 @@ class TestDatabaseTransactions:
             patient_id="TX001",
             last_name_hash="COMMIT",
             first_name_hash="TEST",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         session.add(patient)
         session.commit()
@@ -188,7 +188,7 @@ class TestDatabaseTransactions:
             patient_id="TX002",
             last_name_hash="ROLLBACK",
             first_name_hash="TEST",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         session.add(patient)
 
@@ -213,7 +213,7 @@ class TestDatabaseTransactions:
             patient_id="TX003",
             last_name_hash="ISOLATION",
             first_name_hash="TEST",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         session1.add(patient)
 
@@ -252,7 +252,7 @@ class TestDatabaseErrors:
             patient_id="DUP001",
             last_name_hash="DUPLICATE",
             first_name_hash="TEST1",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         session.add(patient1)
         session.commit()
@@ -261,11 +261,12 @@ class TestDatabaseErrors:
             patient_id="DUP001",  # Same ID
             last_name_hash="DUPLICATE",
             first_name_hash="TEST2",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         session.add(patient2)
 
         from sqlalchemy.exc import IntegrityError
+
         with pytest.raises(IntegrityError):
             session.commit()
 

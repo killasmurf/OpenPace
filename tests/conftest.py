@@ -15,8 +15,10 @@ from pathlib import Path
 from typing import Generator
 
 import pytest
+
 try:
     from PyQt6.QtWidgets import QApplication
+
     HAS_PYQT = True
 except ImportError:
     HAS_PYQT = False
@@ -166,7 +168,7 @@ def sample_patient_data() -> dict:
         "first_name_hash": "JOHN",
         "date_of_birth_offset": 0,
         "anonymized": False,
-        "notes": "Test patient for unit testing"
+        "notes": "Test patient for unit testing",
     }
 
 
@@ -183,7 +185,7 @@ def sample_transmission_data() -> dict:
         "device_model": "ADVISA DR MRI A3DR01",
         "device_serial": "PMC123456",
         "raw_hl7": "MSH|...|",
-        "import_source": "test_file.hl7"
+        "import_source": "test_file.hl7",
     }
 
 
@@ -203,7 +205,7 @@ def sample_observation_data() -> dict:
         "value_numeric": 2.78,
         "units": "V",
         "reference_range": "2.5-2.8",
-        "observation_timestamp": "2024-01-15 12:00:00"
+        "observation_timestamp": "2024-01-15 12:00:00",
     }
 
 
@@ -252,7 +254,7 @@ def reset_env_vars():
         "OPENPACE_ANONYMIZE",
         "OPENPACE_LOG_LEVEL",
         "OPENPACE_IMPORT_PATH",
-        "OPENPACE_EXPORT_PATH"
+        "OPENPACE_EXPORT_PATH",
     ]
 
     for var in env_vars_to_clear:

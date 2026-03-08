@@ -10,9 +10,18 @@ Lists and manages EGM episodes from pacemaker transmissions:
 
 from typing import List, Optional
 from datetime import datetime
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                             QListWidget, QListWidgetItem, QPushButton,
-                             QGroupBox, QLineEdit, QComboBox)
+from PyQt6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QGroupBox,
+    QLineEdit,
+    QComboBox,
+)
 from PyQt6.QtCore import Qt, pyqtSignal
 from sqlalchemy.orm import Session
 
@@ -27,7 +36,7 @@ class EpisodeListItem(QListWidgetItem):
 
         # Create display text
         trans_date = observation.transmission.transmission_date
-        date_str = trans_date.strftime('%Y-%m-%d %H:%M')
+        date_str = trans_date.strftime("%Y-%m-%d %H:%M")
 
         # Get observation description
         obs_text = observation.vendor_code or observation.variable_name or "EGM"
@@ -152,20 +161,26 @@ class EpisodeSelectorWidget(QWidget):
 
         try:
             # Query all EGM observations for this patient
-            observations = self.session.query(Observation).join(
-                Observation.transmission
-            ).filter(
-                Observation.transmission.has(patient_id=patient_id),
-                Observation.value_blob.isnot(None)  # Only observations with EGM blobs
-            ).order_by(
-                Observation.observation_time.desc()
-            ).all()
+            observations = (
+                self.session.query(Observation)
+                .join(Observation.transmission)
+                .filter(
+                    Observation.transmission.has(patient_id=patient_id),
+                    Observation.value_blob.isnot(
+                        None
+                    ),  # Only observations with EGM blobs
+                )
+                .order_by(Observation.observation_time.desc())
+                .all()
+            )
 
             self.episodes = observations
             self._populate_list(observations)
 
             count = len(observations)
-            self.summary_label.setText(f"{count} episode{'s' if count != 1 else ''} found")
+            self.summary_label.setText(
+                f"{count} episode{'s' if count != 1 else ''} found"
+            )
 
         except Exception as e:
             self.summary_label.setText(f"Error loading episodes: {str(e)}")

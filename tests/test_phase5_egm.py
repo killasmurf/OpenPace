@@ -20,9 +20,9 @@ from openpace.database.models import Patient, Transmission, Observation
 from openpace.processing.egm_decoder import EGMDecoder, EGMProcessor
 
 
-def create_synthetic_egm_blob(duration_seconds: float = 10,
-                              sample_rate: int = 512,
-                              heart_rate: int = 72) -> bytes:
+def create_synthetic_egm_blob(
+    duration_seconds: float = 10, sample_rate: int = 512, heart_rate: int = 72
+) -> bytes:
     """
     Create synthetic EGM waveform blob.
 
@@ -48,7 +48,7 @@ def create_synthetic_egm_blob(duration_seconds: float = 10,
     signal = np.zeros(num_samples)
 
     # Generate beats
-    beat_times = np.arange(0, duration_seconds, 1/beats_per_second)
+    beat_times = np.arange(0, duration_seconds, 1 / beats_per_second)
 
     for beat_time in beat_times:
         beat_center = int(beat_time * sample_rate)
@@ -61,7 +61,9 @@ def create_synthetic_egm_blob(duration_seconds: float = 10,
                 p_amplitude = 200  # μV
                 for i in range(p_start, p_end):
                     if i < num_samples:
-                        signal[i] += p_amplitude * np.sin(np.pi * (i - p_start) / (p_end - p_start))
+                        signal[i] += p_amplitude * np.sin(
+                            np.pi * (i - p_start) / (p_end - p_start)
+                        )
 
             # QRS complex (ventricular depolarization)
             qrs_start = beat_center - int(0.04 * sample_rate)
@@ -74,7 +76,11 @@ def create_synthetic_egm_blob(duration_seconds: float = 10,
                             signal[i] -= 300
                         # R wave (positive peak)
                         elif i < beat_center + int(0.01 * sample_rate):
-                            signal[i] += 2000 * np.sin(np.pi * (i - (beat_center - int(0.02 * sample_rate))) / (int(0.03 * sample_rate)))
+                            signal[i] += 2000 * np.sin(
+                                np.pi
+                                * (i - (beat_center - int(0.02 * sample_rate)))
+                                / (int(0.03 * sample_rate))
+                            )
                         # S wave (negative)
                         else:
                             signal[i] -= 400
@@ -86,7 +92,9 @@ def create_synthetic_egm_blob(duration_seconds: float = 10,
                 t_amplitude = 400  # μV
                 for i in range(t_start, t_end):
                     if i < num_samples:
-                        signal[i] += t_amplitude * np.sin(np.pi * (i - t_start) / (t_end - t_start))
+                        signal[i] += t_amplitude * np.sin(
+                            np.pi * (i - t_start) / (t_end - t_start)
+                        )
 
     # Add baseline noise
     noise = np.random.normal(0, 50, num_samples)
@@ -97,10 +105,10 @@ def create_synthetic_egm_blob(duration_seconds: float = 10,
 
     # Create binary blob with simple header
     header = bytearray(64)  # 64-byte header
-    header[0:4] = b'EGM\x00'  # Magic number
+    header[0:4] = b"EGM\x00"  # Magic number
 
     # Pack signal as big-endian signed shorts
-    blob = header + struct.pack(f'>{len(signal_int)}h', *signal_int)
+    blob = header + struct.pack(f">{len(signal_int)}h", *signal_int)
 
     return bytes(blob)
 
@@ -112,7 +120,7 @@ def create_test_data_with_egm():
     print("=" * 70)
 
     # Initialize in-memory database
-    init_database(':memory:', echo=False)
+    init_database(":memory:", echo=False)
     session = get_db_session()
 
     # Create patient
@@ -120,7 +128,7 @@ def create_test_data_with_egm():
         patient_id="P123456",
         patient_name="John Doe",
         date_of_birth=datetime(1980, 1, 1),
-        gender="M"
+        gender="M",
     )
     session.add(patient)
     session.flush()
@@ -131,11 +139,11 @@ def create_test_data_with_egm():
     transmission = Transmission(
         patient_id=patient.patient_id,
         transmission_date=datetime(2024, 1, 15, 10, 30, 0),
-        transmission_type='remote',
-        message_control_id='MSG001',
-        sending_application='Medtronic CareLink',
-        sending_facility='Clinic123',
-        device_manufacturer='Medtronic'
+        transmission_type="remote",
+        message_control_id="MSG001",
+        sending_application="Medtronic CareLink",
+        sending_facility="Clinic123",
+        device_manufacturer="Medtronic",
     )
     session.add(transmission)
     session.flush()
@@ -154,23 +162,25 @@ def create_test_data_with_egm():
         egm_blob = create_synthetic_egm_blob(
             duration_seconds=scenario["duration"],
             sample_rate=512,
-            heart_rate=scenario["rate"]
+            heart_rate=scenario["rate"],
         )
 
         # Create observation
         obs = Observation(
             transmission_id=transmission.transmission_id,
             observation_time=transmission.transmission_date,
-            sequence_number=i+1,
-            variable_name='egm_strip',
-            vendor_code=f'EGM_{i+1}',
-            unit='μV',
-            observation_status='F',
-            value_blob=egm_blob
+            sequence_number=i + 1,
+            variable_name="egm_strip",
+            vendor_code=f"EGM_{i+1}",
+            unit="μV",
+            observation_status="F",
+            value_blob=egm_blob,
         )
         session.add(obs)
 
-        print(f"  EGM {i+1}: {scenario['label']} - {scenario['duration']}s @ {scenario['rate']} bpm")
+        print(
+            f"  EGM {i+1}: {scenario['label']} - {scenario['duration']}s @ {scenario['rate']} bpm"
+        )
 
     session.commit()
 
@@ -186,14 +196,16 @@ def test_egm_decoder():
     print("=" * 70)
 
     # Create synthetic EGM
-    blob = create_synthetic_egm_blob(duration_seconds=10, sample_rate=512, heart_rate=72)
+    blob = create_synthetic_egm_blob(
+        duration_seconds=10, sample_rate=512, heart_rate=72
+    )
 
     print(f"\nGenerated synthetic EGM blob: {len(blob)} bytes")
 
     # Decode
     egm_data = EGMDecoder.decode_blob(blob)
 
-    if not egm_data or 'error' in egm_data:
+    if not egm_data or "error" in egm_data:
         print("ERROR: Failed to decode EGM")
         return False
 
@@ -215,12 +227,14 @@ def test_egm_processor():
     print("=" * 70)
 
     # Create synthetic EGM
-    blob = create_synthetic_egm_blob(duration_seconds=10, sample_rate=512, heart_rate=72)
+    blob = create_synthetic_egm_blob(
+        duration_seconds=10, sample_rate=512, heart_rate=72
+    )
 
     # Decode
     egm_data = EGMDecoder.decode_blob(blob)
 
-    if not egm_data or 'error' in egm_data:
+    if not egm_data or "error" in egm_data:
         print("ERROR: Failed to decode EGM")
         return False
 
@@ -228,26 +242,28 @@ def test_egm_processor():
     print("\nAnalyzing EGM...")
     analyzed_data = EGMProcessor.analyze_egm(egm_data)
 
-    if not analyzed_data.get('analyzed'):
+    if not analyzed_data.get("analyzed"):
         print("ERROR: Analysis failed")
         return False
 
     print("\nAnalysis Results:")
     print(f"  Peaks Detected: {analyzed_data['peak_count']}")
 
-    if analyzed_data.get('rr_intervals'):
+    if analyzed_data.get("rr_intervals"):
         print(f"  RR Intervals: {len(analyzed_data['rr_intervals'])}")
         print(f"  Mean RR: {analyzed_data['rr_mean']:.1f} ms")
 
-    if analyzed_data.get('hr_statistics'):
-        hr = analyzed_data['hr_statistics']
+    if analyzed_data.get("hr_statistics"):
+        hr = analyzed_data["hr_statistics"]
         print(f"  Mean HR: {hr['mean_hr']:.1f} bpm")
         print(f"  Min HR: {hr['min_hr']:.1f} bpm")
         print(f"  Max HR: {hr['max_hr']:.1f} bpm")
 
     # Verify reasonable values
-    if analyzed_data['peak_count'] < 8 or analyzed_data['peak_count'] > 15:
-        print(f"WARNING: Expected ~12 peaks for 72 bpm over 10s, got {analyzed_data['peak_count']}")
+    if analyzed_data["peak_count"] < 8 or analyzed_data["peak_count"] > 15:
+        print(
+            f"WARNING: Expected ~12 peaks for 72 bpm over 10s, got {analyzed_data['peak_count']}"
+        )
 
     return True
 
@@ -262,8 +278,8 @@ def test_egm_filtering():
     blob = create_synthetic_egm_blob(duration_seconds=5, sample_rate=512, heart_rate=72)
     egm_data = EGMDecoder.decode_blob(blob)
 
-    samples = egm_data['samples']
-    sample_rate = egm_data['sample_rate']
+    samples = egm_data["samples"]
+    sample_rate = egm_data["sample_rate"]
 
     print(f"\nOriginal signal: {len(samples)} samples")
     print(f"  Range: {min(samples):.0f} to {max(samples):.0f} uV")
@@ -288,11 +304,15 @@ def test_peak_detection():
     test_rates = [60, 72, 90, 120]
 
     for rate in test_rates:
-        blob = create_synthetic_egm_blob(duration_seconds=10, sample_rate=512, heart_rate=rate)
+        blob = create_synthetic_egm_blob(
+            duration_seconds=10, sample_rate=512, heart_rate=rate
+        )
         egm_data = EGMDecoder.decode_blob(blob)
 
-        filtered = EGMProcessor.filter_signal(egm_data['samples'], egm_data['sample_rate'])
-        peaks = EGMProcessor.detect_peaks(filtered.tolist(), egm_data['sample_rate'])
+        filtered = EGMProcessor.filter_signal(
+            egm_data["samples"], egm_data["sample_rate"]
+        )
+        peaks = EGMProcessor.detect_peaks(filtered.tolist(), egm_data["sample_rate"])
 
         expected_beats = int(rate * 10 / 60)
         tolerance = 2
@@ -347,5 +367,5 @@ def main():
     return 0 if all_passed else 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

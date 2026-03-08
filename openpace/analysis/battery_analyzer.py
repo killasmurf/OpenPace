@@ -43,24 +43,28 @@ class BatteryAnalyzer:
             - r_squared: Quality of fit (0-1)
             - confidence: Analysis confidence level
         """
-        if trend.variable_name != 'battery_voltage':
+        if trend.variable_name != "battery_voltage":
             raise ValueError("Trend must be for battery_voltage")
 
         if len(trend.values) < StatisticalThresholds.MIN_POINTS_TREND_ANALYSIS:
             raise InsufficientDataError(
-                'Insufficient data points for trend analysis',
+                "Insufficient data points for trend analysis",
                 required_points=StatisticalThresholds.MIN_POINTS_TREND_ANALYSIS,
-                actual_points=len(trend.values)
+                actual_points=len(trend.values),
             )
 
         # Convert time points to days since first observation
         time_points = [datetime.fromisoformat(tp) for tp in trend.time_points]
         start_time = time_points[0]
-        days = [(tp - start_time).total_seconds() / StatisticalThresholds.SECONDS_PER_DAY
-                for tp in time_points]
+        days = [
+            (tp - start_time).total_seconds() / StatisticalThresholds.SECONDS_PER_DAY
+            for tp in time_points
+        ]
 
         # Linear regression
-        slope, intercept, r_value, p_value, std_err = stats.linregress(days, trend.values)
+        slope, intercept, r_value, p_value, std_err = stats.linregress(
+            days, trend.values
+        )
 
         # Predict ERI date
         eri_date = None
@@ -84,38 +88,50 @@ class BatteryAnalyzer:
 
         # Determine confidence level
         confidence = BatteryAnalyzer._calculate_confidence(
-            r_value ** 2,
-            len(trend.values),
-            p_value
+            r_value**2, len(trend.values), p_value
         )
 
         # Calculate remaining capacity percentage
         current_voltage = trend.values[-1]
-        remaining_capacity = max(0, min(100,
-            ((current_voltage - BatteryThresholds.ERI_THRESHOLD) /
-             (BatteryThresholds.NOMINAL_VOLTAGE - BatteryThresholds.ERI_THRESHOLD)) * 100
-        ))
+        remaining_capacity = max(
+            0,
+            min(
+                100,
+                (
+                    (current_voltage - BatteryThresholds.ERI_THRESHOLD)
+                    / (
+                        BatteryThresholds.NOMINAL_VOLTAGE
+                        - BatteryThresholds.ERI_THRESHOLD
+                    )
+                )
+                * 100,
+            ),
+        )
 
         return {
-            'current_voltage': current_voltage,
-            'depletion_rate_v_per_year': depletion_rate_per_year,
-            'slope': slope,
-            'intercept': intercept,
-            'r_squared': r_value ** 2,
-            'p_value': p_value,
-            'std_err': std_err,
-            'eri_threshold': BatteryAnalyzer.ERI_THRESHOLD,
-            'eol_threshold': BatteryAnalyzer.EOL_THRESHOLD,
-            'predicted_eri_date': eri_date.isoformat() if eri_date else None,
-            'predicted_eol_date': eol_date.isoformat() if eol_date else None,
-            'days_to_eri': days_to_eri,
-            'days_to_eol': days_to_eol,
-            'years_to_eri': days_to_eri / StatisticalThresholds.DAYS_PER_YEAR if days_to_eri else None,
-            'years_to_eol': days_to_eol / StatisticalThresholds.DAYS_PER_YEAR if days_to_eol else None,
-            'remaining_capacity_percent': remaining_capacity,
-            'confidence': confidence,
-            'data_points': len(trend.values),
-            'observation_period_days': max(days),
+            "current_voltage": current_voltage,
+            "depletion_rate_v_per_year": depletion_rate_per_year,
+            "slope": slope,
+            "intercept": intercept,
+            "r_squared": r_value**2,
+            "p_value": p_value,
+            "std_err": std_err,
+            "eri_threshold": BatteryAnalyzer.ERI_THRESHOLD,
+            "eol_threshold": BatteryAnalyzer.EOL_THRESHOLD,
+            "predicted_eri_date": eri_date.isoformat() if eri_date else None,
+            "predicted_eol_date": eol_date.isoformat() if eol_date else None,
+            "days_to_eri": days_to_eri,
+            "days_to_eol": days_to_eol,
+            "years_to_eri": days_to_eri / StatisticalThresholds.DAYS_PER_YEAR
+            if days_to_eri
+            else None,
+            "years_to_eol": days_to_eol / StatisticalThresholds.DAYS_PER_YEAR
+            if days_to_eol
+            else None,
+            "remaining_capacity_percent": remaining_capacity,
+            "confidence": confidence,
+            "data_points": len(trend.values),
+            "observation_period_days": max(days),
         }
 
     @staticmethod
@@ -131,16 +147,20 @@ class BatteryAnalyzer:
         Returns:
             Confidence level: 'high', 'medium', or 'low'
         """
-        if (r_squared > StatisticalThresholds.HIGH_R_SQUARED and
-            n_points >= StatisticalThresholds.MIN_POINTS_HIGH_CONFIDENCE and
-            p_value < StatisticalThresholds.SIGNIFICANT_P_VALUE):
-            return 'high'
-        elif (r_squared > StatisticalThresholds.MEDIUM_R_SQUARED and
-              n_points >= StatisticalThresholds.MIN_POINTS_TREND_ANALYSIS and
-              p_value < StatisticalThresholds.MARGINAL_P_VALUE):
-            return 'medium'
+        if (
+            r_squared > StatisticalThresholds.HIGH_R_SQUARED
+            and n_points >= StatisticalThresholds.MIN_POINTS_HIGH_CONFIDENCE
+            and p_value < StatisticalThresholds.SIGNIFICANT_P_VALUE
+        ):
+            return "high"
+        elif (
+            r_squared > StatisticalThresholds.MEDIUM_R_SQUARED
+            and n_points >= StatisticalThresholds.MIN_POINTS_TREND_ANALYSIS
+            and p_value < StatisticalThresholds.MARGINAL_P_VALUE
+        ):
+            return "medium"
         else:
-            return 'low'
+            return "low"
 
     @staticmethod
     def get_status_color(voltage: float) -> str:
@@ -154,11 +174,11 @@ class BatteryAnalyzer:
             Color code: 'green', 'yellow', or 'red'
         """
         if voltage >= BatteryThresholds.GREEN_THRESHOLD:
-            return 'green'
+            return "green"
         elif voltage >= BatteryThresholds.YELLOW_THRESHOLD:
-            return 'yellow'
+            return "yellow"
         else:
-            return 'red'
+            return "red"
 
     @staticmethod
     def get_recommendation(analysis: Dict[str, Any]) -> str:
@@ -171,11 +191,11 @@ class BatteryAnalyzer:
         Returns:
             Recommendation text
         """
-        if 'error' in analysis:
+        if "error" in analysis:
             return "Insufficient data for recommendation. Collect more transmissions."
 
-        voltage = analysis['current_voltage']
-        years_to_eri = analysis.get('years_to_eri')
+        voltage = analysis["current_voltage"]
+        years_to_eri = analysis.get("years_to_eri")
 
         if voltage < BatteryThresholds.ERI_THRESHOLD:
             return "URGENT: Battery at ERI. Schedule device replacement immediately."

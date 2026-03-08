@@ -23,7 +23,9 @@ class VendorTranslator(ABC):
         self.vendor_name = "Generic"
 
     @abstractmethod
-    def map_observation_id(self, vendor_code: str, observation_text: str = "") -> Optional[str]:
+    def map_observation_id(
+        self, vendor_code: str, observation_text: str = ""
+    ) -> Optional[str]:
         """
         Map vendor-specific observation code to universal variable name.
 
@@ -71,39 +73,32 @@ class GenericTranslator(VendorTranslator):
         "73990-7": "battery_voltage",
         "73991-5": "battery_eri_date",
         "73992-3": "battery_impedance",
-
         # Lead impedance
         "8889-8": "lead_impedance_atrial",
         "8890-6": "lead_impedance_ventricular",
         "8891-4": "lead_impedance_rv",
         "8892-2": "lead_impedance_lv",
-
         # Arrhythmia burden
         "89269-2": "afib_burden_percent",
         "89270-0": "vt_burden_percent",
         "89271-8": "svt_burden_percent",
-
         # Heart rate
         "8867-4": "heart_rate",
         "8893-0": "heart_rate_max",
         "8894-8": "heart_rate_min",
         "8895-5": "heart_rate_mean",
-
         # Pacing
         "8896-3": "pacing_percent_atrial",
         "8897-1": "pacing_percent_ventricular",
         "8898-9": "pacing_percent_biventricular",
-
         # EGM/Waveforms
         "11524-6": "egm_strip",
         "11525-3": "ecg_waveform",
         "18750-0": "cardiac_ep_report",  # Cardiac Electrophysiology Report (PDF)
-
         # Device parameters
         "8899-7": "lower_rate_limit",
         "8900-3": "upper_rate_limit",
         "8901-1": "pacing_mode",
-
         # Sensing
         "8902-9": "atrial_sensitivity",
         "8903-7": "ventricular_sensitivity",
@@ -113,7 +108,9 @@ class GenericTranslator(VendorTranslator):
         super().__init__()
         self.vendor_name = "Generic"
 
-    def map_observation_id(self, vendor_code: str, observation_text: str = "") -> Optional[str]:
+    def map_observation_id(
+        self, vendor_code: str, observation_text: str = ""
+    ) -> Optional[str]:
         """
         Map LOINC code to universal variable.
 
@@ -133,12 +130,23 @@ class GenericTranslator(VendorTranslator):
 
         # Check if vendor code is already a reasonable variable name
         # (e.g., "BATTERY_VOLTAGE" -> "battery_voltage")
-        if code_lower in ['battery_voltage', 'battery_current', 'battery_impedance',
-                          'ra_lead_impedance', 'rv_lead_impedance', 'lv_lead_impedance',
-                          'atrial_sensing', 'ventricular_sensing',
-                          'a_pace_threshold', 'v_pace_threshold',
-                          'af_episode_count', 'vt_episode_count',
-                          'device_model', 'device_serial', 'longevity_estimate']:
+        if code_lower in [
+            "battery_voltage",
+            "battery_current",
+            "battery_impedance",
+            "ra_lead_impedance",
+            "rv_lead_impedance",
+            "lv_lead_impedance",
+            "atrial_sensing",
+            "ventricular_sensing",
+            "a_pace_threshold",
+            "v_pace_threshold",
+            "af_episode_count",
+            "vt_episode_count",
+            "device_model",
+            "device_serial",
+            "longevity_estimate",
+        ]:
             return code_lower
 
         # Try to infer from observation text
@@ -148,15 +156,27 @@ class GenericTranslator(VendorTranslator):
             return "battery_voltage"
         elif "battery" in text_lower and "current" in text_lower:
             return "battery_current"
-        elif "impedance" in text_lower and ("atrial" in text_lower or "ra" in text_lower):
+        elif "impedance" in text_lower and (
+            "atrial" in text_lower or "ra" in text_lower
+        ):
             return "lead_impedance_atrial"
-        elif "impedance" in text_lower and ("ventricular" in text_lower or "rv" in text_lower):
+        elif "impedance" in text_lower and (
+            "ventricular" in text_lower or "rv" in text_lower
+        ):
             return "lead_impedance_ventricular"
-        elif "afib" in text_lower or "atrial fib" in text_lower or "af episode" in text_lower:
+        elif (
+            "afib" in text_lower
+            or "atrial fib" in text_lower
+            or "af episode" in text_lower
+        ):
             return "afib_burden_percent"
         elif "pacing" in text_lower and "percent" in text_lower:
             return "pacing_percent_ventricular"
-        elif "longevity" in text_lower or "battery" in text_lower and "estimate" in text_lower:
+        elif (
+            "longevity" in text_lower
+            or "battery" in text_lower
+            and "estimate" in text_lower
+        ):
             return "longevity_estimate"
         elif "device" in text_lower and "model" in text_lower:
             return "device_model"
@@ -184,18 +204,18 @@ class GenericTranslator(VendorTranslator):
             Decoded EGM data or None
         """
         # Check if blob is a PDF
-        if blob.startswith(b'%PDF'):
+        if blob.startswith(b"%PDF"):
             return {
-                'type': 'pdf',
-                'size': len(blob),
-                'note': 'EGM embedded in PDF - requires vendor-specific extraction'
+                "type": "pdf",
+                "size": len(blob),
+                "note": "EGM embedded in PDF - requires vendor-specific extraction",
             }
 
         # Generic binary data - return metadata only
         return {
-            'type': 'binary',
-            'size': len(blob),
-            'note': 'Vendor-specific decoder required'
+            "type": "binary",
+            "size": len(blob),
+            "note": "Vendor-specific decoder required",
         }
 
 
@@ -213,9 +233,15 @@ def get_translator(vendor: str) -> VendorTranslator:
 
     if "MEDTRONIC" in vendor_upper:
         from openpace.hl7.translators.medtronic import MedtronicTranslator
+
         return MedtronicTranslator()
-    elif "BOSTON" in vendor_upper or "BSC" in vendor_upper or "LATITUDE" in vendor_upper:
-        from openpace.hl7.translators.boston_scientific import BostonScientificTranslator
+    elif (
+        "BOSTON" in vendor_upper or "BSC" in vendor_upper or "LATITUDE" in vendor_upper
+    ):
+        from openpace.hl7.translators.boston_scientific import (
+            BostonScientificTranslator,
+        )
+
         return BostonScientificTranslator()
     elif "ABBOTT" in vendor_upper or "SJM" in vendor_upper:
         # from openpace.hl7.translators.abbott import AbbottTranslator

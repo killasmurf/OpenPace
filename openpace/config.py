@@ -20,10 +20,10 @@ class DatabaseConfig:
     """Database configuration settings."""
 
     path: Optional[str] = None  # None = use default (~/.openpace/openpace.db)
-    echo_sql: bool = False      # Log all SQL statements
+    echo_sql: bool = False  # Log all SQL statements
     encryption_key: Optional[str] = None  # Encryption key for database
-    pool_size: int = 5          # Connection pool size
-    max_overflow: int = 10      # Maximum overflow connections
+    pool_size: int = 5  # Connection pool size
+    max_overflow: int = 10  # Maximum overflow connections
 
     def get_path(self) -> Path:
         """
@@ -42,12 +42,12 @@ class DatabaseConfig:
 class LoggingConfig:
     """Logging configuration settings."""
 
-    level: str = "INFO"         # Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+    level: str = "INFO"  # Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL
     log_dir: Optional[str] = None  # Directory for log files (None = ~/.openpace/logs)
-    console_output: bool = True    # Output logs to console
-    file_output: bool = True       # Output logs to file
-    max_file_size_mb: int = 10     # Maximum log file size before rotation
-    backup_count: int = 5          # Number of backup log files to keep
+    console_output: bool = True  # Output logs to console
+    file_output: bool = True  # Output logs to file
+    max_file_size_mb: int = 10  # Maximum log file size before rotation
+    backup_count: int = 5  # Number of backup log files to keep
 
     def get_log_dir(self) -> Path:
         """
@@ -66,58 +66,60 @@ class LoggingConfig:
 class SecurityConfig:
     """Security and privacy configuration settings."""
 
-    anonymize_by_default: bool = False       # Anonymize patient names by default
-    max_import_file_size_mb: int = 50        # Maximum file size for imports
-    require_encryption: bool = False         # Require database encryption
-    enable_audit_log: bool = True            # Log all data access operations
-    password_protected: bool = False         # Require password to open app
-    auto_lock_minutes: int = 0               # Auto-lock after inactivity (0 = disabled)
+    anonymize_by_default: bool = False  # Anonymize patient names by default
+    max_import_file_size_mb: int = 50  # Maximum file size for imports
+    require_encryption: bool = False  # Require database encryption
+    enable_audit_log: bool = True  # Log all data access operations
+    password_protected: bool = False  # Require password to open app
+    auto_lock_minutes: int = 0  # Auto-lock after inactivity (0 = disabled)
 
 
 @dataclass
 class UIConfig:
     """User interface configuration settings."""
 
-    theme: str = "default"                   # UI theme: default, dark, light
-    default_window_width: int = 1400         # Default window width in pixels
-    default_window_height: int = 900         # Default window height in pixels
-    show_splash_screen: bool = True          # Show splash screen on startup
-    remember_window_position: bool = True    # Remember window position/size
-    plot_dpi: int = 100                      # Plot resolution (DPI)
-    max_plot_points: int = 10000             # Downsample plots with more points
-    language: str = "en"                     # Interface language
+    theme: str = "default"  # UI theme: default, dark, light
+    default_window_width: int = 1400  # Default window width in pixels
+    default_window_height: int = 900  # Default window height in pixels
+    show_splash_screen: bool = True  # Show splash screen on startup
+    remember_window_position: bool = True  # Remember window position/size
+    plot_dpi: int = 100  # Plot resolution (DPI)
+    max_plot_points: int = 10000  # Downsample plots with more points
+    language: str = "en"  # Interface language
 
     # Panel layout settings
-    use_grid_layout: bool = True             # Use new grid layout system
-    save_panel_layouts: bool = True          # Save panel layout preferences
+    use_grid_layout: bool = True  # Use new grid layout system
+    save_panel_layouts: bool = True  # Save panel layout preferences
     panel_layouts: Dict[str, Any] = field(default_factory=dict)  # Stored panel layouts
-    default_layout_mode: str = "vertical"    # Default layout: vertical, horizontal, free_grid
-    panel_min_height: int = 150              # Minimum panel height in pixels
-    panel_min_width: int = 200               # Minimum panel width in pixels
-    grid_rows: int = 12                      # Number of grid rows
-    grid_cols: int = 12                      # Number of grid columns
-    snap_to_grid: bool = True                # Snap panels to grid when dragging
+    default_layout_mode: str = (
+        "vertical"  # Default layout: vertical, horizontal, free_grid
+    )
+    panel_min_height: int = 150  # Minimum panel height in pixels
+    panel_min_width: int = 200  # Minimum panel width in pixels
+    grid_rows: int = 12  # Number of grid rows
+    grid_cols: int = 12  # Number of grid columns
+    snap_to_grid: bool = True  # Snap panels to grid when dragging
 
 
 @dataclass
 class AnalysisConfig:
     """Analysis and computation configuration settings."""
 
-    trend_cache_ttl_hours: int = 1           # Cache trends for this many hours
-    analysis_cache_ttl_minutes: int = 30     # Cache analysis results
-    auto_calculate_trends: bool = True       # Auto-calculate trends on import
-    min_points_for_prediction: int = 3       # Minimum data points for predictions
-    confidence_threshold: str = "medium"     # Required confidence: low, medium, high
+    trend_cache_ttl_hours: int = 1  # Cache trends for this many hours
+    analysis_cache_ttl_minutes: int = 30  # Cache analysis results
+    auto_calculate_trends: bool = True  # Auto-calculate trends on import
+    min_points_for_prediction: int = 3  # Minimum data points for predictions
+    confidence_threshold: str = "medium"  # Required confidence: low, medium, high
 
 
 @dataclass
 class ExportConfig:
     """Export and reporting configuration settings."""
 
-    default_format: str = "pdf"              # Default export format: pdf, xlsx, csv
-    include_timestamps: bool = True          # Include timestamps in exports
-    include_metadata: bool = True            # Include metadata in exports
-    compress_exports: bool = False           # Compress exported files
+    default_format: str = "pdf"  # Default export format: pdf, xlsx, csv
+    include_timestamps: bool = True  # Include timestamps in exports
+    include_metadata: bool = True  # Include metadata in exports
+    compress_exports: bool = False  # Compress exported files
 
 
 @dataclass
@@ -137,7 +139,7 @@ class OpenPaceConfig:
     export: ExportConfig = field(default_factory=ExportConfig)
 
     @classmethod
-    def load_from_file(cls, config_path: Optional[Path] = None) -> 'OpenPaceConfig':
+    def load_from_file(cls, config_path: Optional[Path] = None) -> "OpenPaceConfig":
         """
         Load configuration from JSON file.
 
@@ -163,25 +165,27 @@ class OpenPaceConfig:
 
         # If config doesn't exist, create default
         if not config_path.exists():
-            logger.info(f"Configuration file not found. Creating default: {config_path}")
+            logger.info(
+                f"Configuration file not found. Creating default: {config_path}"
+            )
             config = cls.default()
             config.save_to_file(config_path)
             return config
 
         # Load existing config
         try:
-            with open(config_path, 'r') as f:
+            with open(config_path, "r") as f:
                 data = json.load(f)
 
             logger.info(f"Loaded configuration from: {config_path}")
 
             return cls(
-                database=DatabaseConfig(**data.get('database', {})),
-                logging=LoggingConfig(**data.get('logging', {})),
-                security=SecurityConfig(**data.get('security', {})),
-                ui=UIConfig(**data.get('ui', {})),
-                analysis=AnalysisConfig(**data.get('analysis', {})),
-                export=ExportConfig(**data.get('export', {}))
+                database=DatabaseConfig(**data.get("database", {})),
+                logging=LoggingConfig(**data.get("logging", {})),
+                security=SecurityConfig(**data.get("security", {})),
+                ui=UIConfig(**data.get("ui", {})),
+                analysis=AnalysisConfig(**data.get("analysis", {})),
+                export=ExportConfig(**data.get("export", {})),
             )
 
         except Exception as e:
@@ -190,7 +194,7 @@ class OpenPaceConfig:
             return cls.default()
 
     @classmethod
-    def load_from_env(cls) -> 'OpenPaceConfig':
+    def load_from_env(cls) -> "OpenPaceConfig":
         """
         Load configuration from environment variables.
 
@@ -208,32 +212,38 @@ class OpenPaceConfig:
         config = cls.default()
 
         # Database config
-        if os.getenv('OPENPACE_DATABASE_PATH'):
-            config.database.path = os.getenv('OPENPACE_DATABASE_PATH')
-        if os.getenv('OPENPACE_DATABASE_ECHO_SQL'):
-            config.database.echo_sql = os.getenv('OPENPACE_DATABASE_ECHO_SQL').lower() == 'true'
-        if os.getenv('OPENPACE_DATABASE_ENCRYPTION_KEY'):
-            config.database.encryption_key = os.getenv('OPENPACE_DATABASE_ENCRYPTION_KEY')
+        if os.getenv("OPENPACE_DATABASE_PATH"):
+            config.database.path = os.getenv("OPENPACE_DATABASE_PATH")
+        if os.getenv("OPENPACE_DATABASE_ECHO_SQL"):
+            config.database.echo_sql = (
+                os.getenv("OPENPACE_DATABASE_ECHO_SQL").lower() == "true"
+            )
+        if os.getenv("OPENPACE_DATABASE_ENCRYPTION_KEY"):
+            config.database.encryption_key = os.getenv(
+                "OPENPACE_DATABASE_ENCRYPTION_KEY"
+            )
 
         # Logging config
-        if os.getenv('OPENPACE_LOGGING_LEVEL'):
-            config.logging.level = os.getenv('OPENPACE_LOGGING_LEVEL')
-        if os.getenv('OPENPACE_LOGGING_LOG_DIR'):
-            config.logging.log_dir = os.getenv('OPENPACE_LOGGING_LOG_DIR')
+        if os.getenv("OPENPACE_LOGGING_LEVEL"):
+            config.logging.level = os.getenv("OPENPACE_LOGGING_LEVEL")
+        if os.getenv("OPENPACE_LOGGING_LOG_DIR"):
+            config.logging.log_dir = os.getenv("OPENPACE_LOGGING_LOG_DIR")
 
         # Security config
-        if os.getenv('OPENPACE_SECURITY_ANONYMIZE_BY_DEFAULT'):
-            config.security.anonymize_by_default = \
-                os.getenv('OPENPACE_SECURITY_ANONYMIZE_BY_DEFAULT').lower() == 'true'
-        if os.getenv('OPENPACE_SECURITY_REQUIRE_ENCRYPTION'):
-            config.security.require_encryption = \
-                os.getenv('OPENPACE_SECURITY_REQUIRE_ENCRYPTION').lower() == 'true'
+        if os.getenv("OPENPACE_SECURITY_ANONYMIZE_BY_DEFAULT"):
+            config.security.anonymize_by_default = (
+                os.getenv("OPENPACE_SECURITY_ANONYMIZE_BY_DEFAULT").lower() == "true"
+            )
+        if os.getenv("OPENPACE_SECURITY_REQUIRE_ENCRYPTION"):
+            config.security.require_encryption = (
+                os.getenv("OPENPACE_SECURITY_REQUIRE_ENCRYPTION").lower() == "true"
+            )
 
         logger.info("Loaded configuration from environment variables")
         return config
 
     @classmethod
-    def default(cls) -> 'OpenPaceConfig':
+    def default(cls) -> "OpenPaceConfig":
         """
         Create default configuration.
 
@@ -246,7 +256,7 @@ class OpenPaceConfig:
             security=SecurityConfig(),
             ui=UIConfig(),
             analysis=AnalysisConfig(),
-            export=ExportConfig()
+            export=ExportConfig(),
         )
 
     def save_to_file(self, config_path: Optional[Path] = None):
@@ -269,17 +279,17 @@ class OpenPaceConfig:
 
         # Convert to dictionary
         data = {
-            'database': asdict(self.database),
-            'logging': asdict(self.logging),
-            'security': asdict(self.security),
-            'ui': asdict(self.ui),
-            'analysis': asdict(self.analysis),
-            'export': asdict(self.export)
+            "database": asdict(self.database),
+            "logging": asdict(self.logging),
+            "security": asdict(self.security),
+            "ui": asdict(self.ui),
+            "analysis": asdict(self.analysis),
+            "export": asdict(self.export),
         }
 
         # Save to file
         try:
-            with open(config_path, 'w') as f:
+            with open(config_path, "w") as f:
                 json.dump(data, f, indent=2)
 
             logger.info(f"Configuration saved to: {config_path}")
@@ -296,12 +306,12 @@ class OpenPaceConfig:
             Dictionary representation of configuration
         """
         return {
-            'database': asdict(self.database),
-            'logging': asdict(self.logging),
-            'security': asdict(self.security),
-            'ui': asdict(self.ui),
-            'analysis': asdict(self.analysis),
-            'export': asdict(self.export)
+            "database": asdict(self.database),
+            "logging": asdict(self.logging),
+            "security": asdict(self.security),
+            "ui": asdict(self.ui),
+            "analysis": asdict(self.analysis),
+            "export": asdict(self.export),
         }
 
     def validate(self) -> bool:
@@ -315,7 +325,7 @@ class OpenPaceConfig:
             ValueError: If configuration is invalid
         """
         # Validate logging level
-        valid_levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+        valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
         if self.logging.level.upper() not in valid_levels:
             raise ValueError(
                 f"Invalid logging level: {self.logging.level}. "
@@ -323,7 +333,7 @@ class OpenPaceConfig:
             )
 
         # Validate UI theme
-        valid_themes = ['default', 'dark', 'light']
+        valid_themes = ["default", "dark", "light"]
         if self.ui.theme not in valid_themes:
             raise ValueError(
                 f"Invalid UI theme: {self.ui.theme}. "
@@ -331,7 +341,7 @@ class OpenPaceConfig:
             )
 
         # Validate confidence threshold
-        valid_confidence = ['low', 'medium', 'high']
+        valid_confidence = ["low", "medium", "high"]
         if self.analysis.confidence_threshold not in valid_confidence:
             raise ValueError(
                 f"Invalid confidence threshold: {self.analysis.confidence_threshold}. "
@@ -339,7 +349,7 @@ class OpenPaceConfig:
             )
 
         # Validate export format
-        valid_formats = ['pdf', 'xlsx', 'csv', 'json']
+        valid_formats = ["pdf", "xlsx", "csv", "json"]
         if self.export.default_format not in valid_formats:
             raise ValueError(
                 f"Invalid export format: {self.export.default_format}. "
@@ -381,7 +391,7 @@ def get_config() -> OpenPaceConfig:
     global _config
     if _config is None:
         # Try loading from environment first, then file
-        if os.getenv('OPENPACE_USE_ENV_CONFIG'):
+        if os.getenv("OPENPACE_USE_ENV_CONFIG"):
             _config = OpenPaceConfig.load_from_env()
         else:
             _config = OpenPaceConfig.load_from_file()

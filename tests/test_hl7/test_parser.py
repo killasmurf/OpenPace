@@ -26,16 +26,16 @@ class TestHL7Parser:
         import hl7
 
         parser = HL7Parser(db_session)
-        hl7_text = sample_hl7_oru_r01.replace('\n', '\r')
+        hl7_text = sample_hl7_oru_r01.replace("\n", "\r")
         msg = hl7.parse(hl7_text)
-        msh = msg.segment('MSH')
+        msh = msg.segment("MSH")
         msh_data = parser.parse_msh(msh)
 
-        assert 'PACEMAKER' in msh_data['sending_application']
-        assert 'MEDTRONIC' in msh_data['sending_facility']
-        assert 'ORU^R01' in msh_data['message_type']
-        assert msh_data['message_control_id'] is not None
-        assert msh_data['message_datetime'] is not None
+        assert "PACEMAKER" in msh_data["sending_application"]
+        assert "MEDTRONIC" in msh_data["sending_facility"]
+        assert "ORU^R01" in msh_data["message_type"]
+        assert msh_data["message_control_id"] is not None
+        assert msh_data["message_datetime"] is not None
 
     def test_parse_pid_segment(self, sample_hl7_oru_r01, db_session):
         """Test parsing PID (Patient Identification) segment."""
@@ -44,15 +44,15 @@ class TestHL7Parser:
 
         parser = HL7Parser(db_session, anonymize=False)
         # Use replace to ensure proper HL7 format (should use \r as segment separator)
-        hl7_text = sample_hl7_oru_r01.replace('\n', '\r')
+        hl7_text = sample_hl7_oru_r01.replace("\n", "\r")
         msg = hl7.parse(hl7_text)
-        pid = msg.segment('PID')
+        pid = msg.segment("PID")
         pid_data = parser.parse_pid(pid)
 
-        assert pid_data['patient_id'] == 'TEST001'
-        assert pid_data['patient_name'] == 'JOHN DOE'
-        assert pid_data['gender'] == 'M'
-        assert pid_data['date_of_birth'] is not None
+        assert pid_data["patient_id"] == "TEST001"
+        assert pid_data["patient_name"] == "JOHN DOE"
+        assert pid_data["gender"] == "M"
+        assert pid_data["date_of_birth"] is not None
 
     def test_parse_obr_segment(self, sample_hl7_oru_r01, db_session):
         """Test parsing OBR (Observation Request) segment."""
@@ -60,14 +60,14 @@ class TestHL7Parser:
         import hl7
 
         parser = HL7Parser(db_session)
-        hl7_text = sample_hl7_oru_r01.replace('\n', '\r')
+        hl7_text = sample_hl7_oru_r01.replace("\n", "\r")
         msg = hl7.parse(hl7_text)
-        obr = msg.segment('OBR')
+        obr = msg.segment("OBR")
         obr_data = parser.parse_obr(obr)
 
-        assert obr_data['observation_type'] in ['remote', 'in_clinic']
-        assert obr_data['order_id'] is not None
-        assert obr_data['observation_datetime'] is not None
+        assert obr_data["observation_type"] in ["remote", "in_clinic"]
+        assert obr_data["order_id"] is not None
+        assert obr_data["observation_datetime"] is not None
 
     def test_parse_obx_segment(self, sample_hl7_oru_r01, db_session):
         """Test parsing OBX (Observation/Result) segment."""
@@ -76,21 +76,24 @@ class TestHL7Parser:
         import hl7
 
         parser = HL7Parser(db_session)
-        hl7_text = sample_hl7_oru_r01.replace('\n', '\r')
+        hl7_text = sample_hl7_oru_r01.replace("\n", "\r")
         msg = hl7.parse(hl7_text)
-        translator = get_translator('Generic')
+        translator = get_translator("Generic")
 
         # Test first OBX segment (should be numeric)
-        obx_segments = list(msg.segments('OBX'))
+        obx_segments = list(msg.segments("OBX"))
         assert len(obx_segments) > 0
 
         # Find a numeric OBX segment (Battery Voltage)
         for obx in obx_segments:
-            if 'BATTERY_VOLTAGE' in str(obx[3]):
+            if "BATTERY_VOLTAGE" in str(obx[3]):
                 observation = parser.parse_obx(obx, 1, translator)
                 if observation:
                     assert observation.variable_name is not None
-                    assert observation.value_numeric is not None or observation.value_text is not None
+                    assert (
+                        observation.value_numeric is not None
+                        or observation.value_text is not None
+                    )
                     break
 
     def test_parse_complete_message(self, sample_hl7_oru_r01, db_session):
@@ -98,7 +101,7 @@ class TestHL7Parser:
         from openpace.hl7.parser import HL7Parser
 
         parser = HL7Parser(db_session)
-        hl7_text = sample_hl7_oru_r01.replace('\n', '\r')
+        hl7_text = sample_hl7_oru_r01.replace("\n", "\r")
         transmission = parser.parse_message(hl7_text, filename="test.hl7")
 
         assert transmission is not None
@@ -107,17 +110,19 @@ class TestHL7Parser:
         assert transmission.transmission_date is not None
         assert transmission.device_manufacturer is not None
 
-    def test_parse_multiple_obr_segments(self, sample_hl7_multiple_segments, db_session):
+    def test_parse_multiple_obr_segments(
+        self, sample_hl7_multiple_segments, db_session
+    ):
         """Test parsing message with multiple OBR segments."""
         from openpace.hl7.parser import HL7Parser
         import hl7
 
         parser = HL7Parser(db_session)
-        hl7_text = sample_hl7_multiple_segments.replace('\n', '\r')
+        hl7_text = sample_hl7_multiple_segments.replace("\n", "\r")
         msg = hl7.parse(hl7_text)
 
         # Check that multiple OBR segments exist
-        obr_segments = list(msg.segments('OBR'))
+        obr_segments = list(msg.segments("OBR"))
         assert len(obr_segments) >= 2
 
         # Parse complete message
@@ -155,15 +160,20 @@ OBR|1|ORD001|SPEC001|TEST|||20240115120000"""
         from openpace.hl7.parser import HL7Parser
 
         parser = HL7Parser(db_session)
-        hl7_text = sample_hl7_oru_r01.replace('\n', '\r')
+        hl7_text = sample_hl7_oru_r01.replace("\n", "\r")
         transmission = parser.parse_message(hl7_text)
 
         # Query observations with numeric values
         from openpace.database.models import Observation
-        numeric_obs = db_session.query(Observation).filter(
-            Observation.transmission_id == transmission.transmission_id,
-            Observation.value_numeric.isnot(None)
-        ).all()
+
+        numeric_obs = (
+            db_session.query(Observation)
+            .filter(
+                Observation.transmission_id == transmission.transmission_id,
+                Observation.value_numeric.isnot(None),
+            )
+            .all()
+        )
 
         # Verify at least the transmission was created
         assert transmission is not None
@@ -173,15 +183,20 @@ OBR|1|ORD001|SPEC001|TEST|||20240115120000"""
         from openpace.hl7.parser import HL7Parser
 
         parser = HL7Parser(db_session)
-        hl7_text = sample_hl7_oru_r01.replace('\n', '\r')
+        hl7_text = sample_hl7_oru_r01.replace("\n", "\r")
         transmission = parser.parse_message(hl7_text)
 
         # Query observations with string values
         from openpace.database.models import Observation
-        string_obs = db_session.query(Observation).filter(
-            Observation.transmission_id == transmission.transmission_id,
-            Observation.value_text.isnot(None)
-        ).all()
+
+        string_obs = (
+            db_session.query(Observation)
+            .filter(
+                Observation.transmission_id == transmission.transmission_id,
+                Observation.value_text.isnot(None),
+            )
+            .all()
+        )
 
         # Should have string observations - if not, at least verify transmission succeeded
         # Some observations may not be recognized by the translator
@@ -209,15 +224,20 @@ OBR|1|ORD001|SPEC001|TEST|||20240115120000"""
         from openpace.hl7.parser import HL7Parser
 
         parser = HL7Parser(db_session)
-        hl7_text = sample_hl7_multiple_segments.replace('\n', '\r')
+        hl7_text = sample_hl7_multiple_segments.replace("\n", "\r")
         transmission = parser.parse_message(hl7_text)
 
         # Query observations with binary data
         from openpace.database.models import Observation
-        binary_obs = db_session.query(Observation).filter(
-            Observation.transmission_id == transmission.transmission_id,
-            Observation.value_blob.isnot(None)
-        ).all()
+
+        binary_obs = (
+            db_session.query(Observation)
+            .filter(
+                Observation.transmission_id == transmission.transmission_id,
+                Observation.value_blob.isnot(None),
+            )
+            .all()
+        )
 
         # The sample message has an EGM strip with base64 data
         # If no binary data found, at least verify transmission succeeded
@@ -235,13 +255,28 @@ class TestVendorTranslators:
         assert translator.vendor_name == "Medtronic"
 
         # Test Medtronic-specific codes
-        assert translator.map_observation_id("MDC_BATTERY_VOLTAGE", "") == "battery_voltage"
-        assert translator.map_observation_id("MDC_IMP_ATRIAL", "") == "lead_impedance_atrial"
-        assert translator.map_observation_id("MDC_AFIB_BURDEN", "") == "afib_burden_percent"
+        assert (
+            translator.map_observation_id("MDC_BATTERY_VOLTAGE", "")
+            == "battery_voltage"
+        )
+        assert (
+            translator.map_observation_id("MDC_IMP_ATRIAL", "")
+            == "lead_impedance_atrial"
+        )
+        assert (
+            translator.map_observation_id("MDC_AFIB_BURDEN", "")
+            == "afib_burden_percent"
+        )
 
         # Test text-based inference
-        assert translator.map_observation_id("UNKNOWN123", "Battery Voltage") == "battery_voltage"
-        assert translator.map_observation_id("UNKNOWN456", "RA Lead Impedance") == "lead_impedance_atrial"
+        assert (
+            translator.map_observation_id("UNKNOWN123", "Battery Voltage")
+            == "battery_voltage"
+        )
+        assert (
+            translator.map_observation_id("UNKNOWN456", "RA Lead Impedance")
+            == "lead_impedance_atrial"
+        )
 
     def test_boston_scientific_translator(self):
         """Test Boston Scientific vendor code translation."""
@@ -283,7 +318,9 @@ class TestVendorTranslators:
         assert translator.vendor_name == "Generic"
 
         # Test that unknown codes return None
-        result = translator.map_observation_id("COMPLETELY_UNKNOWN_CODE", "Unknown Text")
+        result = translator.map_observation_id(
+            "COMPLETELY_UNKNOWN_CODE", "Unknown Text"
+        )
         assert result is None
 
     def test_loinc_code_mapping(self):
@@ -300,6 +337,7 @@ class TestVendorTranslators:
 
         # Test Medtronic translator with LOINC codes
         from openpace.hl7.translators.medtronic import MedtronicTranslator
+
         medtronic = MedtronicTranslator()
         assert medtronic.map_observation_id("73990-7", "") == "battery_voltage"
 
@@ -315,20 +353,28 @@ class TestHL7FileImport:
 
         # Read and parse the file
         hl7_content = mock_hl7_file.read_text(encoding="utf-8")
-        hl7_text = hl7_content.replace('\n', '\r')
+        hl7_text = hl7_content.replace("\n", "\r")
         transmission = parser.parse_message(hl7_text, filename=str(mock_hl7_file))
 
         assert transmission is not None
         assert transmission.hl7_filename == str(mock_hl7_file)
         assert transmission.patient_id is not None
 
-    def test_import_multiple_messages_file(self, temp_test_dir, db_session, sample_hl7_oru_r01, sample_hl7_multiple_segments):
+    def test_import_multiple_messages_file(
+        self,
+        temp_test_dir,
+        db_session,
+        sample_hl7_oru_r01,
+        sample_hl7_multiple_segments,
+    ):
         """Test importing a file with multiple HL7 messages."""
         from openpace.hl7.parser import HL7Parser
 
         # Create a file with multiple messages separated by newlines
         multi_message_file = temp_test_dir / "multiple_messages.hl7"
-        multi_message_content = sample_hl7_oru_r01 + "\n\n" + sample_hl7_multiple_segments
+        multi_message_content = (
+            sample_hl7_oru_r01 + "\n\n" + sample_hl7_multiple_segments
+        )
         multi_message_file.write_text(multi_message_content, encoding="utf-8")
 
         parser = HL7Parser(db_session)
@@ -339,8 +385,10 @@ class TestHL7FileImport:
 
         for i, msg_text in enumerate(messages):
             if msg_text.strip():
-                hl7_text = msg_text.replace('\n', '\r')
-                transmission = parser.parse_message(hl7_text, filename=f"{multi_message_file}_{i}")
+                hl7_text = msg_text.replace("\n", "\r")
+                transmission = parser.parse_message(
+                    hl7_text, filename=f"{multi_message_file}_{i}"
+                )
                 transmissions.append(transmission)
 
         # Should have parsed 2 messages
@@ -353,7 +401,9 @@ class TestHL7FileImport:
 
         # Create a file with invalid content
         invalid_file = temp_test_dir / "invalid.hl7"
-        invalid_file.write_text("This is not a valid HL7 file\nJust random text", encoding="utf-8")
+        invalid_file.write_text(
+            "This is not a valid HL7 file\nJust random text", encoding="utf-8"
+        )
 
         parser = HL7Parser(db_session)
         content = invalid_file.read_text(encoding="utf-8")
@@ -386,26 +436,34 @@ class TestHL7FileImport:
 
         # Parse and import
         hl7_content = mock_hl7_file.read_text(encoding="utf-8")
-        hl7_text = hl7_content.replace('\n', '\r')
+        hl7_text = hl7_content.replace("\n", "\r")
         transmission = parser.parse_message(hl7_text, filename=str(mock_hl7_file))
 
         # Verify patient was created/retrieved
-        patient = db_session.query(Patient).filter_by(patient_id=transmission.patient_id).first()
+        patient = (
+            db_session.query(Patient)
+            .filter_by(patient_id=transmission.patient_id)
+            .first()
+        )
         assert patient is not None
         assert patient.patient_id == "TEST001"
 
         # Verify transmission was saved
-        saved_transmission = db_session.query(Transmission).filter_by(
-            transmission_id=transmission.transmission_id
-        ).first()
+        saved_transmission = (
+            db_session.query(Transmission)
+            .filter_by(transmission_id=transmission.transmission_id)
+            .first()
+        )
         assert saved_transmission is not None
         assert saved_transmission.patient_id == patient.patient_id
         assert saved_transmission.hl7_filename == str(mock_hl7_file)
 
         # Verify observations were saved
-        observations = db_session.query(Observation).filter_by(
-            transmission_id=transmission.transmission_id
-        ).all()
+        observations = (
+            db_session.query(Observation)
+            .filter_by(transmission_id=transmission.transmission_id)
+            .all()
+        )
 
         # At least the transmission should be created successfully
         assert transmission is not None

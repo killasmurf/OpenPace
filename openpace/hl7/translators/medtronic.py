@@ -26,7 +26,6 @@ class MedtronicTranslator(VendorTranslator):
         "MDC_BATTERY_REMAINING": "battery_percent",
         "MDC_BATTERY_ERI": "battery_eri_date",
         "MDC_BATTERY_STATUS": "battery_status",
-
         # Lead impedance codes
         "MDC_IMP_ATRIAL": "lead_impedance_atrial",
         "MDC_IMP_RV": "lead_impedance_ventricular",
@@ -34,43 +33,35 @@ class MedtronicTranslator(VendorTranslator):
         "MDC_IMP_RA": "lead_impedance_atrial",
         "MDC_LEAD_IMP_A": "lead_impedance_atrial",
         "MDC_LEAD_IMP_V": "lead_impedance_ventricular",
-
         # Arrhythmia burden
         "MDC_AFIB_BURDEN": "afib_burden_percent",
         "MDC_AFL_BURDEN": "aflutter_burden_percent",
         "MDC_VT_EPISODES": "vt_episode_count",
         "MDC_SVT_EPISODES": "svt_episode_count",
-
         # Heart rate statistics
         "MDC_HR_AVERAGE": "heart_rate_mean",
         "MDC_HR_MAX": "heart_rate_max",
         "MDC_HR_MIN": "heart_rate_min",
         "MDC_HR_REST": "heart_rate_resting",
-
         # Pacing statistics
         "MDC_PACE_PCT_A": "pacing_percent_atrial",
         "MDC_PACE_PCT_V": "pacing_percent_ventricular",
         "MDC_PACE_PCT_BIV": "pacing_percent_biventricular",
         "MDC_PACE_BURDEN": "pacing_burden_total",
-
         # Device parameters
         "MDC_RATE_LOWER": "lower_rate_limit",
         "MDC_RATE_UPPER": "upper_rate_limit",
         "MDC_MODE": "pacing_mode",
         "MDC_AV_DELAY": "av_delay",
-
         # Sensing thresholds
         "MDC_SENSE_A": "atrial_sensitivity",
         "MDC_SENSE_V": "ventricular_sensitivity",
-
         # EGM/Episodes
         "MDC_EGM_STRIP": "egm_strip",
         "MDC_EPISODE_DATA": "episode_data",
-
         # Activity/Rate Response
         "MDC_ACTIVITY_LEVEL": "activity_level",
         "MDC_RATE_RESPONSE": "rate_response_status",
-
         # Alerts
         "MDC_ALERT_COUNT": "alert_count",
         "MDC_LEAD_NOISE": "lead_noise_detected",
@@ -82,7 +73,9 @@ class MedtronicTranslator(VendorTranslator):
         # Fallback to generic translator for LOINC codes
         self.generic_translator = GenericTranslator()
 
-    def map_observation_id(self, vendor_code: str, observation_text: str = "") -> Optional[str]:
+    def map_observation_id(
+        self, vendor_code: str, observation_text: str = ""
+    ) -> Optional[str]:
         """
         Map Medtronic code to universal variable.
 
@@ -98,9 +91,11 @@ class MedtronicTranslator(VendorTranslator):
             return self.MEDTRONIC_CODES[vendor_code]
 
         # Check if it's a LOINC code (format: XXXXX-X)
-        if '-' in vendor_code and vendor_code.replace('-', '').isdigit():
+        if "-" in vendor_code and vendor_code.replace("-", "").isdigit():
             # Use generic translator for LOINC codes
-            return self.generic_translator.map_observation_id(vendor_code, observation_text)
+            return self.generic_translator.map_observation_id(
+                vendor_code, observation_text
+            )
 
         # Try to infer from observation text
         text_lower = observation_text.lower()
@@ -120,7 +115,9 @@ class MedtronicTranslator(VendorTranslator):
         elif "impedance" in text_lower or "ohm" in text_lower:
             if "atrial" in text_lower or "ra" in text_lower or " a " in text_lower:
                 return "lead_impedance_atrial"
-            elif "ventricular" in text_lower or "rv" in text_lower or " v " in text_lower:
+            elif (
+                "ventricular" in text_lower or "rv" in text_lower or " v " in text_lower
+            ):
                 return "lead_impedance_ventricular"
             elif "lv" in text_lower or "left" in text_lower:
                 return "lead_impedance_lv"
@@ -185,21 +182,21 @@ class MedtronicTranslator(VendorTranslator):
             Decoded EGM data or None
         """
         # Check if PDF
-        if blob.startswith(b'%PDF'):
+        if blob.startswith(b"%PDF"):
             return {
-                'type': 'pdf',
-                'vendor': 'Medtronic',
-                'size': len(blob),
-                'note': 'PDF format - requires PDF parsing for waveform extraction'
+                "type": "pdf",
+                "vendor": "Medtronic",
+                "size": len(blob),
+                "note": "PDF format - requires PDF parsing for waveform extraction",
             }
 
         # Check if XML/CDA
-        if blob.startswith(b'<?xml') or blob.startswith(b'<'):
+        if blob.startswith(b"<?xml") or blob.startswith(b"<"):
             return {
-                'type': 'xml',
-                'vendor': 'Medtronic',
-                'size': len(blob),
-                'note': 'HL7 CDA format - requires XML parsing'
+                "type": "xml",
+                "vendor": "Medtronic",
+                "size": len(blob),
+                "note": "HL7 CDA format - requires XML parsing",
             }
 
         # Attempt to parse binary format
@@ -225,33 +222,34 @@ class MedtronicTranslator(VendorTranslator):
 
             # Parse as signed 16-bit integers (big-endian typical for medical devices)
             import struct
+
             samples = []
             for i in range(sample_count):
                 offset = i * 2
                 if offset + 2 <= len(samples_data):
-                    value = struct.unpack('>h', samples_data[offset:offset+2])[0]
+                    value = struct.unpack(">h", samples_data[offset : offset + 2])[0]
                     samples.append(value)
 
             # Typical Medtronic sample rate is 1000 Hz or 512 Hz
             sample_rate = 1000  # Hz - would be in header
 
             return {
-                'type': 'binary',
-                'vendor': 'Medtronic',
-                'samples': samples,
-                'sample_rate': sample_rate,
-                'sample_count': len(samples),
-                'channels': ['Atrial', 'Ventricular'],  # Typical
-                'note': 'Simplified parsing - may need device-specific adjustments'
+                "type": "binary",
+                "vendor": "Medtronic",
+                "samples": samples,
+                "sample_rate": sample_rate,
+                "sample_count": len(samples),
+                "channels": ["Atrial", "Ventricular"],  # Typical
+                "note": "Simplified parsing - may need device-specific adjustments",
             }
 
         except Exception as e:
             return {
-                'type': 'binary',
-                'vendor': 'Medtronic',
-                'size': len(blob),
-                'error': str(e),
-                'note': 'Failed to parse - format may be device-specific'
+                "type": "binary",
+                "vendor": "Medtronic",
+                "size": len(blob),
+                "error": str(e),
+                "note": "Failed to parse - format may be device-specific",
             }
 
     def __repr__(self):

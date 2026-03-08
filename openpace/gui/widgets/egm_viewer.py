@@ -12,9 +12,19 @@ Interactive waveform visualization for pacemaker electrograms with:
 
 from typing import List, Optional, Dict, Any, Tuple
 from datetime import datetime
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                             QPushButton, QComboBox, QGroupBox, QSpinBox,
-                             QCheckBox, QToolBar, QSplitter)
+from PyQt6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QComboBox,
+    QGroupBox,
+    QSpinBox,
+    QCheckBox,
+    QToolBar,
+    QSplitter,
+)
 from PyQt6.QtCore import Qt, QPointF, pyqtSignal
 from PyQt6.QtGui import QAction, QIcon
 import pyqtgraph as pg
@@ -127,15 +137,23 @@ class EGMViewerWidget(QWidget):
 
         # EGM plot
         self.plot_widget = pg.PlotWidget()
-        self.plot_widget.setBackground('w')
-        self.plot_widget.setLabel('left', 'Amplitude', units='μV')
-        self.plot_widget.setLabel('bottom', 'Time', units='s')
+        self.plot_widget.setBackground("w")
+        self.plot_widget.setLabel("left", "Amplitude", units="μV")
+        self.plot_widget.setLabel("bottom", "Time", units="s")
         self.plot_widget.showGrid(x=True, y=True, alpha=0.3)
         self.plot_widget.setTitle("Electrogram Waveform")
 
         # Enable crosshair cursor
-        self.vLine = pg.InfiniteLine(angle=90, movable=False, pen=pg.mkPen('gray', width=1, style=Qt.PenStyle.DashLine))
-        self.hLine = pg.InfiniteLine(angle=0, movable=False, pen=pg.mkPen('gray', width=1, style=Qt.PenStyle.DashLine))
+        self.vLine = pg.InfiniteLine(
+            angle=90,
+            movable=False,
+            pen=pg.mkPen("gray", width=1, style=Qt.PenStyle.DashLine),
+        )
+        self.hLine = pg.InfiniteLine(
+            angle=0,
+            movable=False,
+            pen=pg.mkPen("gray", width=1, style=Qt.PenStyle.DashLine),
+        )
         self.plot_widget.addItem(self.vLine, ignoreBounds=True)
         self.plot_widget.addItem(self.hLine, ignoreBounds=True)
 
@@ -146,9 +164,9 @@ class EGMViewerWidget(QWidget):
 
         # RR interval plot
         self.rr_plot_widget = pg.PlotWidget()
-        self.rr_plot_widget.setBackground('w')
-        self.rr_plot_widget.setLabel('left', 'RR Interval', units='ms')
-        self.rr_plot_widget.setLabel('bottom', 'Beat Number')
+        self.rr_plot_widget.setBackground("w")
+        self.rr_plot_widget.setLabel("left", "RR Interval", units="ms")
+        self.rr_plot_widget.setLabel("bottom", "Beat Number")
         self.rr_plot_widget.showGrid(x=True, y=True, alpha=0.3)
         self.rr_plot_widget.setTitle("RR Interval Tachogram")
         self.rr_plot_widget.setMaximumHeight(150)
@@ -260,8 +278,12 @@ class EGMViewerWidget(QWidget):
         try:
             egm_data = EGMDecoder.decode_blob(observation.value_blob)
 
-            if not egm_data or 'error' in egm_data:
-                error_msg = egm_data.get('error', 'Unknown error') if egm_data else 'Decode failed'
+            if not egm_data or "error" in egm_data:
+                error_msg = (
+                    egm_data.get("error", "Unknown error")
+                    if egm_data
+                    else "Decode failed"
+                )
                 self.status_label.setText(f"Error decoding EGM: {error_msg}")
                 return
 
@@ -280,6 +302,7 @@ class EGMViewerWidget(QWidget):
         except Exception as e:
             self.status_label.setText(f"Error loading EGM: {str(e)}")
             import traceback
+
             traceback.print_exc()
 
     def _update_display(self):
@@ -290,24 +313,27 @@ class EGMViewerWidget(QWidget):
         self.plot_widget.clear()
 
         # Determine which signal to show
-        if self.show_filtered_checkbox.isChecked() and 'filtered_samples' in self.egm_data:
-            samples = self.egm_data['filtered_samples']
+        if (
+            self.show_filtered_checkbox.isChecked()
+            and "filtered_samples" in self.egm_data
+        ):
+            samples = self.egm_data["filtered_samples"]
             label = "Filtered EGM"
         else:
-            samples = self.egm_data['samples']
+            samples = self.egm_data["samples"]
             label = "Raw EGM"
 
         # Create time axis
-        sample_rate = self.egm_data['sample_rate']
+        sample_rate = self.egm_data["sample_rate"]
         time_axis = np.arange(len(samples)) / sample_rate
 
         # Plot waveform
-        pen = pg.mkPen(color='b', width=1)
+        pen = pg.mkPen(color="b", width=1)
         self.plot_widget.plot(time_axis, samples, pen=pen, name=label)
 
         # Show R-peaks if enabled
-        if self.show_peaks_checkbox.isChecked() and 'peaks' in self.egm_data:
-            peaks = self.egm_data['peaks']
+        if self.show_peaks_checkbox.isChecked() and "peaks" in self.egm_data:
+            peaks = self.egm_data["peaks"]
             peak_times = [time_axis[p] for p in peaks if p < len(time_axis)]
             peak_values = [samples[p] for p in peaks if p < len(samples)]
 
@@ -316,11 +342,11 @@ class EGMViewerWidget(QWidget):
                 peak_times,
                 peak_values,
                 pen=None,
-                symbol='o',
-                symbolPen='r',
-                symbolBrush='r',
+                symbol="o",
+                symbolPen="r",
+                symbolBrush="r",
                 symbolSize=8,
-                name='R-Peaks'
+                name="R-Peaks",
             )
 
         # Re-add crosshair
@@ -339,23 +365,23 @@ class EGMViewerWidget(QWidget):
         self.rr_plot_widget.show()
         self.rr_plot_widget.clear()
 
-        if not self.egm_data or 'rr_intervals' not in self.egm_data:
+        if not self.egm_data or "rr_intervals" not in self.egm_data:
             return
 
-        rr_intervals = self.egm_data['rr_intervals']
+        rr_intervals = self.egm_data["rr_intervals"]
         if not rr_intervals:
             return
 
         # Plot RR intervals
         beat_numbers = list(range(1, len(rr_intervals) + 1))
-        pen = pg.mkPen(color='g', width=2)
+        pen = pg.mkPen(color="g", width=2)
         self.rr_plot_widget.plot(
             beat_numbers,
             rr_intervals,
             pen=pen,
-            symbol='o',
+            symbol="o",
             symbolSize=5,
-            symbolBrush='g'
+            symbolBrush="g",
         )
 
         # Add mean line
@@ -363,8 +389,8 @@ class EGMViewerWidget(QWidget):
         mean_line = pg.InfiniteLine(
             pos=mean_rr,
             angle=0,
-            pen=pg.mkPen('r', width=2, style=Qt.PenStyle.DashLine),
-            label=f'Mean: {mean_rr:.0f}ms'
+            pen=pg.mkPen("r", width=2, style=Qt.PenStyle.DashLine),
+            label=f"Mean: {mean_rr:.0f}ms",
         )
         self.rr_plot_widget.addItem(mean_line)
 
@@ -373,7 +399,7 @@ class EGMViewerWidget(QWidget):
         if not self.egm_data:
             return
 
-        hr_stats = self.egm_data.get('hr_statistics', {})
+        hr_stats = self.egm_data.get("hr_statistics", {})
 
         if hr_stats:
             self.hr_mean_label.setText(f"Mean HR: {hr_stats['mean_hr']:.1f} bpm")
@@ -384,15 +410,15 @@ class EGMViewerWidget(QWidget):
             self.hr_min_label.setText("Min HR: --")
             self.hr_max_label.setText("Max HR: --")
 
-        peak_count = self.egm_data.get('peak_count', 0)
+        peak_count = self.egm_data.get("peak_count", 0)
         self.peak_count_label.setText(f"Beats: {peak_count}")
 
-        duration = self.egm_data.get('duration_seconds', 0)
+        duration = self.egm_data.get("duration_seconds", 0)
         self.duration_label.setText(f"Duration: {duration:.1f}s")
 
     def _refilter_signal(self):
         """Refilter signal with new parameters."""
-        if not self.egm_data or 'samples' not in self.egm_data:
+        if not self.egm_data or "samples" not in self.egm_data:
             return
 
         low_cut = self.low_cutoff_spin.value()
@@ -405,39 +431,39 @@ class EGMViewerWidget(QWidget):
         try:
             # Refilter
             filtered = EGMProcessor.filter_signal(
-                self.egm_data['samples'],
-                self.egm_data['sample_rate'],
+                self.egm_data["samples"],
+                self.egm_data["sample_rate"],
                 lowcut=low_cut,
-                highcut=high_cut
+                highcut=high_cut,
             )
 
             # Update filtered samples
-            self.egm_data['filtered_samples'] = filtered.tolist()
+            self.egm_data["filtered_samples"] = filtered.tolist()
 
             # Redetect peaks on filtered signal
             peaks = EGMProcessor.detect_peaks(
-                filtered.tolist(),
-                self.egm_data['sample_rate']
+                filtered.tolist(), self.egm_data["sample_rate"]
             )
-            self.egm_data['peaks'] = peaks
-            self.egm_data['peak_count'] = len(peaks)
+            self.egm_data["peaks"] = peaks
+            self.egm_data["peak_count"] = len(peaks)
 
             # Recalculate RR intervals
             rr_intervals = EGMProcessor.calculate_rr_intervals(
-                peaks,
-                self.egm_data['sample_rate']
+                peaks, self.egm_data["sample_rate"]
             )
-            self.egm_data['rr_intervals'] = rr_intervals
+            self.egm_data["rr_intervals"] = rr_intervals
 
             # Recalculate HR stats
             hr_stats = EGMProcessor.calculate_heart_rate(rr_intervals)
-            self.egm_data['hr_statistics'] = hr_stats
+            self.egm_data["hr_statistics"] = hr_stats
 
             # Update display
             self._update_display()
             self._update_statistics()
 
-            self.status_label.setText(f"Refiltered: {low_cut}-{high_cut} Hz, {len(peaks)} peaks detected")
+            self.status_label.setText(
+                f"Refiltered: {low_cut}-{high_cut} Hz, {len(peaks)} peaks detected"
+            )
 
         except Exception as e:
             self.status_label.setText(f"Error refiltering: {str(e)}")
@@ -477,8 +503,8 @@ class EGMViewerWidget(QWidget):
             pos=center_x,
             angle=90,
             movable=True,
-            pen=pg.mkPen('m', width=2, style=Qt.PenStyle.DashLine),
-            label=f'{center_x:.3f}s'
+            pen=pg.mkPen("m", width=2, style=Qt.PenStyle.DashLine),
+            label=f"{center_x:.3f}s",
         )
         self.plot_widget.addItem(line)
         self.caliper_lines.append(line)
@@ -488,7 +514,9 @@ class EGMViewerWidget(QWidget):
             pos1 = self.caliper_lines[-2].value()
             pos2 = self.caliper_lines[-1].value()
             interval = abs(pos2 - pos1)
-            self.status_label.setText(f"Caliper interval: {interval*1000:.1f}ms ({60/interval:.1f} bpm)")
+            self.status_label.setText(
+                f"Caliper interval: {interval*1000:.1f}ms ({60/interval:.1f} bpm)"
+            )
 
     def _clear_calipers(self):
         """Clear all calipers."""
@@ -507,7 +535,7 @@ class EGMViewerWidget(QWidget):
             self,
             "Export EGM Image",
             "egm_waveform.png",
-            "PNG Image (*.png);;JPEG Image (*.jpg)"
+            "PNG Image (*.png);;JPEG Image (*.jpg)",
         )
 
         if filename:

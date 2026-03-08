@@ -53,9 +53,9 @@ class TestDataSanitizer:
         dirty_id = "PT\x0012345\n\r"
         clean_id = DataSanitizer.sanitize_patient_id(dirty_id)
         assert clean_id == "PT12345"
-        assert '\x00' not in clean_id
-        assert '\n' not in clean_id
-        assert '\r' not in clean_id
+        assert "\x00" not in clean_id
+        assert "\n" not in clean_id
+        assert "\r" not in clean_id
 
     def test_sanitize_patient_id_rejects_empty(self):
         """Test that empty patient IDs are rejected."""
@@ -107,8 +107,8 @@ class TestDataSanitizer:
         dirty_name = "John\x00Doe\n\r"
         clean_name = DataSanitizer.sanitize_patient_name(dirty_name)
         assert clean_name == "JohnDoe"
-        assert '\x00' not in clean_name
-        assert '\n' not in clean_name
+        assert "\x00" not in clean_name
+        assert "\n" not in clean_name
 
     def test_sanitize_patient_name_rejects_too_long(self):
         """Test that overly long patient names are rejected."""
@@ -139,9 +139,9 @@ class TestDataSanitizer:
         """Test that control characters are removed from text fields."""
         dirty_text = "Test\x00\x01\x02Text\n\r"
         clean_text = DataSanitizer.sanitize_text_field(dirty_text)
-        assert '\x00' not in clean_text
-        assert '\x01' not in clean_text
-        assert '\x02' not in clean_text
+        assert "\x00" not in clean_text
+        assert "\x01" not in clean_text
+        assert "\x02" not in clean_text
 
     def test_sanitize_text_field_enforces_length_limit(self):
         """Test that text fields enforce length limits."""
@@ -189,7 +189,9 @@ class TestHL7MessageValidation:
     def test_validate_missing_pid_segment(self, db_session):
         """Test that messages without PID segment are rejected."""
         parser = HL7Parser(db_session)
-        invalid_message = "MSH|^~\\&|SENDING_APP|FACILITY|||||ORU^R01|||2.5\r" + "X" * 200
+        invalid_message = (
+            "MSH|^~\\&|SENDING_APP|FACILITY|||||ORU^R01|||2.5\r" + "X" * 200
+        )
         with pytest.raises(HL7ValidationError, match="missing required PID"):
             parser.validate_hl7_message(invalid_message)
 
@@ -237,7 +239,7 @@ class TestFileValidation:
         window = MainWindow()
         qtbot.addWidget(window)
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.hl7', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".hl7", delete=False) as f:
             # Write just enough data to exceed limit (in chunks to avoid memory issues)
             chunk_size = 1024 * 1024  # 1 MB chunks
             chunks_needed = (FileLimits.MAX_IMPORT_FILE_SIZE // chunk_size) + 2
@@ -256,7 +258,7 @@ class TestFileValidation:
         window = MainWindow()
         qtbot.addWidget(window)
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.hl7', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".hl7", delete=False) as f:
             f.write("MSH")  # Too small
             temp_path = f.name
 
@@ -271,7 +273,7 @@ class TestFileValidation:
         window = MainWindow()
         qtbot.addWidget(window)
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.hl7', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".hl7", delete=False) as f:
             f.write("MSH|^~\\&|" + "X" * 200)
             temp_path = f.name
 
@@ -291,7 +293,7 @@ class TestFileValidation:
         window = MainWindow()
         qtbot.addWidget(window)
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.hl7', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".hl7", delete=False) as f:
             f.write(
                 "MSH|^~\\&|SENDING_APP|FACILITY|RECEIVING_APP|RECEIVING_FACILITY|"
                 "20240101120000||ORU^R01|MSG001|P|2.5\r"

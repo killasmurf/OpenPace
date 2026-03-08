@@ -5,8 +5,16 @@ Combined window for browsing and viewing electrogram episodes.
 Integrates episode selector and EGM viewer in a single interface.
 """
 
-from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-                             QSplitter, QMenuBar, QMenu, QStatusBar)
+from PyQt6.QtWidgets import (
+    QMainWindow,
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QSplitter,
+    QMenuBar,
+    QMenu,
+    QStatusBar,
+)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction
 from sqlalchemy.orm import Session
@@ -166,11 +174,7 @@ class EGMWindow(QMainWindow):
         """Show patient selection dialog (placeholder)."""
         from PyQt6.QtWidgets import QInputDialog
 
-        patient_id, ok = QInputDialog.getText(
-            self,
-            "Load Patient",
-            "Enter Patient ID:"
-        )
+        patient_id, ok = QInputDialog.getText(self, "Load Patient", "Enter Patient ID:")
 
         if ok and patient_id:
             self.load_patient(patient_id)
@@ -193,5 +197,5 @@ class EGMWindow(QMainWindow):
             "<li>Signal filtering controls</li>"
             "<li>Export capabilities</li>"
             "</ul>"
-            "<p><i>Version 1.0 - Educational Use Only</i></p>"
+            "<p><i>Version 1.0 - Educational Use Only</i></p>",
         )

@@ -7,8 +7,15 @@ for battery, lead impedance, and arrhythmia burden analyses.
 
 from typing import Optional, Dict, Any
 from datetime import datetime
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                             QGroupBox, QScrollArea, QFrame)
+from PyQt6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QGroupBox,
+    QScrollArea,
+    QFrame,
+)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 
@@ -44,7 +51,9 @@ class SummaryPanel(QWidget):
 
         # Patient info header
         self.patient_label = QLabel("No patient selected")
-        self.patient_label.setStyleSheet("font-size: 14px; font-weight: bold; padding: 5px;")
+        self.patient_label.setStyleSheet(
+            "font-size: 14px; font-weight: bold; padding: 5px;"
+        )
         layout.addWidget(self.patient_label)
 
         self.date_label = QLabel("")
@@ -129,7 +138,9 @@ class SummaryPanel(QWidget):
 
         return group
 
-    def _add_metric_row(self, layout: QVBoxLayout, label_text: str, value_label: QLabel):
+    def _add_metric_row(
+        self, layout: QVBoxLayout, label_text: str, value_label: QLabel
+    ):
         """Add a metric row to the layout."""
         row = QHBoxLayout()
         label = QLabel(label_text)
@@ -144,11 +155,15 @@ class SummaryPanel(QWidget):
         """Add a recommendation row."""
         layout.addWidget(QLabel("Recommendation:"))
         value_label.setWordWrap(True)
-        value_label.setStyleSheet("padding: 5px; border-left: 3px solid #999; margin-left: 10px;")
+        value_label.setStyleSheet(
+            "padding: 5px; border-left: 3px solid #999; margin-left: 10px;"
+        )
         layout.addWidget(value_label)
         layout.addSpacing(10)
 
-    def update_patient_info(self, patient_name: str, last_transmission: Optional[datetime] = None):
+    def update_patient_info(
+        self, patient_name: str, last_transmission: Optional[datetime] = None
+    ):
         """Update patient information header."""
         self.patient_name = patient_name
         self.last_transmission = last_transmission
@@ -167,19 +182,19 @@ class SummaryPanel(QWidget):
         try:
             analysis = BatteryAnalyzer.analyze_depletion(trend)
 
-            if 'error' in analysis:
-                self._set_error_state(self.battery_voltage_label, analysis['error'])
+            if "error" in analysis:
+                self._set_error_state(self.battery_voltage_label, analysis["error"])
                 return
 
             # Current voltage with color coding
-            voltage = analysis['current_voltage']
+            voltage = analysis["current_voltage"]
             color = BatteryAnalyzer.get_status_color(voltage)
             self.battery_voltage_label.setText(
                 f"<span style='color: {color}; font-weight: bold;'>{voltage:.2f}V</span>"
             )
 
             # Years to ERI
-            years_to_eri = analysis.get('years_to_eri')
+            years_to_eri = analysis.get("years_to_eri")
             if years_to_eri:
                 if years_to_eri < 0:
                     self.battery_eri_label.setText(
@@ -191,12 +206,14 @@ class SummaryPanel(QWidget):
                 self.battery_eri_label.setText("N/A")
 
             # Depletion rate
-            depletion = analysis['depletion_rate_v_per_year']
+            depletion = analysis["depletion_rate_v_per_year"]
             self.battery_depletion_label.setText(f"{abs(depletion):.3f} V/year")
 
             # Recommendation
             recommendation = BatteryAnalyzer.get_recommendation(analysis)
-            self._set_recommendation(self.battery_recommendation_label, recommendation, color)
+            self._set_recommendation(
+                self.battery_recommendation_label, recommendation, color
+            )
 
         except Exception as e:
             self._set_error_state(self.battery_voltage_label, str(e))
@@ -204,38 +221,28 @@ class SummaryPanel(QWidget):
     def update_lead_analysis(self, trends: Dict[str, LongitudinalTrend]):
         """Update lead section with analysis results."""
         try:
-            atrial_trend = trends.get('lead_impedance_atrial')
-            ventricular_trend = trends.get('lead_impedance_ventricular')
-            lv_trend = trends.get('lead_impedance_lv')
+            atrial_trend = trends.get("lead_impedance_atrial")
+            ventricular_trend = trends.get("lead_impedance_ventricular")
+            lv_trend = trends.get("lead_impedance_lv")
 
             # Analyze each lead
             if atrial_trend:
                 analysis = ImpedanceAnalyzer.analyze_trend(atrial_trend)
-                self._update_lead_display(
-                    self.lead_atrial_label,
-                    analysis,
-                    "Atrial"
-                )
+                self._update_lead_display(self.lead_atrial_label, analysis, "Atrial")
             else:
                 self.lead_atrial_label.setText("No data")
 
             if ventricular_trend:
                 analysis = ImpedanceAnalyzer.analyze_trend(ventricular_trend)
                 self._update_lead_display(
-                    self.lead_ventricular_label,
-                    analysis,
-                    "Ventricular"
+                    self.lead_ventricular_label, analysis, "Ventricular"
                 )
             else:
                 self.lead_ventricular_label.setText("No data")
 
             if lv_trend:
                 analysis = ImpedanceAnalyzer.analyze_trend(lv_trend)
-                self._update_lead_display(
-                    self.lead_lv_label,
-                    analysis,
-                    "LV"
-                )
+                self._update_lead_display(self.lead_lv_label, analysis, "LV")
             else:
                 self.lead_lv_label.setText("No data")
 
@@ -246,43 +253,45 @@ class SummaryPanel(QWidget):
                     all_anomalies.extend(ImpedanceAnalyzer.detect_anomalies(trend))
 
             if all_anomalies:
-                critical_count = len([a for a in all_anomalies if a['severity'] == 'critical'])
+                critical_count = len(
+                    [a for a in all_anomalies if a["severity"] == "critical"]
+                )
                 if critical_count > 0:
                     self._set_recommendation(
                         self.lead_anomaly_label,
                         f"CRITICAL: {critical_count} lead anomalies detected. Review immediately.",
-                        'red'
+                        "red",
                     )
                 else:
                     self._set_recommendation(
                         self.lead_anomaly_label,
                         f"{len(all_anomalies)} anomalies detected. Monitor closely.",
-                        'orange'
+                        "orange",
                     )
             else:
                 self._set_recommendation(
-                    self.lead_anomaly_label,
-                    "All leads functioning normally.",
-                    'green'
+                    self.lead_anomaly_label, "All leads functioning normally.", "green"
                 )
 
         except Exception as e:
             self._set_error_state(self.lead_atrial_label, str(e))
 
-    def _update_lead_display(self, label: QLabel, analysis: Dict[str, Any], lead_name: str):
+    def _update_lead_display(
+        self, label: QLabel, analysis: Dict[str, Any], lead_name: str
+    ):
         """Update individual lead display."""
-        impedance = analysis['current_impedance']
-        stability = analysis['stability']
-        status = analysis['overall_status']
+        impedance = analysis["current_impedance"]
+        stability = analysis["stability"]
+        status = analysis["overall_status"]
 
         # Color based on status
         color_map = {
-            'normal': 'green',
-            'monitor': 'orange',
-            'warning': 'orange',
-            'critical': 'red'
+            "normal": "green",
+            "monitor": "orange",
+            "warning": "orange",
+            "critical": "red",
         }
-        color = color_map.get(status, 'black')
+        color = color_map.get(status, "black")
 
         label.setText(
             f"<span style='color: {color};'>{impedance:.0f} Ohms "
@@ -294,29 +303,33 @@ class SummaryPanel(QWidget):
         try:
             analysis = ArrhythmiaAnalyzer.calculate_burden_statistics(trend)
 
-            if 'error' in analysis:
-                self._set_error_state(self.burden_current_label, analysis['error'])
+            if "error" in analysis:
+                self._set_error_state(self.burden_current_label, analysis["error"])
                 return
 
             # Current burden with color
-            current = analysis['current_burden']
+            current = analysis["current_burden"]
             color = self._get_burden_color(current)
             self.burden_current_label.setText(
                 f"<span style='color: {color}; font-weight: bold;'>{current:.1f}%</span>"
             )
 
             # Mean burden
-            mean = analysis['mean_burden']
+            mean = analysis["mean_burden"]
             self.burden_mean_label.setText(f"{mean:.1f}%")
 
             # Trend
-            trend_dir = analysis['trend']['direction']
-            trend_icon = {'increasing': '↑', 'decreasing': '↓', 'stable': '→'}.get(trend_dir, '?')
+            trend_dir = analysis["trend"]["direction"]
+            trend_icon = {"increasing": "↑", "decreasing": "↓", "stable": "→"}.get(
+                trend_dir, "?"
+            )
             self.burden_trend_label.setText(f"{trend_icon} {trend_dir.title()}")
 
             # Recommendation
             recommendation = ArrhythmiaAnalyzer.get_recommendation(analysis)
-            self._set_recommendation(self.burden_recommendation_label, recommendation, color)
+            self._set_recommendation(
+                self.burden_recommendation_label, recommendation, color
+            )
 
         except Exception as e:
             self._set_error_state(self.burden_current_label, str(e))
@@ -324,11 +337,11 @@ class SummaryPanel(QWidget):
     def _get_burden_color(self, burden: float) -> str:
         """Get color for burden level."""
         if burden < ArrhythmiaAnalyzer.LOW_BURDEN:
-            return 'green'
+            return "green"
         elif burden < ArrhythmiaAnalyzer.MODERATE_BURDEN:
-            return 'orange'
+            return "orange"
         else:
-            return 'red'
+            return "red"
 
     def _set_recommendation(self, label: QLabel, text: str, color: str):
         """Set recommendation text with color."""
@@ -347,10 +360,18 @@ class SummaryPanel(QWidget):
         self.patient_label.setText("No patient selected")
         self.date_label.setText("")
 
-        for label in [self.battery_voltage_label, self.battery_eri_label,
-                     self.battery_depletion_label, self.battery_recommendation_label,
-                     self.lead_atrial_label, self.lead_ventricular_label,
-                     self.lead_lv_label, self.lead_anomaly_label,
-                     self.burden_current_label, self.burden_mean_label,
-                     self.burden_trend_label, self.burden_recommendation_label]:
+        for label in [
+            self.battery_voltage_label,
+            self.battery_eri_label,
+            self.battery_depletion_label,
+            self.battery_recommendation_label,
+            self.lead_atrial_label,
+            self.lead_ventricular_label,
+            self.lead_lv_label,
+            self.lead_anomaly_label,
+            self.burden_current_label,
+            self.burden_mean_label,
+            self.burden_trend_label,
+            self.burden_recommendation_label,
+        ]:
             label.setText("--")

@@ -35,7 +35,7 @@ class TestPatientModel:
             last_name_hash="DOE",
             first_name_hash="JOHN",
             date_of_birth_offset=0,
-            anonymized=False
+            anonymized=False,
         )
         db_session.add(patient)
         db_session.commit()
@@ -53,7 +53,7 @@ class TestPatientModel:
             first_name_hash="JANE",
             date_of_birth_offset=0,
             anonymized=False,
-            notes="Test patient with notes"
+            notes="Test patient with notes",
         )
         db_session.add(patient)
         db_session.commit()
@@ -66,13 +66,13 @@ class TestPatientModel:
             patient_id="TEST001",
             last_name_hash="DOE",
             first_name_hash="JOHN",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         patient2 = Patient(
             patient_id="TEST001",
             last_name_hash="SMITH",
             first_name_hash="JANE",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
 
         db_session.add(patient1)
@@ -89,7 +89,7 @@ class TestPatientModel:
             last_name_hash="ANON",
             first_name_hash="PATIENT",
             date_of_birth_offset=30,
-            anonymized=True
+            anonymized=True,
         )
         db_session.add(patient)
         db_session.commit()
@@ -103,7 +103,7 @@ class TestPatientModel:
             patient_id="TEST004",
             last_name_hash="CASCADE",
             first_name_hash="TEST",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         db_session.add(patient)
         db_session.commit()
@@ -113,7 +113,7 @@ class TestPatientModel:
             transmission_date=datetime.now(),
             device_model="TEST_DEVICE",
             device_serial="TEST123",
-            raw_hl7="TEST"
+            raw_hl7="TEST",
         )
         db_session.add(transmission)
         db_session.commit()
@@ -125,7 +125,9 @@ class TestPatientModel:
         db_session.commit()
 
         # Verify transmission is also deleted
-        assert db_session.query(Transmission).filter_by(id=transmission_id).first() is None
+        assert (
+            db_session.query(Transmission).filter_by(id=transmission_id).first() is None
+        )
 
 
 class TestTransmissionModel:
@@ -143,7 +145,7 @@ class TestTransmissionModel:
             device_model="ADVISA DR MRI A3DR01",
             device_serial="PMC123456",
             raw_hl7="MSH|...|",
-            import_source="test_file.hl7"
+            import_source="test_file.hl7",
         )
         db_session.add(transmission)
         db_session.commit()
@@ -159,7 +161,7 @@ class TestTransmissionModel:
             patient_id="TEST005",
             last_name_hash="REL",
             first_name_hash="TEST",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         db_session.add(patient)
         db_session.commit()
@@ -169,7 +171,7 @@ class TestTransmissionModel:
             transmission_date=datetime.now(),
             device_model="TEST",
             device_serial="123",
-            raw_hl7="TEST"
+            raw_hl7="TEST",
         )
         db_session.add(transmission)
         db_session.commit()
@@ -185,7 +187,7 @@ class TestTransmissionModel:
             transmission_date=datetime.now(),
             device_model="TEST",
             device_serial="123",
-            raw_hl7="TEST"
+            raw_hl7="TEST",
         )
         db_session.add(transmission)
 
@@ -198,7 +200,7 @@ class TestTransmissionModel:
             patient_id="TEST006",
             last_name_hash="JSON",
             first_name_hash="TEST",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         db_session.add(patient)
         db_session.commit()
@@ -206,7 +208,7 @@ class TestTransmissionModel:
         metadata = {
             "vendor": "Medtronic",
             "clinic": "Test Clinic",
-            "technician": "Test Tech"
+            "technician": "Test Tech",
         }
 
         transmission = Transmission(
@@ -215,7 +217,7 @@ class TestTransmissionModel:
             device_model="TEST",
             device_serial="123",
             raw_hl7="TEST",
-            metadata=metadata
+            metadata=metadata,
         )
         db_session.add(transmission)
         db_session.commit()
@@ -235,7 +237,7 @@ class TestObservationModel:
             patient_id="TEST007",
             last_name_hash="OBS",
             first_name_hash="TEST",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         db_session.add(patient)
         db_session.commit()
@@ -245,7 +247,7 @@ class TestObservationModel:
             transmission_date=datetime.now(),
             device_model="TEST",
             device_serial="123",
-            raw_hl7="TEST"
+            raw_hl7="TEST",
         )
         db_session.add(transmission)
         db_session.commit()
@@ -259,7 +261,7 @@ class TestObservationModel:
             value_numeric=2.78,
             units="V",
             reference_range="2.5-2.8",
-            observation_timestamp=datetime.now()
+            observation_timestamp=datetime.now(),
         )
         db_session.add(observation)
         db_session.commit()
@@ -274,7 +276,7 @@ class TestObservationModel:
             patient_id="TEST008",
             last_name_hash="STR",
             first_name_hash="OBS",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         db_session.add(patient)
         db_session.commit()
@@ -284,7 +286,7 @@ class TestObservationModel:
             transmission_date=datetime.now(),
             device_model="TEST",
             device_serial="123",
-            raw_hl7="TEST"
+            raw_hl7="TEST",
         )
         db_session.add(transmission)
         db_session.commit()
@@ -295,7 +297,7 @@ class TestObservationModel:
             variable_name="PACING_MODE",
             variable_code="MODE",
             value_string="DDDR",
-            observation_timestamp=datetime.now()
+            observation_timestamp=datetime.now(),
         )
         db_session.add(observation)
         db_session.commit()
@@ -309,7 +311,7 @@ class TestObservationModel:
             patient_id="TEST009",
             last_name_hash="EGM",
             first_name_hash="TEST",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         db_session.add(patient)
         db_session.commit()
@@ -319,7 +321,7 @@ class TestObservationModel:
             transmission_date=datetime.now(),
             device_model="TEST",
             device_serial="123",
-            raw_hl7="TEST"
+            raw_hl7="TEST",
         )
         db_session.add(transmission)
         db_session.commit()
@@ -332,7 +334,7 @@ class TestObservationModel:
             variable_code="EGM",
             value_string="BASE64_ENCODED",
             egm_data=egm_data,
-            observation_timestamp=datetime.now()
+            observation_timestamp=datetime.now(),
         )
         db_session.add(observation)
         db_session.commit()
@@ -350,7 +352,7 @@ class TestLongitudinalTrendModel:
             patient_id="TEST010",
             last_name_hash="TREND",
             first_name_hash="TEST",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         db_session.add(patient)
         db_session.commit()
@@ -360,7 +362,7 @@ class TestLongitudinalTrendModel:
             variable_name="BATTERY_VOLTAGE",
             timestamp=datetime.now(),
             value_numeric=2.78,
-            units="V"
+            units="V",
         )
         db_session.add(trend)
         db_session.commit()
@@ -375,7 +377,7 @@ class TestLongitudinalTrendModel:
             patient_id="TEST011",
             last_name_hash="SERIES",
             first_name_hash="TEST",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         db_session.add(patient)
         db_session.commit()
@@ -388,15 +390,18 @@ class TestLongitudinalTrendModel:
                 variable_name="BATTERY_VOLTAGE",
                 timestamp=base_date + timedelta(days=i * 30),
                 value_numeric=2.80 - (i * 0.01),
-                units="V"
+                units="V",
             )
             db_session.add(trend)
         db_session.commit()
 
         # Query trends
-        trends = db_session.query(LongitudinalTrend).filter_by(
-            patient_id=patient.id
-        ).order_by(LongitudinalTrend.timestamp).all()
+        trends = (
+            db_session.query(LongitudinalTrend)
+            .filter_by(patient_id=patient.id)
+            .order_by(LongitudinalTrend.timestamp)
+            .all()
+        )
 
         assert len(trends) == 5
         assert trends[0].value_numeric == 2.80
@@ -412,7 +417,7 @@ class TestArrhythmiaEpisodeModel:
             patient_id="TEST012",
             last_name_hash="ARRHYTHMIA",
             first_name_hash="TEST",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         db_session.add(patient)
         db_session.commit()
@@ -422,7 +427,7 @@ class TestArrhythmiaEpisodeModel:
             transmission_date=datetime.now(),
             device_model="TEST",
             device_serial="123",
-            raw_hl7="TEST"
+            raw_hl7="TEST",
         )
         db_session.add(transmission)
         db_session.commit()
@@ -433,7 +438,7 @@ class TestArrhythmiaEpisodeModel:
             start_timestamp=datetime(2024, 1, 10, 8, 30, 0),
             duration_seconds=320,
             average_hr=145,
-            max_hr=160
+            max_hr=160,
         )
         db_session.add(episode)
         db_session.commit()
@@ -449,7 +454,7 @@ class TestArrhythmiaEpisodeModel:
             patient_id="TEST013",
             last_name_hash="EGM_EPISODE",
             first_name_hash="TEST",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         db_session.add(patient)
         db_session.commit()
@@ -459,7 +464,7 @@ class TestArrhythmiaEpisodeModel:
             transmission_date=datetime.now(),
             device_model="TEST",
             device_serial="123",
-            raw_hl7="TEST"
+            raw_hl7="TEST",
         )
         db_session.add(transmission)
         db_session.commit()
@@ -471,7 +476,7 @@ class TestArrhythmiaEpisodeModel:
             start_timestamp=datetime.now(),
             duration_seconds=1800,
             average_hr=138,
-            egm_strip=egm_data
+            egm_strip=egm_data,
         )
         db_session.add(episode)
         db_session.commit()
@@ -489,7 +494,7 @@ class TestDeviceParameterModel:
             patient_id="TEST014",
             last_name_hash="PARAM",
             first_name_hash="TEST",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         db_session.add(patient)
         db_session.commit()
@@ -499,7 +504,7 @@ class TestDeviceParameterModel:
             transmission_date=datetime.now(),
             device_model="TEST",
             device_serial="123",
-            raw_hl7="TEST"
+            raw_hl7="TEST",
         )
         db_session.add(transmission)
         db_session.commit()
@@ -508,7 +513,7 @@ class TestDeviceParameterModel:
             transmission_id=transmission.id,
             parameter_name="LOWER_RATE_LIMIT",
             parameter_value="60",
-            units="bpm"
+            units="bpm",
         )
         db_session.add(param)
         db_session.commit()
@@ -528,7 +533,7 @@ class TestAnalysisModel:
             patient_id="TEST015",
             last_name_hash="ANALYSIS",
             first_name_hash="TEST",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         db_session.add(patient)
         db_session.commit()
@@ -536,14 +541,14 @@ class TestAnalysisModel:
         analysis_results = {
             "battery_trend": "declining",
             "estimated_replacement_date": "2024-12-01",
-            "lead_status": "normal"
+            "lead_status": "normal",
         }
 
         analysis = Analysis(
             patient_id=patient.id,
             analysis_type="BATTERY_TREND",
             analysis_timestamp=datetime.now(),
-            results=analysis_results
+            results=analysis_results,
         )
         db_session.add(analysis)
         db_session.commit()
@@ -558,7 +563,7 @@ class TestAnalysisModel:
             patient_id="TEST016",
             last_name_hash="VERSION",
             first_name_hash="TEST",
-            date_of_birth_offset=0
+            date_of_birth_offset=0,
         )
         db_session.add(patient)
         db_session.commit()
@@ -568,7 +573,7 @@ class TestAnalysisModel:
             analysis_type="AF_BURDEN",
             analysis_timestamp=datetime.now(),
             results={"burden": 2.3},
-            algorithm_version="1.0.0"
+            algorithm_version="1.0.0",
         )
         db_session.add(analysis)
         db_session.commit()

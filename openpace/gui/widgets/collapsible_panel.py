@@ -5,9 +5,7 @@ A panel that can be expanded/collapsed with a header containing
 title, collapse button, and close button.
 """
 
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QToolButton
-)
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QToolButton
 from PyQt6.QtCore import pyqtSignal
 
 
@@ -38,13 +36,15 @@ class CollapsiblePanel(QWidget):
 
         # Header with collapse button
         header = QWidget()
-        header.setStyleSheet("""
+        header.setStyleSheet(
+            """
             QWidget {
                 background-color: #e0e0e0;
                 border: 1px solid #cccccc;
                 border-radius: 3px;
             }
-        """)
+        """
+        )
         header_layout = QHBoxLayout()
         header_layout.setContentsMargins(5, 5, 5, 5)
         header.setLayout(header_layout)

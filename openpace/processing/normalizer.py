@@ -21,45 +21,42 @@ class UnitConverter:
 
     # Standard units for each observation type
     STANDARD_UNITS = {
-        'battery_voltage': 'V',
-        'battery_percent': '%',
-        'lead_impedance_atrial': 'Ohm',
-        'lead_impedance_ventricular': 'Ohm',
-        'lead_impedance_lv': 'Ohm',
-        'afib_burden_percent': '%',
-        'heart_rate': 'bpm',
-        'heart_rate_mean': 'bpm',
-        'heart_rate_max': 'bpm',
-        'heart_rate_min': 'bpm',
-        'pacing_percent_atrial': '%',
-        'pacing_percent_ventricular': '%',
-        'pacing_percent_biventricular': '%',
-        'lower_rate_limit': 'bpm',
-        'upper_rate_limit': 'bpm',
-        'av_delay': 'ms',
-        'atrial_sensitivity': 'mV',
-        'ventricular_sensitivity': 'mV',
+        "battery_voltage": "V",
+        "battery_percent": "%",
+        "lead_impedance_atrial": "Ohm",
+        "lead_impedance_ventricular": "Ohm",
+        "lead_impedance_lv": "Ohm",
+        "afib_burden_percent": "%",
+        "heart_rate": "bpm",
+        "heart_rate_mean": "bpm",
+        "heart_rate_max": "bpm",
+        "heart_rate_min": "bpm",
+        "pacing_percent_atrial": "%",
+        "pacing_percent_ventricular": "%",
+        "pacing_percent_biventricular": "%",
+        "lower_rate_limit": "bpm",
+        "upper_rate_limit": "bpm",
+        "av_delay": "ms",
+        "atrial_sensitivity": "mV",
+        "ventricular_sensitivity": "mV",
     }
 
     # Conversion factors: source_unit -> (multiplier, target_unit)
     CONVERSION_FACTORS = {
         # Voltage
-        ('mV', 'V'): 0.001,
-        ('V', 'mV'): 1000,
-
+        ("mV", "V"): 0.001,
+        ("V", "mV"): 1000,
         # Impedance
-        ('kOhm', 'Ohm'): 1000,
-        ('Ohm', 'kOhm'): 0.001,
-
+        ("kOhm", "Ohm"): 1000,
+        ("Ohm", "kOhm"): 0.001,
         # Time
-        ('s', 'ms'): 1000,
-        ('ms', 's'): 0.001,
-        ('min', 's'): 60,
-        ('s', 'min'): 1/60,
-
+        ("s", "ms"): 1000,
+        ("ms", "s"): 0.001,
+        ("min", "s"): 60,
+        ("s", "min"): 1 / 60,
         # Percentage (sometimes expressed as decimal)
-        ('decimal', '%'): 100,
-        ('%', 'decimal'): 0.01,
+        ("decimal", "%"): 100,
+        ("%", "decimal"): 0.01,
     }
 
     @classmethod
@@ -94,7 +91,9 @@ class UnitConverter:
         raise ValueError(f"No conversion available from {from_unit} to {to_unit}")
 
     @classmethod
-    def normalize(cls, variable_name: str, value: float, unit: str) -> Tuple[float, str]:
+    def normalize(
+        cls, variable_name: str, value: float, unit: str
+    ) -> Tuple[float, str]:
         """
         Normalize a value to standard units for the given variable.
 
@@ -119,7 +118,9 @@ class UnitConverter:
             normalized_value = cls.convert(value, unit, standard_unit)
             return normalized_value, standard_unit
         except ValueError:
-            logger.warning(f"Could not convert {variable_name} from {unit} to {standard_unit}")
+            logger.warning(
+                f"Could not convert {variable_name} from {unit} to {standard_unit}"
+            )
             return value, unit
 
 
@@ -132,30 +133,30 @@ class DataQualityValidator:
 
     # Normal ranges for observations (min, max)
     NORMAL_RANGES = {
-        'battery_voltage': (2.0, 3.5),  # Volts
-        'battery_percent': (0, 100),
-        'lead_impedance_atrial': (200, 1500),  # Ohms
-        'lead_impedance_ventricular': (200, 1500),
-        'lead_impedance_lv': (200, 1500),
-        'afib_burden_percent': (0, 100),
-        'heart_rate': (30, 200),  # bpm
-        'heart_rate_mean': (40, 150),
-        'heart_rate_max': (50, 250),
-        'heart_rate_min': (30, 100),
-        'pacing_percent_atrial': (0, 100),
-        'pacing_percent_ventricular': (0, 100),
-        'pacing_percent_biventricular': (0, 100),
-        'lower_rate_limit': (30, 100),
-        'upper_rate_limit': (100, 180),
-        'av_delay': (0, 400),  # ms
+        "battery_voltage": (2.0, 3.5),  # Volts
+        "battery_percent": (0, 100),
+        "lead_impedance_atrial": (200, 1500),  # Ohms
+        "lead_impedance_ventricular": (200, 1500),
+        "lead_impedance_lv": (200, 1500),
+        "afib_burden_percent": (0, 100),
+        "heart_rate": (30, 200),  # bpm
+        "heart_rate_mean": (40, 150),
+        "heart_rate_max": (50, 250),
+        "heart_rate_min": (30, 100),
+        "pacing_percent_atrial": (0, 100),
+        "pacing_percent_ventricular": (0, 100),
+        "pacing_percent_biventricular": (0, 100),
+        "lower_rate_limit": (30, 100),
+        "upper_rate_limit": (100, 180),
+        "av_delay": (0, 400),  # ms
     }
 
     # Critical ranges (outside these = device malfunction or data error)
     CRITICAL_RANGES = {
-        'battery_voltage': (1.5, 4.0),
-        'lead_impedance_atrial': (50, 3000),
-        'lead_impedance_ventricular': (50, 3000),
-        'heart_rate': (20, 300),
+        "battery_voltage": (1.5, 4.0),
+        "lead_impedance_atrial": (50, 3000),
+        "lead_impedance_ventricular": (50, 3000),
+        "heart_rate": (20, 300),
     }
 
     @classmethod
@@ -176,7 +177,7 @@ class DataQualityValidator:
                 - severity: 'normal', 'warning', 'critical'
         """
         flags = []
-        severity = 'normal'
+        severity = "normal"
 
         # Check critical range
         critical_range = cls.CRITICAL_RANGES.get(variable_name)
@@ -184,8 +185,8 @@ class DataQualityValidator:
         if critical_range:
             min_val, max_val = critical_range
             if value < min_val or value > max_val:
-                flags.append('OUTSIDE_CRITICAL_RANGE')
-                severity = 'critical'
+                flags.append("OUTSIDE_CRITICAL_RANGE")
+                severity = "critical"
                 in_critical_range = False
 
         # Check normal range
@@ -194,41 +195,41 @@ class DataQualityValidator:
         if normal_range:
             min_val, max_val = normal_range
             if value < min_val:
-                flags.append('BELOW_NORMAL_RANGE')
-                if severity == 'normal':
-                    severity = 'warning'
+                flags.append("BELOW_NORMAL_RANGE")
+                if severity == "normal":
+                    severity = "warning"
                 in_normal_range = False
             elif value > max_val:
-                flags.append('ABOVE_NORMAL_RANGE')
-                if severity == 'normal':
-                    severity = 'warning'
+                flags.append("ABOVE_NORMAL_RANGE")
+                if severity == "normal":
+                    severity = "warning"
                 in_normal_range = False
 
         # Variable-specific validation
-        if variable_name == 'battery_voltage' and value < 2.2:
-            flags.append('LOW_BATTERY_ERI')
-            severity = 'critical'
+        if variable_name == "battery_voltage" and value < 2.2:
+            flags.append("LOW_BATTERY_ERI")
+            severity = "critical"
 
-        if variable_name.startswith('lead_impedance'):
+        if variable_name.startswith("lead_impedance"):
             if value > 1500:
-                flags.append('POSSIBLE_LEAD_FRACTURE')
-                severity = 'critical'
+                flags.append("POSSIBLE_LEAD_FRACTURE")
+                severity = "critical"
             elif value < 200:
-                flags.append('POSSIBLE_INSULATION_FAILURE')
-                severity = 'critical'
+                flags.append("POSSIBLE_INSULATION_FAILURE")
+                severity = "critical"
 
-        if variable_name == 'afib_burden_percent' and value > 20:
-            flags.append('HIGH_AFIB_BURDEN')
-            severity = 'warning'
+        if variable_name == "afib_burden_percent" and value > 20:
+            flags.append("HIGH_AFIB_BURDEN")
+            severity = "warning"
 
-        is_valid = len(flags) == 0 or severity != 'critical'
+        is_valid = len(flags) == 0 or severity != "critical"
 
         return {
-            'is_valid': is_valid,
-            'in_normal_range': in_normal_range,
-            'in_critical_range': in_critical_range,
-            'flags': flags,
-            'severity': severity,
+            "is_valid": is_valid,
+            "in_normal_range": in_normal_range,
+            "in_critical_range": in_critical_range,
+            "flags": flags,
+            "severity": severity,
         }
 
 
@@ -260,16 +261,16 @@ class DataNormalizer:
                 - validation_result: dict
                 - quality_flags: list
         """
-        variable_name = observation_data.get('variable_name')
-        value = observation_data.get('value_numeric')
-        unit = observation_data.get('unit')
+        variable_name = observation_data.get("variable_name")
+        value = observation_data.get("value_numeric")
+        unit = observation_data.get("unit")
 
         if not variable_name or value is None:
             return observation_data
 
         # Normalize units
         normalized_value, standard_unit = self.unit_converter.normalize(
-            variable_name, value, unit or ''
+            variable_name, value, unit or ""
         )
 
         # Validate
@@ -278,11 +279,11 @@ class DataNormalizer:
         # Enrich observation data
         return {
             **observation_data,
-            'normalized_value': normalized_value,
-            'standard_unit': standard_unit,
-            'validation_result': validation_result,
-            'quality_flags': validation_result['flags'],
-            'severity': validation_result['severity'],
+            "normalized_value": normalized_value,
+            "standard_unit": standard_unit,
+            "validation_result": validation_result,
+            "quality_flags": validation_result["flags"],
+            "severity": validation_result["severity"],
         }
 
     def normalize_batch(self, observations: list) -> list:

@@ -51,12 +51,12 @@ class BatteryTrendWidget(QWidget, TableChartMixin):
         """Initialize the user interface."""
         # Create plot widget first
         self.plot_widget = pg.PlotWidget()
-        self.plot_widget.setBackground('w')
+        self.plot_widget.setBackground("w")
         self.plot_widget.showGrid(x=True, y=True, alpha=0.3)
 
         # Axis labels (will be updated based on measurement type)
-        self.plot_widget.setLabel('left', 'Battery Longevity', units='months')
-        self.plot_widget.setLabel('bottom', 'Date')
+        self.plot_widget.setLabel("left", "Battery Longevity", units="months")
+        self.plot_widget.setLabel("bottom", "Date")
 
         # Enable mouse interaction
         self.plot_widget.setMouseEnabled(x=True, y=False)
@@ -68,14 +68,19 @@ class BatteryTrendWidget(QWidget, TableChartMixin):
         self.init_table_chart_toggle(
             title="Battery Status",
             columns=["Date/Time", "Value", "Status"],
-            chart_widget=self.plot_widget
+            chart_widget=self.plot_widget,
         )
 
         # Set default time range (2020 to current date)
         self._set_default_time_range()
 
-    def set_data(self, time_points: List[datetime], values: List[float],
-                 measurement_type: str = "longevity", unit: str = None):
+    def set_data(
+        self,
+        time_points: List[datetime],
+        values: List[float],
+        measurement_type: str = "longevity",
+        unit: str = None,
+    ):
         """
         Set battery measurement data.
 
@@ -99,10 +104,10 @@ class BatteryTrendWidget(QWidget, TableChartMixin):
 
         # Update axis label
         if measurement_type == "longevity":
-            self.plot_widget.setLabel('left', 'Battery Longevity', units='months')
+            self.plot_widget.setLabel("left", "Battery Longevity", units="months")
             self.title_label.setText("Battery Longevity")
         else:
-            self.plot_widget.setLabel('left', 'Battery Level', units='%')
+            self.plot_widget.setLabel("left", "Battery Level", units="%")
             self.title_label.setText("Battery Level")
 
         # Convert datetimes to timestamps for plotting
@@ -143,15 +148,15 @@ class BatteryTrendWidget(QWidget, TableChartMixin):
 
         # Plot line
         pen = pg.mkPen(color=color, width=2)
-        label = 'Longevity' if self.measurement_type == "longevity" else 'Battery %'
+        label = "Longevity" if self.measurement_type == "longevity" else "Battery %"
         self.plot_widget.plot(
             timestamps,
             values,
             pen=pen,
-            symbol='o',
+            symbol="o",
             symbolSize=6,
             symbolBrush=color,
-            name=label
+            name=label,
         )
 
     def _get_value_color(self, value: float) -> tuple:
@@ -187,7 +192,7 @@ class BatteryTrendWidget(QWidget, TableChartMixin):
                 x_range,
                 [self.LONGEVITY_WARNING, self.LONGEVITY_WARNING],
                 pen=pen,
-                name=f'Warning ({self.LONGEVITY_WARNING} months)'
+                name=f"Warning ({self.LONGEVITY_WARNING} months)",
             )
         else:
             # Warning threshold for percentage
@@ -196,7 +201,7 @@ class BatteryTrendWidget(QWidget, TableChartMixin):
                 x_range,
                 [self.PERCENTAGE_WARNING, self.PERCENTAGE_WARNING],
                 pen=pen,
-                name=f'Warning ({self.PERCENTAGE_WARNING}%)'
+                name=f"Warning ({self.PERCENTAGE_WARNING}%)",
             )
 
     def _update_statistics(self):
@@ -243,8 +248,8 @@ class BatteryTrendWidget(QWidget, TableChartMixin):
         """
         Configure X-axis to display dates properly.
         """
-        axis = pg.DateAxisItem(orientation='bottom')
-        self.plot_widget.setAxisItems({'bottom': axis})
+        axis = pg.DateAxisItem(orientation="bottom")
+        self.plot_widget.setAxisItems({"bottom": axis})
 
     def _set_time_range_with_padding(self, timestamps: List[float]):
         """
@@ -258,12 +263,14 @@ class BatteryTrendWidget(QWidget, TableChartMixin):
         time_range = max_time - min_time
 
         # Add 10% padding on each side
-        padding = time_range * 0.10 if time_range > 0 else 86400  # 1 day if single point
+        padding = (
+            time_range * 0.10 if time_range > 0 else 86400
+        )  # 1 day if single point
 
         self.plot_widget.setXRange(min_time - padding, max_time + padding, padding=0)
 
         # Auto-range Y-axis only
-        self.plot_widget.enableAutoRange(axis='y')
+        self.plot_widget.enableAutoRange(axis="y")
 
     def _set_default_time_range(self):
         """Set default time range from 2020 to current date."""

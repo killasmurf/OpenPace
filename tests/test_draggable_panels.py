@@ -21,6 +21,7 @@ def test_imports():
         from openpace.gui.widgets.resize_handle import ResizeHandle, ResizeHandleManager
         from openpace.gui.layouts import GridLayoutManager, LayoutMode, LayoutSerializer
         from openpace.gui.dialogs import GridSettingsDialog
+
         print("✓ All imports successful")
         return True
     except ImportError as e:
@@ -65,6 +66,7 @@ def test_grid_layout_manager():
     except Exception as e:
         print(f"✗ GridLayoutManager tests failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -102,6 +104,7 @@ def test_layout_serializer():
     except Exception as e:
         print(f"✗ LayoutSerializer tests failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -115,15 +118,15 @@ def test_config_extensions():
         config = UIConfig()
 
         # Verify new fields exist
-        assert hasattr(config, 'use_grid_layout')
-        assert hasattr(config, 'save_panel_layouts')
-        assert hasattr(config, 'panel_layouts')
-        assert hasattr(config, 'default_layout_mode')
-        assert hasattr(config, 'panel_min_height')
-        assert hasattr(config, 'panel_min_width')
-        assert hasattr(config, 'grid_rows')
-        assert hasattr(config, 'grid_cols')
-        assert hasattr(config, 'snap_to_grid')
+        assert hasattr(config, "use_grid_layout")
+        assert hasattr(config, "save_panel_layouts")
+        assert hasattr(config, "panel_layouts")
+        assert hasattr(config, "default_layout_mode")
+        assert hasattr(config, "panel_min_height")
+        assert hasattr(config, "panel_min_width")
+        assert hasattr(config, "grid_rows")
+        assert hasattr(config, "grid_cols")
+        assert hasattr(config, "snap_to_grid")
 
         # Verify default values
         assert config.grid_rows == 12
@@ -135,6 +138,7 @@ def test_config_extensions():
     except Exception as e:
         print(f"✗ UIConfig tests failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 

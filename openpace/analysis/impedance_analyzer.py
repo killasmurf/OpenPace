@@ -44,7 +44,7 @@ class ImpedanceAnalyzer:
         Returns:
             List of detected anomalies with timestamps and severity
         """
-        if not trend.variable_name.startswith('lead_impedance'):
+        if not trend.variable_name.startswith("lead_impedance"):
             raise ValueError("Trend must be for lead impedance")
 
         if len(trend.values) < 2:
@@ -56,69 +56,77 @@ class ImpedanceAnalyzer:
 
         # Calculate differences between consecutive measurements
         for i in range(1, len(values)):
-            delta = values[i] - values[i-1]
+            delta = values[i] - values[i - 1]
             current_value = values[i]
 
             # Check for fracture (sudden increase)
             if delta > ImpedanceAnalyzer.FRACTURE_THRESHOLD:
                 severity = ImpedanceAnalyzer._determine_severity(
-                    delta,
-                    current_value,
-                    'fracture'
+                    delta, current_value, "fracture"
                 )
-                anomalies.append({
-                    'type': 'possible_fracture',
-                    'timestamp': time_points[i].isoformat(),
-                    'previous_value': values[i-1],
-                    'current_value': current_value,
-                    'delta': delta,
-                    'severity': severity,
-                    'description': f"Sudden increase of {delta:.0f} Ohms suggests possible lead fracture",
-                    'recommendation': ImpedanceAnalyzer._get_fracture_recommendation(severity)
-                })
+                anomalies.append(
+                    {
+                        "type": "possible_fracture",
+                        "timestamp": time_points[i].isoformat(),
+                        "previous_value": values[i - 1],
+                        "current_value": current_value,
+                        "delta": delta,
+                        "severity": severity,
+                        "description": f"Sudden increase of {delta:.0f} Ohms suggests possible lead fracture",
+                        "recommendation": ImpedanceAnalyzer._get_fracture_recommendation(
+                            severity
+                        ),
+                    }
+                )
 
             # Check for insulation failure (sudden decrease)
             elif delta < ImpedanceAnalyzer.FAILURE_THRESHOLD:
                 severity = ImpedanceAnalyzer._determine_severity(
-                    abs(delta),
-                    current_value,
-                    'failure'
+                    abs(delta), current_value, "failure"
                 )
-                anomalies.append({
-                    'type': 'possible_insulation_failure',
-                    'timestamp': time_points[i].isoformat(),
-                    'previous_value': values[i-1],
-                    'current_value': current_value,
-                    'delta': delta,
-                    'severity': severity,
-                    'description': f"Sudden decrease of {abs(delta):.0f} Ohms suggests possible insulation failure",
-                    'recommendation': ImpedanceAnalyzer._get_failure_recommendation(severity)
-                })
+                anomalies.append(
+                    {
+                        "type": "possible_insulation_failure",
+                        "timestamp": time_points[i].isoformat(),
+                        "previous_value": values[i - 1],
+                        "current_value": current_value,
+                        "delta": delta,
+                        "severity": severity,
+                        "description": f"Sudden decrease of {abs(delta):.0f} Ohms suggests possible insulation failure",
+                        "recommendation": ImpedanceAnalyzer._get_failure_recommendation(
+                            severity
+                        ),
+                    }
+                )
 
             # Check for out-of-range values
             if current_value < ImpedanceAnalyzer.NORMAL_RANGE_MIN:
-                anomalies.append({
-                    'type': 'below_normal_range',
-                    'timestamp': time_points[i].isoformat(),
-                    'previous_value': values[i-1],
-                    'current_value': current_value,
-                    'delta': delta,
-                    'severity': 'warning',
-                    'description': f"Impedance {current_value:.0f} Ohms below normal range",
-                    'recommendation': "Monitor for potential lead insulation compromise"
-                })
+                anomalies.append(
+                    {
+                        "type": "below_normal_range",
+                        "timestamp": time_points[i].isoformat(),
+                        "previous_value": values[i - 1],
+                        "current_value": current_value,
+                        "delta": delta,
+                        "severity": "warning",
+                        "description": f"Impedance {current_value:.0f} Ohms below normal range",
+                        "recommendation": "Monitor for potential lead insulation compromise",
+                    }
+                )
 
             elif current_value > ImpedanceAnalyzer.NORMAL_RANGE_MAX:
-                anomalies.append({
-                    'type': 'above_normal_range',
-                    'timestamp': time_points[i].isoformat(),
-                    'previous_value': values[i-1],
-                    'current_value': current_value,
-                    'delta': delta,
-                    'severity': 'warning',
-                    'description': f"Impedance {current_value:.0f} Ohms above normal range",
-                    'recommendation': "Monitor for potential lead conductor issues"
-                })
+                anomalies.append(
+                    {
+                        "type": "above_normal_range",
+                        "timestamp": time_points[i].isoformat(),
+                        "previous_value": values[i - 1],
+                        "current_value": current_value,
+                        "delta": delta,
+                        "severity": "warning",
+                        "description": f"Impedance {current_value:.0f} Ohms above normal range",
+                        "recommendation": "Monitor for potential lead conductor issues",
+                    }
+                )
 
         return anomalies
 
@@ -136,11 +144,7 @@ class ImpedanceAnalyzer:
             Dictionary with stability metrics
         """
         if len(trend.values) < 2:
-            return {
-                'score': 100.0,
-                'rating': 'excellent',
-                'confidence': 'low'
-            }
+            return {"score": 100.0, "rating": "excellent", "confidence": "low"}
 
         values = np.array(trend.values)
 
@@ -149,11 +153,7 @@ class ImpedanceAnalyzer:
         std_val = np.std(values)
 
         if mean_val == 0:
-            return {
-                'score': 0.0,
-                'rating': 'invalid',
-                'confidence': 'none'
-            }
+            return {"score": 0.0, "rating": "invalid", "confidence": "none"}
 
         cv = (std_val / mean_val) * 100
 
@@ -163,30 +163,30 @@ class ImpedanceAnalyzer:
 
         # Determine rating
         if stability_score >= ImpedanceAnalyzer.EXCELLENT_STABILITY:
-            rating = 'excellent'
+            rating = "excellent"
         elif stability_score >= ImpedanceAnalyzer.GOOD_STABILITY:
-            rating = 'good'
+            rating = "good"
         elif stability_score >= ImpedanceAnalyzer.FAIR_STABILITY:
-            rating = 'fair'
+            rating = "fair"
         else:
-            rating = 'poor'
+            rating = "poor"
 
         # Confidence based on number of data points
         if len(values) >= 10:
-            confidence = 'high'
+            confidence = "high"
         elif len(values) >= 5:
-            confidence = 'medium'
+            confidence = "medium"
         else:
-            confidence = 'low'
+            confidence = "low"
 
         return {
-            'score': round(stability_score, 1),
-            'rating': rating,
-            'coefficient_of_variation': round(cv, 2),
-            'mean_impedance': round(mean_val, 1),
-            'std_deviation': round(std_val, 1),
-            'confidence': confidence,
-            'data_points': len(values)
+            "score": round(stability_score, 1),
+            "rating": rating,
+            "coefficient_of_variation": round(cv, 2),
+            "mean_impedance": round(mean_val, 1),
+            "std_deviation": round(std_val, 1),
+            "confidence": confidence,
+            "data_points": len(values),
         }
 
     @staticmethod
@@ -200,7 +200,7 @@ class ImpedanceAnalyzer:
         Returns:
             Complete analysis including anomalies, stability, and statistics
         """
-        if not trend.variable_name.startswith('lead_impedance'):
+        if not trend.variable_name.startswith("lead_impedance"):
             raise ValueError("Trend must be for lead impedance")
 
         # Detect anomalies
@@ -216,80 +216,86 @@ class ImpedanceAnalyzer:
         # Calculate trend direction
         if len(values) >= 3:
             from scipy import stats as scipy_stats
+
             slope, intercept, r_value, p_value, std_err = scipy_stats.linregress(
-                range(len(values)),
-                values
+                range(len(values)), values
             )
-            trend_direction = 'increasing' if slope > 5 else ('decreasing' if slope < -5 else 'stable')
+            trend_direction = (
+                "increasing"
+                if slope > 5
+                else ("decreasing" if slope < -5 else "stable")
+            )
         else:
             slope = 0
-            trend_direction = 'stable'
+            trend_direction = "stable"
 
         # Overall assessment
-        critical_anomalies = [a for a in anomalies if a['severity'] == 'critical']
-        warning_anomalies = [a for a in anomalies if a['severity'] == 'warning']
+        critical_anomalies = [a for a in anomalies if a["severity"] == "critical"]
+        warning_anomalies = [a for a in anomalies if a["severity"] == "warning"]
 
         if critical_anomalies:
-            overall_status = 'critical'
+            overall_status = "critical"
             recommendation = "URGENT: Critical lead issue detected. Review immediately."
         elif warning_anomalies:
-            overall_status = 'warning'
+            overall_status = "warning"
             recommendation = "CAUTION: Lead anomaly detected. Monitor closely."
-        elif stability['rating'] in ['poor', 'fair']:
-            overall_status = 'monitor'
+        elif stability["rating"] in ["poor", "fair"]:
+            overall_status = "monitor"
             recommendation = "Lead stability below optimal. Continue monitoring."
         else:
-            overall_status = 'normal'
+            overall_status = "normal"
             recommendation = "Lead functioning normally."
 
         return {
-            'lead_name': trend.variable_name.replace('lead_impedance_', '').title(),
-            'current_impedance': values[-1],
-            'mean_impedance': float(np.mean(values)),
-            'min_impedance': float(np.min(values)),
-            'max_impedance': float(np.max(values)),
-            'impedance_range': float(np.max(values) - np.min(values)),
-            'trend_direction': trend_direction,
-            'trend_slope': slope,
-            'stability': stability,
-            'anomalies': anomalies,
-            'anomaly_count': len(anomalies),
-            'critical_anomaly_count': len(critical_anomalies),
-            'warning_anomaly_count': len(warning_anomalies),
-            'overall_status': overall_status,
-            'recommendation': recommendation,
-            'data_points': len(values),
-            'observation_period': {
-                'start': time_points[0].isoformat(),
-                'end': time_points[-1].isoformat(),
-                'days': (time_points[-1] - time_points[0]).days
-            }
+            "lead_name": trend.variable_name.replace("lead_impedance_", "").title(),
+            "current_impedance": values[-1],
+            "mean_impedance": float(np.mean(values)),
+            "min_impedance": float(np.min(values)),
+            "max_impedance": float(np.max(values)),
+            "impedance_range": float(np.max(values) - np.min(values)),
+            "trend_direction": trend_direction,
+            "trend_slope": slope,
+            "stability": stability,
+            "anomalies": anomalies,
+            "anomaly_count": len(anomalies),
+            "critical_anomaly_count": len(critical_anomalies),
+            "warning_anomaly_count": len(warning_anomalies),
+            "overall_status": overall_status,
+            "recommendation": recommendation,
+            "data_points": len(values),
+            "observation_period": {
+                "start": time_points[0].isoformat(),
+                "end": time_points[-1].isoformat(),
+                "days": (time_points[-1] - time_points[0]).days,
+            },
         }
 
     @staticmethod
-    def _determine_severity(delta: float, current_value: float, anomaly_type: str) -> str:
+    def _determine_severity(
+        delta: float, current_value: float, anomaly_type: str
+    ) -> str:
         """Determine severity of anomaly."""
-        if anomaly_type == 'fracture':
+        if anomaly_type == "fracture":
             if delta > 1000 or current_value > 2000:
-                return 'critical'
+                return "critical"
             elif delta > 700 or current_value > 1800:
-                return 'warning'
+                return "warning"
             else:
-                return 'info'
+                return "info"
         else:  # failure
             if delta > 500 or current_value < 100:
-                return 'critical'
+                return "critical"
             elif delta > 400 or current_value < 150:
-                return 'warning'
+                return "warning"
             else:
-                return 'info'
+                return "info"
 
     @staticmethod
     def _get_fracture_recommendation(severity: str) -> str:
         """Get recommendation for fracture."""
-        if severity == 'critical':
+        if severity == "critical":
             return "Immediate lead evaluation required. Consider lead replacement."
-        elif severity == 'warning':
+        elif severity == "warning":
             return "Close monitoring required. Schedule follow-up interrogation."
         else:
             return "Monitor trend. Consider follow-up if pattern continues."
@@ -297,9 +303,9 @@ class ImpedanceAnalyzer:
     @staticmethod
     def _get_failure_recommendation(severity: str) -> str:
         """Get recommendation for insulation failure."""
-        if severity == 'critical':
+        if severity == "critical":
             return "Immediate evaluation required. Possible insulation breach."
-        elif severity == 'warning':
+        elif severity == "warning":
             return "Monitor closely for progressive insulation compromise."
         else:
             return "Continue monitoring. Verify with additional interrogations."

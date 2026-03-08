@@ -39,8 +39,8 @@ class LayoutSerializer:
         layout_data = grid_manager.serialize_layout()
 
         # Add metadata
-        layout_data['version'] = '1.0'
-        layout_data['timestamp'] = datetime.now().isoformat()
+        layout_data["version"] = "1.0"
+        layout_data["timestamp"] = datetime.now().isoformat()
 
         return layout_data
 
@@ -58,14 +58,14 @@ class LayoutSerializer:
         """
         try:
             # Validate version (for future compatibility)
-            version = layout_data.get('version', '1.0')
-            if version != '1.0':
+            version = layout_data.get("version", "1.0")
+            if version != "1.0":
                 logger.warning(f"Layout version {version} may not be fully compatible")
 
             # Remove metadata before passing to grid manager
             layout_copy = layout_data.copy()
-            layout_copy.pop('version', None)
-            layout_copy.pop('timestamp', None)
+            layout_copy.pop("version", None)
+            layout_copy.pop("timestamp", None)
 
             # Apply layout
             grid_manager.restore_layout(layout_copy)
@@ -93,7 +93,7 @@ class LayoutSerializer:
             file_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Write to file
-            with open(file_path, 'w') as f:
+            with open(file_path, "w") as f:
                 json.dump(layout_data, f, indent=2)
 
             logger.info(f"Layout saved to {file_path}")
@@ -119,7 +119,7 @@ class LayoutSerializer:
                 logger.warning(f"Layout file not found: {file_path}")
                 return None
 
-            with open(file_path, 'r') as f:
+            with open(file_path, "r") as f:
                 layout_data = json.load(f)
 
             logger.info(f"Layout loaded from {file_path}")
@@ -243,28 +243,32 @@ class LayoutSerializer:
         """
         try:
             # Check required fields
-            required_fields = ['layout_mode', 'grid_rows', 'grid_cols', 'panels']
+            required_fields = ["layout_mode", "grid_rows", "grid_cols", "panels"]
             for field in required_fields:
                 if field not in layout_data:
                     logger.error(f"Missing required field: {field}")
                     return False
 
             # Validate panels
-            panels = layout_data.get('panels', {})
+            panels = layout_data.get("panels", {})
             if not isinstance(panels, dict):
                 logger.error("Panels must be a dictionary")
                 return False
 
             for panel_id, panel_data in panels.items():
-                required_panel_fields = ['row', 'col', 'row_span', 'col_span']
+                required_panel_fields = ["row", "col", "row_span", "col_span"]
                 for field in required_panel_fields:
                     if field not in panel_data:
                         logger.error(f"Panel {panel_id} missing field: {field}")
                         return False
 
                 # Validate numeric values
-                if (panel_data['row'] < 0 or panel_data['col'] < 0 or
-                    panel_data['row_span'] <= 0 or panel_data['col_span'] <= 0):
+                if (
+                    panel_data["row"] < 0
+                    or panel_data["col"] < 0
+                    or panel_data["row_span"] <= 0
+                    or panel_data["col_span"] <= 0
+                ):
                     logger.error(f"Panel {panel_id} has invalid dimensions")
                     return False
 
@@ -283,69 +287,69 @@ class LayoutSerializer:
             Dictionary containing default grid layout
         """
         return {
-            'version': '1.0',
-            'timestamp': datetime.now().isoformat(),
-            'layout_mode': 'vertical',
-            'grid_rows': 12,
-            'grid_cols': 12,
-            'panels': {
-                'battery': {
-                    'row': 0,
-                    'col': 0,
-                    'row_span': 4,
-                    'col_span': 4,
-                    'visible': True,
-                    'collapsed': False
+            "version": "1.0",
+            "timestamp": datetime.now().isoformat(),
+            "layout_mode": "vertical",
+            "grid_rows": 12,
+            "grid_cols": 12,
+            "panels": {
+                "battery": {
+                    "row": 0,
+                    "col": 0,
+                    "row_span": 4,
+                    "col_span": 4,
+                    "visible": True,
+                    "collapsed": False,
                 },
-                'atrial_impedance': {
-                    'row': 0,
-                    'col': 4,
-                    'row_span': 4,
-                    'col_span': 4,
-                    'visible': True,
-                    'collapsed': False
+                "atrial_impedance": {
+                    "row": 0,
+                    "col": 4,
+                    "row_span": 4,
+                    "col_span": 4,
+                    "visible": True,
+                    "collapsed": False,
                 },
-                'vent_impedance': {
-                    'row': 0,
-                    'col': 8,
-                    'row_span': 4,
-                    'col_span': 4,
-                    'visible': True,
-                    'collapsed': False
+                "vent_impedance": {
+                    "row": 0,
+                    "col": 8,
+                    "row_span": 4,
+                    "col_span": 4,
+                    "visible": True,
+                    "collapsed": False,
                 },
-                'burden': {
-                    'row': 4,
-                    'col': 0,
-                    'row_span': 4,
-                    'col_span': 4,
-                    'visible': True,
-                    'collapsed': False
+                "burden": {
+                    "row": 4,
+                    "col": 0,
+                    "row_span": 4,
+                    "col_span": 4,
+                    "visible": True,
+                    "collapsed": False,
                 },
-                'settings': {
-                    'row': 4,
-                    'col': 4,
-                    'row_span': 4,
-                    'col_span': 4,
-                    'visible': True,
-                    'collapsed': False
+                "settings": {
+                    "row": 4,
+                    "col": 4,
+                    "row_span": 4,
+                    "col_span": 4,
+                    "visible": True,
+                    "collapsed": False,
                 },
-                'device_settings': {
-                    'row': 4,
-                    'col': 8,
-                    'row_span': 4,
-                    'col_span': 4,
-                    'visible': True,
-                    'collapsed': False
+                "device_settings": {
+                    "row": 4,
+                    "col": 8,
+                    "row_span": 4,
+                    "col_span": 4,
+                    "visible": True,
+                    "collapsed": False,
                 },
-                'heart_rate': {
-                    'row': 8,
-                    'col': 0,
-                    'row_span': 4,
-                    'col_span': 12,
-                    'visible': True,
-                    'collapsed': False
-                }
-            }
+                "heart_rate": {
+                    "row": 8,
+                    "col": 0,
+                    "row_span": 4,
+                    "col_span": 12,
+                    "visible": True,
+                    "collapsed": False,
+                },
+            },
         }
 
     @staticmethod
@@ -357,67 +361,67 @@ class LayoutSerializer:
             Dictionary containing default horizontal layout
         """
         return {
-            'version': '1.0',
-            'timestamp': datetime.now().isoformat(),
-            'layout_mode': 'horizontal',
-            'grid_rows': 12,
-            'grid_cols': 12,
-            'panels': {
-                'battery': {
-                    'row': 0,
-                    'col': 0,
-                    'row_span': 2,
-                    'col_span': 12,
-                    'visible': True,
-                    'collapsed': False
+            "version": "1.0",
+            "timestamp": datetime.now().isoformat(),
+            "layout_mode": "horizontal",
+            "grid_rows": 12,
+            "grid_cols": 12,
+            "panels": {
+                "battery": {
+                    "row": 0,
+                    "col": 0,
+                    "row_span": 2,
+                    "col_span": 12,
+                    "visible": True,
+                    "collapsed": False,
                 },
-                'atrial_impedance': {
-                    'row': 2,
-                    'col': 0,
-                    'row_span': 2,
-                    'col_span': 6,
-                    'visible': True,
-                    'collapsed': False
+                "atrial_impedance": {
+                    "row": 2,
+                    "col": 0,
+                    "row_span": 2,
+                    "col_span": 6,
+                    "visible": True,
+                    "collapsed": False,
                 },
-                'vent_impedance': {
-                    'row': 2,
-                    'col': 6,
-                    'row_span': 2,
-                    'col_span': 6,
-                    'visible': True,
-                    'collapsed': False
+                "vent_impedance": {
+                    "row": 2,
+                    "col": 6,
+                    "row_span": 2,
+                    "col_span": 6,
+                    "visible": True,
+                    "collapsed": False,
                 },
-                'burden': {
-                    'row': 4,
-                    'col': 0,
-                    'row_span': 2,
-                    'col_span': 6,
-                    'visible': True,
-                    'collapsed': False
+                "burden": {
+                    "row": 4,
+                    "col": 0,
+                    "row_span": 2,
+                    "col_span": 6,
+                    "visible": True,
+                    "collapsed": False,
                 },
-                'settings': {
-                    'row': 4,
-                    'col': 6,
-                    'row_span': 2,
-                    'col_span': 6,
-                    'visible': True,
-                    'collapsed': False
+                "settings": {
+                    "row": 4,
+                    "col": 6,
+                    "row_span": 2,
+                    "col_span": 6,
+                    "visible": True,
+                    "collapsed": False,
                 },
-                'device_settings': {
-                    'row': 6,
-                    'col': 0,
-                    'row_span': 2,
-                    'col_span': 6,
-                    'visible': True,
-                    'collapsed': False
+                "device_settings": {
+                    "row": 6,
+                    "col": 0,
+                    "row_span": 2,
+                    "col_span": 6,
+                    "visible": True,
+                    "collapsed": False,
                 },
-                'heart_rate': {
-                    'row': 6,
-                    'col': 6,
-                    'row_span': 6,
-                    'col_span': 6,
-                    'visible': True,
-                    'collapsed': False
-                }
-            }
+                "heart_rate": {
+                    "row": 6,
+                    "col": 6,
+                    "row_span": 6,
+                    "col_span": 6,
+                    "visible": True,
+                    "collapsed": False,
+                },
+            },
         }
