@@ -54,7 +54,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("OpenPace - Pacemaker Data Analyzer")
+        self.setWindowTitle("OpenPace - Pacemaker Data Analysis")
         self.setGeometry(100, 100, 1400, 900)
 
         # Initialize database
@@ -243,9 +243,9 @@ class MainWindow(QMainWindow):
         toolbar = self.addToolBar("Main Toolbar")
 
         # Add toolbar actions
-        import_btn = QPushButton("Import Data")
-        import_btn.clicked.connect(self._import_data)
-        toolbar.addWidget(import_btn)
+        import_action = QAction("Import HL7", self)
+        import_action.triggered.connect(self._import_data)
+        toolbar.addAction(import_action)
 
     def _create_central_widget(self):
         """Create the central widget with timeline and episode views."""
