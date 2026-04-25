@@ -304,10 +304,17 @@ class HL7Parser:
         # Get or create patient
         patient = self._get_or_create_patient(pid_data)
 
+        # Resolve transmission_date with the same hierarchy used for observations:
+        # OBR-7 (per-transmission datetime) is preferred over MSH-7 because some
+        # vendors (e.g. Boston Scientific LATITUDE) populate MSH-7 with the export
+        # wall-clock time, which is identical across every file in a single export
+        # batch and thus useless for distinguishing transmissions.
+        tx_date = obr_data.get("observation_datetime") or msh_data["message_datetime"]
+
         # Create transmission record
         transmission = Transmission(
             patient_id=patient.patient_id,
-            transmission_date=msh_data["message_datetime"],
+            transmission_date=tx_date,
             transmission_type=obr_data.get("observation_type", "unknown"),
             message_control_id=msh_data.get("message_control_id"),
             sending_application=msh_data.get("sending_application"),
